@@ -1,0 +1,198 @@
+---
+title: "Experiments with Fire and Caribou"
+author: "Steve Cumming"
+date: "April 13, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Loading a shapefile
+
+
+
+![Ecoregions names and numeric IDs](figures/ecoregions_e.png)
+
+You can find similar maps for the other ecozones of Canada [here](http://www.ecozones.ca/english/zone/).
+
+This is how I know that the numeric code the Athabasca Plains is 87. We will see how a simple shapefile can be extracted from a bigger, more complex one, using the standard R indexing syntax. This works the class methods for SpatialPointsDataFrame inherit characteristics of data frames.
+
+So in the following code, re read the shapefile, extract one ecoRegion and store it in a
+SpatialPointsDataFrame called studyArea. We also Plot the entire original shapefile, and the chosen ecoRegion.
+
+```{r loadShp, echo=FALSE}
+library(rgdal)
+library(SpaDES)
+library(magrittr)
+
+#saveDir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
+dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
+savedDir<-setwd(dataDir)
+shape <- readOGR(dsn = ".", layer = "ltfrcycles3")
+Plot(shape)
+studyArea<-shape[shape$ECOREGION==87,] #we have chosen Athabasca Plains in northern SK
+                                       #we happen to know the numeric code is 87 (easier to type)
+print(paste("class(studyArea) =",class(studyArea)))
+Plot(studyArea)
+```
+
+## Subset, crop, mask and reproject
+
+Now, we are going to show how to use a shapefile to crop out a subset of a larger area. 
+
+The challenge is: what if the projections are different?
+
+The logic is as follows:
+
+1. We use the projection of the study area shapefile as the projection for the simulation.
+
+2. We reproject the study region to conform to the vegetation map. This is much faster than the other way around.
+
+3. We then crop the vegetation map to the _bounding rectangle_ of the study area shapefile.
+
+4. Then we mask out the pixels outside the boundary of the reprojected shapefile.
+
+5. Finally, we reproject the result back to conform to the studyArea shapefile, and restore
+the colour map.
+
+The following code fragments come from module _scfmCrop_.
+
+```{r cropLCC05}
+dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/")
+vegMapInit <- raster(file.path(dataDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif")) %>% setMinMax
+Plot(vegMapInit)
+vegProjection <- crs(vegMapInit)
+if (is.na(crs(studyArea)))   #in case it was sampled from the vegmap.
+    crs(studyArea) <- vegProjection
+simProjection<-crs(studyArea)  #this would probably be set to be 
+                               #the same as the veg map at an earlier stage.
+  
+#Project the study area into each input raster, then crop and mask; 
+#Then project result into sim projection.
+ 
+studyAreaTmp <- spTransform(studyArea, CRSobj =vegProjection)
+vegMapCrop <-  crop(vegMapInit, studyAreaTmp)
+Plot(vegMapCrop)
+crs(vegMapCrop) <- vegProjection #must rest the projection after the crop to what it was before
+vegMap <- mask(vegMapCrop,studyAreaTmp) 
+crs(vegMap) <- vegProjection #not sure if this is required
+vegMap <- projectRaster(vegMap,crs=simProjection,method="ngb")
+tmp <- getColors(vegMapInit)[[1]] # mask removes colors!
+setColors(vegMap, n=length(tmp)) <- tmp 
+Plot(vegMap)
+```
+
+## Classification and Patch Metrics
+
+Now in this excercise we build a map classifier and then use package _SDMTools_ to generate patch metrics.
+
+The function we will use is SDMTool::ClassStat()
+
+```{r Data2ModelsPlusPatches echo=TRUE}
+library(SpaDES)
+library(igraph)
+library(spatial.tools)
+library(magrittr) #implements pipes as %>%
+library(archivist)
+library(memoise)
+library(raster)
+library(SDMTools) #NOTE NEW
+
+savedir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
+baseDir<-"/Users/stevec/Dropbox/SpaDES/Data"
+cacheLoc<-file.path("/tmp/cacheSpaDES")
+
+#there is supposed to be someway to get simInit to read this, too, but the method are undocumented and I can not get them to work...s'matter of specifying the names arguments of readOGR, and also in what environment or package to look for the memoised version we just created here.
+if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
+
+dsnPath<-normalizePath(file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","")) #somebody don't like ~stevec. ahem, readOGR,
+if (!exists("firePointsInput"))
+    firePointsInput<-readOGRmem(dsn=dsnPath,layer="NFDB_point_20141222")
+
+inputs <- data.frame(file=c(file.path("age", "age.tif"), 
+                            file.path("LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"),
+                            file.path("spread_firesize_curves.csv"),
+                            file.path("FiresN1000MinFiresSize2NoLakes.csv")),
+                     fun=c("raster","raster","read.csv", "read.csv"),
+                     package=c("raster","raster","utils", "utils"),
+                     objectName=c("ageMapInit","vegMapInit","spreadCalibrationTable","cTable2"))
+
+times <- list(start=0, end=30, timeunit="year")
+
+plotInit <- NA #times$start+1
+defaultInterval<-1
+defaultInitialSaveTime<-NA
+
+parameters <- list(.globals=list("neighbours"=8),
+                   .progress=list(type=NA, interval=1), #was type="graphical"
+                   scfmCrop=list(useCache=TRUE),
+                   scfmLandcoverInit=list(useCache=TRUE),
+                   scfmRegime=list(fireEpoch=c(1981,2010),fireCause=c("L")),
+   ageModule = list(
+    initialAge=100, 
+    maxAge=200, 
+    returnInterval = defaultInterval, 
+    startTime = times$start,
+    .plotInitialTime = times$start,
+    .plotInterval = defaultInterval,
+    .saveInitialTime = defaultInitialSaveTime, 
+    .saveInterval=defaultInterval),
+   scfmIgnition = list(
+    pIgnition=0.0002, 
+    returnInterval = defaultInterval, 
+    startTime = times$start,
+    .plotInitialTime = NA,
+    .plotInterval = defaultInterval,
+    .saveInitialTime = defaultInitialSaveTime, 
+    .saveInterval = defaultInterval),
+  scfmEscape = list(
+    p0=0.1, 
+    returnInterval = defaultInterval, 
+    startTime = times$start,
+    .plotInitialTime = NA,
+    .plotInterval = defaultInterval,
+    .saveInitialTime = defaultInitialSaveTime, 
+    .saveInterval = defaultInterval),
+  scfmSpread = list(
+    pSpread=0.235, 
+    returnInterval = defaultInterval, 
+    startTime = times$start,
+    .plotInitialTime = times$start,
+    .plotInterval = defaultInterval,
+    .saveInitialTime = defaultInitialSaveTime, 
+    .saveInterval = defaultInterval),
+  classifyAge = list(
+    startTime = times$start,
+    returnInterval = 5,
+    .plotInitialTime = NA,#times$start,
+    .plotInterval = 5,
+    howOldIsOld = 120
+  )
+)
+#
+#modules<-list("scfmParent")
+modules <- list("scfmCrop","scfmLandcoverInit", "scfmRegime", "scfmDriver","ageModule", "scfmIgnition","scfmEscape", "scfmSpread","classifyAge") # "caribou"
+            
+paths <- list(modulePath=file.path(getwd(),"scfmModules"),
+             inputPath=baseDir,
+             outputPath="/tmp/SpaDES")
+
+
+shape <- readOGR(dsn = file.path(baseDir,"LandWEB", "shp"), layer = "ltfrcycles3")
+studyArea<-shape[shape$ECOREGION==87,] #we have chosen Athabasca Plains in northern SK
+                                       #we happen to know the numeric code is 87 (easier to type)
+Plot(studyArea)
+
+objects <- list(firePointsInput = firePointsInput,
+                studyArea = studyArea,
+                cacheLoc = cacheLoc
+                )
+
+try(rm(mySim))
+mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
+#tmpSim<- spades(mySim,debug=TRUE)
+```
+
+
+
