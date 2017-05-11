@@ -26,15 +26,30 @@ library(rgdal)
 library(SpaDES)
 library(magrittr)
 
+savedir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
+baseDir<-"/Users/stevec/Dropbox/SpaDES/Data"
+baseDir <- file.path("inputs")
+cacheLoc<-file.path("cache")
+
+paths <- list(inputPath = "inputs",
+              cachePath = cacheLoc)
+studyArea <- "SMALL" # can be SMALL, MEDIUM, LARGE, FULL
 #saveDir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
-dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
-savedDir<-setwd(dataDir)
-shape <- readOGR(dsn = ".", layer = "ltfrcycles3")
-Plot(shape)
-studyArea<-shape[shape$ECOREGION==87,] #we have chosen Athabasca Plains in northern SK
-                                       #we happen to know the numeric code is 87 (easier to type)
-print(paste("class(studyArea) =",class(studyArea)))
-Plot(studyArea)
+#dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
+#dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
+#savedDir<-setwd(dataDir)
+#shape <- readOGR(dsn = ".", layer = "ltfrcycles3")
+
+paths <- list(inputPath = "inputsLandWeb",
+              cachePath = cacheLoc)
+source("inputMaps.R")
+paths <- list(inputPath = baseDir,
+              cachePath = cacheLoc)
+
+studyArea<-shpStudyRegion 
+
+Plot(studyArea, new=TRUE)
+
 ```
 
 ## Subset, crop, mask and reproject
@@ -58,7 +73,7 @@ the colour map.
 
 The following code fragments come from module _scfmCrop_.
 
-```{r cropLCC05}
+```{r cropLCC05, eval=FALSE}
 dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/")
 vegMapInit <- raster(file.path(dataDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif")) %>% setMinMax
 Plot(vegMapInit)
@@ -99,16 +114,24 @@ library(memoise)
 library(raster)
 library(SDMTools) #NOTE NEW
 
-savedir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
-baseDir<-"/Users/stevec/Dropbox/SpaDES/Data"
-cacheLoc<-file.path("/tmp/cacheSpaDES")
-
 #there is supposed to be someway to get simInit to read this, too, but the method are undocumented and I can not get them to work...s'matter of specifying the names arguments of readOGR, and also in what environment or package to look for the memoised version we just created here.
 if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
 
-dsnPath<-normalizePath(file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","")) #somebody don't like ~stevec. ahem, readOGR,
-if (!exists("firePointsInput"))
-    firePointsInput<-readOGRmem(dsn=dsnPath,layer="NFDB_point_20141222")
+dsnPath<-normalizePath(checkPath(file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","FirePoints.zip"),
+                                 create = TRUE))
+pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point")
+if(length(pointDataFilename)==0) {
+  download.file("http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip", 
+                destfile = dsnPath, method = "auto")
+  unzip(dsnPath, exdir = paths$inputPath)
+  file.remove(dsnPath)
+}
+pointDataFilename <- pointDataFilename[grep(pattern = ".shp$", pointDataFilename)]
+
+#somebody don't like ~stevec. ahem, readOGR,
+if (!exists("firePointsInput")){
+    firePointsInput<-Cache(shapefile, pointDataFilename, cacheRepo = paths$cachePath)
+}
 
 inputs <- data.frame(file=c(file.path("age", "age.tif"), 
                             file.path("LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"),

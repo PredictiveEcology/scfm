@@ -53,8 +53,6 @@ doEvent.scfmCrop = function(sim, eventTime, eventType, debug=FALSE) {
 ### template initilization
 scfmCropInit <- function(sim) {
 
- # browser()
-  
   vegProjection <- crs(sim$vegMapInit)
   
   if (is.na(crs(sim$studyArea)))        #in case it was sampled from the vegmap.

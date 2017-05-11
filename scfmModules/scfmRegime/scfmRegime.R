@@ -70,11 +70,14 @@ scfmRegimeInit = function(sim) {
 
 
   #subset fires by cause and epoch.
-  tmp<-as.data.frame(sim$firePoints)
+  tmp<-sim$firePoints
 
   #extract and validate fireCause spec
+  browser()
   fc<-params(sim)$scfmRegime$fireCause
-  if(any(!(fc %in% levels(tmp$CAUSE))))
+  causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
+    
+  if(any(!(fc %in% causeSet)))
       stop("illegal fireCause: ", fc)
   tmp<-subset(tmp,CAUSE %in% fc)
 
@@ -83,38 +86,46 @@ scfmRegimeInit = function(sim) {
   if (length(epoch)!=2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1]>epoch[2])
       stop("illegal fireEpoch: ",epoch)
   tmp<-subset(tmp, YEAR>=epoch[1] & YEAR<=epoch[2])
-
+  
+  epochLength<-as.numeric(epoch[2]-epoch[1]+1)
+  
+  
   #Poisson!!!
 
-  nFires<-dim(tmp)[1]
-  epochLength<-as.numeric(epoch[2]-epoch[1]+1)
-  rate<-nFires/(epochLength * sim$landscapeAttr$burnyArea)   # fires per ha per yr
-
-  #calculate escaped fires
-  #careful to subtract cellSize where appropriate
-  xVec<-tmp$SIZE_HA[tmp$SIZE_HA > sim$landscapeAttr$cellSize]
-  pEscape<-length(xVec)/nFires
-  xBar<-mean(xVec)
-  lxBar<-mean(log(xVec))
-  xMax<-max(xVec)
-
-  zVec<-log(xVec/sim$landscapeAttr$cellSize)
-  if (length(zVec)<100)
-    warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
-  #later, this would sim$HannonDayiha
-  hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-  maxFireSize<-exp(hdList$That) * sim$landscapeAttr$cellSize
-  #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #
-  #need to addd a name or code for basic verification by Driver module, and time field
-  #to allow for dynamic regeneration of disturbanceDriver pars.
-  sim$scfmRegime<-list(ignitionRate=rate,
-                       pEscape=pEscape,
-                       xBar=xBar,  #mean fire size
-                       lxBar=lxBar, #mean log(fire size)
-                       xMax=xMax,  #maximum observed size
-                       meanBigFireSize=mean(xVec[xVec>200]),
-                       emfs=maxFireSize) # Estimated Maximum Fire Size in ha
+  lapply(seq_len(NROW(sim$studyArea)), function(polyRowIndex) {
+    browser()
+      
+    
+    nFires<-dim(tmp)[1]
+    rate<-nFires/(epochLength * sim$landscapeAttr$burnyArea)   # fires per ha per yr
+  
+    #calculate escaped fires
+    #careful to subtract cellSize where appropriate
+    xVec<-tmp$SIZE_HA[tmp$SIZE_HA > sim$landscapeAttr$cellSize]
+    pEscape<-length(xVec)/nFires
+    xBar<-mean(xVec)
+    lxBar<-mean(log(xVec))
+    xMax<-max(xVec)
+  
+    zVec<-log(xVec/sim$landscapeAttr$cellSize)
+    if (length(zVec)<100)
+      warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
+    #later, this would sim$HannonDayiha
+    hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
+    maxFireSize<-exp(hdList$That) * sim$landscapeAttr$cellSize
+    #verify estimation results are reasonable. That=-1 indicates convergence failure.
+    #
+    #need to addd a name or code for basic verification by Driver module, and time field
+    #to allow for dynamic regeneration of disturbanceDriver pars.
+    sim$scfmRegime<-list(ignitionRate=rate,
+                         pEscape=pEscape,
+                         xBar=xBar,  #mean fire size
+                         lxBar=lxBar, #mean log(fire size)
+                         xMax=xMax,  #maximum observed size
+                         meanBigFireSize=mean(xVec[xVec>200]),
+                         emfs=maxFireSize) # Estimated Maximum Fire Size in ha
+  })
+  
   return(invisible(sim))
 }
 

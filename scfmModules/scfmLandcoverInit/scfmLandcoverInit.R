@@ -61,30 +61,57 @@ genFireMapAttr<-function(sim){
   #
   #All areas in ha
   #
+  browser()
   cellSize<-prod(res(sim$flammableMap))/1e4 #in ha
-  nFlammable<-table(values(sim$flammableMap), useNA="no")["0"] #depends on sfcmLandCoverInit
-  #to agree of the meaning of 1s
+  
+  sim$studyArea[sim$studyArea$ECOREGION]
+  
   if (globals(sim)$neighbours==8)
     w<-matrix(c(1,1,1,1,0,1,1,1,1),nrow=3,ncol=3)
   else if (globals(sim)$neighbours==4)
     w<-matrix(c(0,1,0,1,0,1,0,1,0),nrow=3,ncol=3)
   else 
     stop("illegal global neighbours spec")
-  
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
-  tmp<- focal(sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
-  x<-values(tmp)
-  x<-x[values(sim$flammableMap)==0] #only count neighbours for flammable cells!
-  x<- globals(sim)$neighbours - x  #need to invert, because we are counting the nonflamy 1's
-  nv<-table(x,useNA="no")
-  #verify that this works for neighbours 8 and 4
-  nNbrs<-rep(0,9) #guard against the terrible chance that 
-  #not all nNbrs values are realised. 
-  nNbrs[as.integer(names(nv))+1]<-nv
-  names(nNbrs)<-0:8
-  sim$landscapeAttr<-list(cellSize=cellSize,nFlammable=nFlammable,
-                        burnyArea=cellSize*nFlammable, nNbrs=nNbrs)
+  neighMap <- focal(sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
+  neighMapVals <- values(neighMap)
+  valsByPoly <- Cache(extract, neighMap, sim$studyArea, cellnumbers = TRUE)
+  
+  names(valsByPoly) <- sim$studyArea$ECOREGION
+  uniqueEcoNames <- unique(sim$studyArea$ECOREGION)
+  valsByZone <- lapply(uniqueEcoNames, function(ecoName) {
+    aa <- valsByPoly[names(valsByPoly)==ecoName] 
+    if(is.list(aa)) aa <- do.call(rbind, aa)
+    aa
+  })
+  names(valsByZone) <- uniqueEcoNames
+  
+  
+  nNbrs <- lapply(valsByZone, function(x) {
+    browser()
+    nFlammable<-table(x[,2], useNA="no")["0"] #depends on sfcmLandCoverInit
+    
+    })
+  
+  lapply(unique(sim$studyArea$ECOREGION), function(polyEcoregion) {
+    browser()
+    tmp <- sim$studyArea[sim$studyArea$ECOREGION==polyEcoregion,]
+    nFlammable<-table(values(sim$flammableMap), useNA="no")["0"] #depends on sfcmLandCoverInit
+    #to agree of the meaning of 1s
+    
+    x<-x[values(sim$flammableMap)==0] #only count neighbours for flammable cells!
+    x<- globals(sim)$neighbours - x  #need to invert, because we are counting the nonflamy 1's
+    nv<-table(x,useNA="no")
+    #verify that this works for neighbours 8 and 4
+    nNbrs<-rep(0,9) #guard against the terrible chance that 
+    #not all nNbrs values are realised. 
+    nNbrs[as.integer(names(nv))+1]<-nv
+    names(nNbrs)<-0:8
+    sim$landscapeAttr<-list(cellSize=cellSize,nFlammable=nFlammable,
+                          burnyArea=cellSize*nFlammable, nNbrs=nNbrs)
+  })
+  
   return(invisible(sim))
 }
 
