@@ -77,8 +77,8 @@ genFireMapAttr<-function(sim){
     stop("illegal global neighbours spec")
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
-  neighMap <- focal(1-sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
-  neighMapVals <- values(neighMap)
+  neighMap <- Cache(focal, 1-sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
+  neighMapVals <- getValues(neighMap)
   
   # extract table for each polygon
   valsByPoly <- Cache(extract, neighMap, sim$studyArea, cellnumbers = TRUE)
@@ -160,12 +160,12 @@ scfmLandcoverInitCacheFunctions <- function(sim) {
       archivist::cache(cacheRepo=sim$cacheLoc, FUN=raster::focal, ...)
     }
     
-    sim$Frabjous <-function(...){
-      archivist::cache(cacheRepo=sim$cacheLoc, FUN=sim$testFun, ...)
-    }
+    # sim$Frabjous <-function(...){
+    #   archivist::cache(cacheRepo=sim$cacheLoc, FUN=sim$testFun, ...)
+    # }
     
   } else {
-    sim$Frabjous <- function(x){sum(na.omit(x)==1)}
+    #sim$Frabjous <- function(x){sum(na.omit(x)==1)}
     sim$focal <- raster::focal
   }
   

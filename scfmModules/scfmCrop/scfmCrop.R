@@ -38,7 +38,7 @@ defineModule(sim, list(
 doEvent.scfmCrop = function(sim, eventTime, eventType, debug=FALSE) {
   if (eventType=="init") {
     # do stuff for this event
-    sim <- scfmCropCacheFunctions(sim)
+    #sim <- scfmCropCacheFunctions(sim)
     sim <- scfmCropInit(sim)
     # schedule future event(s)
     sim <- scheduleEvent(sim, params(sim)$scfmCrop$.plotInitialTime, "scfmCrop", "plot")
@@ -66,10 +66,10 @@ scfmCropInit <- function(sim) {
   #Then project result intpo sim projection.
  
   studyAreaTmp <- Cache(spTransform, sim$studyArea, CRSobj =vegProjection)
-  sim$vegMap <-  sim$crop(sim$vegMapInit, studyAreaTmp)
+  sim$vegMap <-  Cache(crop, sim$vegMapInit, studyAreaTmp)
   crs(sim$vegMap) <- vegProjection
-  sim$vegMap <- sim$mask(sim$vegMap,studyAreaTmp) #
-  sim$vegMap <- sim$projectRaster(sim$vegMap,crs=simProjection,method="ngb")
+  sim$vegMap <- Cache(mask, sim$vegMap,studyAreaTmp) #
+  sim$vegMap <- Cache(projectRaster, sim$vegMap,crs=simProjection,method="ngb")
   sim$Mask <- sim$vegMap
   sim$Mask[] <- ifelse(is.na(sim$vegMap[]), NA, 1)
   
@@ -77,18 +77,18 @@ scfmCropInit <- function(sim) {
   setColors(sim$vegMap, n=length(tmp)) <- tmp 
   
   ageProjection <- crs(sim$ageMapInit)
-  studyAreaTmp <- sim$spTransform(sim$studyArea, CRSobj =ageProjection)
-  sim$ageMap <-  sim$crop(sim$ageMapInit, studyAreaTmp)
+  studyAreaTmp <- Cache(spTransform, sim$studyArea, CRSobj =ageProjection)
+  sim$ageMap <-  Cache(crop, sim$ageMapInit, studyAreaTmp)
   crs(sim$ageMap) <- ageProjection
-  sim$ageMap <- sim$mask(sim$ageMap,studyAreaTmp)
-  sim$ageMap <- sim$projectRaster(sim$ageMap,to=sim$vegMap,method="ngb")
+  sim$ageMap <- Cache(mask, sim$ageMap,studyAreaTmp)
+  sim$ageMap <- Cache(projectRaster, sim$ageMap,to=sim$vegMap,method="ngb")
   
   fireProjection <- CRS(proj4string(sim$firePointsInput))
-  studyAreaTmp <- sim$spTransform(sim$studyArea, CRSobj =fireProjection)
+  studyAreaTmp <- Cache(spTransform, sim$studyArea, CRSobj =fireProjection)
   sim$firePoints <- sim$firePointsInput[studyAreaTmp,]  #note possibly correct syntax A[B,] rather than A[B]
                                                         #https://cran.r-project.org/web/packages/sp/vignettes/over.pdf page 3
   #crs(sim$firePoints) <- fireProjection
-  sim$firePoints <- sim$spTransform(sim$firePoints,CRSobj =simProjection)
+  sim$firePoints <- Cache(spTransform, sim$firePoints,CRSobj =simProjection)
   
   #endCluster()
     
