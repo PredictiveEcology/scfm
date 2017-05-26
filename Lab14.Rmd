@@ -145,10 +145,11 @@ if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))) {
   dir.create("LandCoverOfCanada2005_V1_4")
 }
 filename <- "LCC2005_V1_4a.tif"
+remoteFilename <- "LandCoverOfCanada2005_V1_4.zip"
 if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename))) {
-  download.file("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip", filename, mode="wb")
-  unzip(filename, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
-  file.remove(filename)
+  download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), remoteFilename, mode="wb")
+  unzip(remoteFilename)#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
+  file.remove(remoteFilename)
 }
 
 
