@@ -87,7 +87,6 @@ genFireMapAttr<-function(sim){
   uniqueZoneNames <- unique(sim$studyArea$ECOREGION)
   browser()
   valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
-    browser()
     aa <- valsByPoly[names(valsByPoly)==ecoName] 
     if(is.list(aa)) aa <- do.call(rbind, aa)
     aa
