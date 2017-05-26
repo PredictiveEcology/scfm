@@ -53,51 +53,6 @@ Plot(studyArea, new=TRUE)
 
 ```
 
-## Subset, crop, mask and reproject
-
-Now, we are going to show how to use a shapefile to crop out a subset of a larger area. 
-
-The challenge is: what if the projections are different?
-
-The logic is as follows:
-
-1. We use the projection of the study area shapefile as the projection for the simulation.
-
-2. We reproject the study region to conform to the vegetation map. This is much faster than the other way around.
-
-3. We then crop the vegetation map to the _bounding rectangle_ of the study area shapefile.
-
-4. Then we mask out the pixels outside the boundary of the reprojected shapefile.
-
-5. Finally, we reproject the result back to conform to the studyArea shapefile, and restore
-the colour map.
-
-The following code fragments come from module _scfmCrop_.
-
-```{r cropLCC05, eval=FALSE}
-dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/")
-vegMapInit <- raster(file.path(dataDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif")) %>% setMinMax
-Plot(vegMapInit)
-vegProjection <- crs(vegMapInit)
-if (is.na(crs(studyArea)))   #in case it was sampled from the vegmap.
-    crs(studyArea) <- vegProjection
-simProjection<-crs(studyArea)  #this would probably be set to be 
-                               #the same as the veg map at an earlier stage.
-  
-#Project the study area into each input raster, then crop and mask; 
-#Then project result into sim projection.
- 
-studyAreaTmp <- spTransform(studyArea, CRSobj =vegProjection)
-vegMapCrop <-  crop(vegMapInit, studyAreaTmp)
-Plot(vegMapCrop)
-crs(vegMapCrop) <- vegProjection #must rest the projection after the crop to what it was before
-vegMap <- mask(vegMapCrop,studyAreaTmp) 
-crs(vegMap) <- vegProjection #not sure if this is required
-vegMap <- projectRaster(vegMap,crs=simProjection,method="ngb")
-tmp <- getColors(vegMapInit)[[1]] # mask removes colors!
-setColors(vegMap, n=length(tmp)) <- tmp 
-Plot(vegMap)
-```
 
 ## Classification and Patch Metrics
 
