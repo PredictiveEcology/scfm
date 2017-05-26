@@ -26,8 +26,6 @@ library(rgdal)
 library(SpaDES)
 library(magrittr)
 
-savedir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
-baseDir<-"/Users/stevec/Dropbox/SpaDES/Data"
 baseDir <- file.path("inputs")
 cacheLoc<-file.path("cache")
 

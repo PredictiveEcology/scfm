@@ -18,3 +18,9 @@ Thumbs.db
 cache/
 inputs/
 
+
+\.Rproj\.user\.bak/shared/notebooks/
+
+\.Rproj\.user\.bak/99762CAE/
+
+\.DS_Store
