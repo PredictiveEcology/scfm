@@ -56,37 +56,22 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
   } else if (eventType == "plot") {
     # ! ----- EDIT BELOW ----- ! #
     # do stuff for this event
-    sim$burnMap[]<-ifelse(sim$burnMap[]>0,1,0)
+    # sim$burnMap[sim$burnMap[]>0]<-1
     Plot(sim$burnMap, title="Fire map", legendRange=c(0,1), cols =c("white", "red"), new=TRUE)#length(sim$ignitionLoci)))
-    #Plot(sim$burnMap, legendRange=c(0,1))
-    browser()
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmSpread$.plotInterval,
                          "scfmSpread", "plot")
    
     # ! ----- STOP EDITING ----- ! #
   } else if (eventType == "save") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-
-    # e.g., call your custom functions/methods here
-    # you can define your own methods below this `doEvent` function
-
-    # schedule future event(s)
-
-    # e.g.,
-    # sim <- scheduleEvent(sim, time(sim) + increment, "scfmSpread", "save")
-
-    # ! ----- STOP EDITING ----- ! #
+    
   } else if (eventType == "burn") { 
-    # ! ----- EDIT BELOW ----- ! #
-    #browser()
     if (!is.null(sim$spreadState)){ #we really want to test if the data table has any rows
-      sim<-scfmSpreadBurnemup(sim)
+      if(any(sim$spreadState$active))
+        sim<-scfmSpreadBurnemup(sim)
     }
     
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmSpread$returnInterval, "scfmSpread", "burn")
 
-    # ! ----- STOP EDITING ----- ! #
   }  else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -101,16 +86,30 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### template initialization
 scfmSpreadInit <- function(sim) {
-  # # ! ----- EDIT BELOW ----- ! #
-
-  if (!("ageMap" %in% names(objs(sim)))){
-    N<-sim$mapDim
-    x<-raster::extent(c(0,N-1,0,N-1))
-    sim$burnMap<-raster(x,nrows=N, ncols=N,vals=0)
+  
+  sim$burnMap <- sim$flammableMap * 0  # 0 * NA = NA
+  
+  if("scfmPars" %in% names(objs(sim))) {
+    if(length(sim$landscapeAttr) > 1) {
+      pSpread <- raster(sim$flammableMap)
+      for(x in names(sim$landscapeAttr)) {
+        pSpread[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pSpread
+        pSpread[] <- pSpread[] * (1-sim$flammableMap[])
+      }
+    } else {
+      pSpread <- sim$scfmPars[[1]]$pSpread
+    }
+    
+  } else {
+    pSpread <- P(sim)$pSpread
   }
-  else {
-    sim$burnMap<-sim$flammableMap * 0  # 0 * NA = NA
-  }
+  sim$pSpread <- pSpread
+  
+  
+  # pSpread <- ifelse("scfmPars" %in% names(objs(sim)),
+  #            sim$scfmPars$pSpread,
+  #            params(sim)$scfmSpread$pSpread
+  #           )
   
   setColors(sim$burnMap,n=10) <- colorRampPalette(c("yellow", "red"))(10)
   
@@ -120,25 +119,19 @@ scfmSpreadInit <- function(sim) {
 }
 
 scfmSpreadBurnemup <- function(sim){ #name is a homage to Walters and Hillborne
-  
 
-  pSpread <- ifelse("scfmPars" %in% names(objs(sim)),
-             sim$scfmPars$pSpread,
-             params(sim)$scfmSpread$pSpread
-            )
+  maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
+  activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
+  maxSizes <- maxSizes[sim$cellsByZone[activeLoci,"zone"]]
   
-  maxSize <- ifelse("scfmPars" %in% names(objs(sim)),
-              sim$scfmPars$maxBurnCells,
-              ncell(sim$burnMap)*0.9
-            )
-  #browser()
-  sim$burnMap <- SpaDES::spread(sim$flammableMap, 
-                 spreadProb=pSpread,
+  sim$burnDT <- SpaDES::spread(sim$flammableMap, 
+                 spreadProb=sim$pSpread,
                  spreadState=sim$spreadState,
                  #mask=sim$flammableMap, #this should work but it don't
                  directions=globals(sim)$neighbours,
-                 maxSize=maxSize,
+                 maxSize=maxSizes, returnIndices = TRUE, 
                  id=TRUE)
+  sim$burnMap[sim$burnDT$indices] <- 1
   idx<-which(sim$burnMap[] != 0)
   if (length(idx)>0){
       sim$ageMap[idx] <- 0
@@ -147,21 +140,12 @@ scfmSpreadBurnemup <- function(sim){ #name is a homage to Walters and Hillborne
 }
 ### template for save events
 scfmSpreadSave <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
   sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
 ### template for plot events
 scfmSpreadPlot <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot("object")
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 

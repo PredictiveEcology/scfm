@@ -85,7 +85,27 @@ scfmIgnitionInit <- function(sim) {
     }
 
   }
-  sim$igntionLoci <- NULL
+  
+  #if either of these is a map, it needs to have NAs in the right place
+  #and be conformant with flammableMap
+  if("scfmPars" %in% names(objs(sim))) {
+    if(length(sim$landscapeAttr) > 1) {
+      pIg <- raster(sim$flammableMap)
+      for(x in names(sim$landscapeAttr)) {
+        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pIgnition
+        pIg[] <- pIg[] * (1-sim$flammableMap[])
+      }
+    } else {
+      pIg <- sim$scfmPars[[1]]$pIgnition
+    }
+    
+  } else {
+    pIg <- params(sim)$scfmIgnition$pIgnition
+  }
+  sim$pIg <- pIg
+  
+  sim$ignitionLoci <- NULL
+  
   return(invisible(sim))
 }
 
@@ -97,22 +117,10 @@ scfmIgnitionSave <- function(sim) {
 
 ### template for your event1
 scfmIgnitionIgnite <- function(sim) {
-  pIg <- ifelse("scfmPars" %in% names(objs(sim)),  #if either of these is a map, it needs to have NAs in the right place
-                                                   #and be conformant with flammableMap
-           sim$scfmPars$pIgnition,
-           params(sim)$scfmIgnition$pIgnition
-  )
- # browser()
-
-  sim$ignitionLoci=NULL
-  tmp <- which(runif(raster::ncell(sim$flammableMap)) < pIg)
-  if (length(tmp)>0)
-    tmp <- tmp[!is.na(sim$flammableMap[tmp])]
-  if (length(tmp)>0)
-    tmp <- tmp[sim$flammableMap[tmp]==0]
-  sim$ignitionLoci <- tmp #tmp[flammableMap[tmp]==0]  #this should exclude NAs and 1s
-
-  z<-length(sim$ignitionLoci)
+  
+ #browser()
+  sim$ignitionLoci <- which(runif(raster::ncell(sim$flammableMap)) < sim$pIg[])
+  
   return(invisible(sim))
 }
 

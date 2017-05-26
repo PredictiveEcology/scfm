@@ -72,56 +72,64 @@ scfmDriverInit = function(sim) {
   #and several min fire sizes (1 or 2 cells), organised by collumn.
   #The data were made by Steve Cumming in June 2013 for a whole other purpose.
   #I chose the one that seems most appropriate to me
-  #browser()
-  if (FALSE) {
-    y<-log(sim$spreadCalibrationTable[,paste("ls",1e3,"fs",2,sep="")])
-    x<-sim$spreadCalibrationTable$pjmp
-    m.glm<-glm(x~y,family=gaussian)
-    mfs<-sim$scfmRegime$xBar/sim$landscapeAttr$cellSize #mean size escaped fires in cells
-    pJmp<-sum(m.glm$coeff*c(1,log(mfs)))
-    #mfs <- sim$scfmRegime$lxBar - log(sim$landscapeAttr$cellSize)
-    #pjmp <- sum(m.glm$coeff*c(1,mfs))
-  }
-  else {
-    #we know this table was produced with MinFireSize=2cells.
+  cellSize <- sim$landscapeAttr[[1]]$cellSize
+  
+  sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
+  
+    regime <- sim$scfmRegime[[polygonType]]
+    landAttr <- sim$landscapeAttr[[polygonType]]
+      
+    if (FALSE) {
+      y<-log(sim$spreadCalibrationTable[,paste("ls",1e3,"fs",2,sep="")])
+      x<-sim$spreadCalibrationTable$pjmp
+      m.glm<-glm(x~y,family=gaussian)
+      mfs<-regime$xBar/cellSize #mean size escaped fires in cells
+      pJmp<-sum(m.glm$coeff*c(1,log(mfs)))
+      #mfs <- sim$scfmRegime$lxBar - log(cellSize)
+      #pjmp <- sum(m.glm$coeff*c(1,mfs))
+    }
+    else {
+      #we know this table was produced with MinFireSize=2cells.
+      #browser()
+      y <- sim$cTable2$y
+      x <- sim$cTable2$p
+      m.lw <- lowess(y~x,iter=2)
+      if (sum(diff(m.lw$y)<0)>0)
+        warning("lowess curve non-monotone. Proceed with caution")
+      targetSize <- regime$xBar/cellSize - 1 
+      pJmp <- approx(m.lw$y,m.lw$x,targetSize,rule=2)$y
+    }
     #browser()
-    y <- sim$cTable2$y
-    x <- sim$cTable2$p
-    m.lw <- lowess(y~x,iter=2)
-    if (sum(diff(m.lw$y)<0)>0)
-      warning("lowess curve non-monotone. Proceed with caution")
-    targetSize <- sim$scfmRegime$xBar/sim$landscapeAttr$cellSize - 1 
-    pJmp <- approx(m.lw$y,m.lw$x,targetSize,rule=2)$y
-  }
-  #browser()
-  w<-sim$landscapeAttr$nNbrs
-  w<-w/sum(w)
-  hatPE<-sim$scfmRegime$pEscape
-  foo<-optimise(sim$escapeProbDelta,
-                interval=c(sim$hatP0(hatPE,globals(sim)$neighbours),sim$hatP0(hatPE,floor(sum(w*0:8)))),
-                tol=1e6,
-                w=w,
-                hatPE=hatPE)
-  #do some sanity tests to ensure convergence
-  #also, it is almost obvious that the true minimum must occurr within the interval specified in the 
-  #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
-  #monotone.
+    w<-landAttr$nNbrs
+    w<-w/sum(w)
+    hatPE<-regime$pEscape
+    foo<-optimise(sim$escapeProbDelta,
+                  interval=c(sim$hatP0(hatPE,globals(sim)$neighbours),
+                             sim$hatP0(hatPE,floor(sum(w*0:8)))),
+                  tol=1e6,
+                  w=w,
+                  hatPE=hatPE)
+    #do some sanity tests to ensure convergence
+    #also, it is almost obvious that the true minimum must occurr within the interval specified in the 
+    #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
+    #monotone.
+    
+    #don't forget to scale by number of years, as well.
+    rate<-regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on 
+                                                                   #an annual time step. How to test / enforce?
+    pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
+                      #for Poisson rate << 1, the expected values are the same, partially accounting
+                      #for multiple arrivals within years. Formerly, I used a poorer approximation
+                      #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
+    
+    list(pSpread=pJmp,
+         p0=foo$minimum,
+         naiveP0=sim$hatP0(regime$pEscape,8), 
+         pIgnition=pIgnition,
+         maxBurnCells=as.integer(round(regime$emfs/cellSize)))
+  })
+  names(sim$scfmPars) <- names(sim$landscapeAttr)
   
-  #don't forget to scale by number of years, as well.
-  rate<-sim$scfmRegime$ignitionRate * sim$landscapeAttr$cellSize #fireRegimeModel and this module must agree on 
-                                                                 #an annual time step. How to test / enforce?
-  pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
-                    #for Poisson rate << 1, the expected values are the same, partially accounting
-                    #for multiple arrivals within years. Formerly, I used a poorer approximation
-                    #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
-  
-  
-  sim$scfmPars<-list(pSpread=pJmp,
-                     p0=foo$minimum,
-                     naiveP0=sim$hatP0(sim$scfmRegime$pEscape,8), 
-                     pIgnition=pIgnition,
-                     maxBurnCells=as.integer(round(sim$scfmRegime$emfs/sim$landscapeAttr$cellSize)))
-
   return(invisible(sim))
 }
  

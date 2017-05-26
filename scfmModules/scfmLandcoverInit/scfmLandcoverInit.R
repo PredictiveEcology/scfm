@@ -13,20 +13,20 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmLandCoverInit.Rmd"),
   timeunit="year",
   citation=list(),
-  reqdPkgs=list("raster"),
+  reqdPkgs=list("raster", "purrr"),
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc="Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc="Interval between plotting"),
     defineParameter(".saveInitialTime", "numeric", NA_real_,  NA, NA, desc="Initial time for saving"),
     defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc="Interval between save events"),
     defineParameter("useCache", "logical", TRUE, NA, NA, desc="Use cache")),
-  inputObjects=data.frame(objectName="vegMap",
-                          objectClass="RasterLayer",
+  inputObjects=data.frame(objectName=c("vegMap","studyArea"),
+                          objectClass=c("RasterLayer","SpatialPolygonsDataFrame"),
                           sourceURL="",
                           other=NA_character_, stringsAsFactors=FALSE),
-  outputObjects=data.frame(objectName=c("flammableMap", "landscapeAttr"), #mapAttr are all things the fir
-                           objectClass=c("RasterLayer", "list"),
-                           other=rep(NA_character_, 2L), 
+  outputObjects=data.frame(objectName=c("flammableMap", "landscapeAttr", "cellsByZone"), #mapAttr are all things the fir
+                           objectClass=c("RasterLayer", "list", "data.frame"),
+                           other=rep(NA_character_, 3L), 
                            stringsAsFactors=FALSE)
 ))
 
@@ -61,10 +61,13 @@ genFireMapAttr<-function(sim){
   #
   #All areas in ha
   #
-  browser()
   cellSize<-prod(res(sim$flammableMap))/1e4 #in ha
   
-  sim$studyArea[sim$studyArea$ECOREGION]
+  ecoregionErrors <- as.numeric(sim$studyArea$ECOREGION)==0
+  if(any(ecoregionErrors)) {
+    warning("ECOREGION in studyArea has invalid values. Removing invalid values")
+    sim$studyArea <- sim$studyArea[!ecoregionErrors,]
+  }
   
   if (globals(sim)$neighbours==8)
     w<-matrix(c(1,1,1,1,0,1,1,1,1),nrow=3,ncol=3)
@@ -74,43 +77,48 @@ genFireMapAttr<-function(sim){
     stop("illegal global neighbours spec")
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
-  neighMap <- focal(sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
+  neighMap <- focal(1-sim$flammableMap, w, na.rm=TRUE) #default function is sum(...,na.rm)
   neighMapVals <- values(neighMap)
+  
+  # extract table for each polygon
   valsByPoly <- Cache(extract, neighMap, sim$studyArea, cellnumbers = TRUE)
   
   names(valsByPoly) <- sim$studyArea$ECOREGION
-  uniqueEcoNames <- unique(sim$studyArea$ECOREGION)
-  valsByZone <- lapply(uniqueEcoNames, function(ecoName) {
+  uniqueZoneNames <- unique(sim$studyArea$ECOREGION)
+  valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
     aa <- valsByPoly[names(valsByPoly)==ecoName] 
     if(is.list(aa)) aa <- do.call(rbind, aa)
     aa
   })
-  names(valsByZone) <- uniqueEcoNames
+  names(valsByZone) <- uniqueZoneNames
   
-  
+  # Derive frequency tables of number of flammable cells, per polygon type, currently ECOREGION
   nNbrs <- lapply(valsByZone, function(x) {
-    browser()
-    nFlammable<-table(x[,2], useNA="no")["0"] #depends on sfcmLandCoverInit
-    
+    nNbrs<-tabulate(x[,2]+1, 9)#depends on sfcmLandCoverInit
+    names(nNbrs)<-0:8
+    nNbrs
     })
   
-  lapply(unique(sim$studyArea$ECOREGION), function(polyEcoregion) {
-    browser()
-    tmp <- sim$studyArea[sim$studyArea$ECOREGION==polyEcoregion,]
-    nFlammable<-table(values(sim$flammableMap), useNA="no")["0"] #depends on sfcmLandCoverInit
-    #to agree of the meaning of 1s
-    
-    x<-x[values(sim$flammableMap)==0] #only count neighbours for flammable cells!
-    x<- globals(sim)$neighbours - x  #need to invert, because we are counting the nonflamy 1's
-    nv<-table(x,useNA="no")
-    #verify that this works for neighbours 8 and 4
-    nNbrs<-rep(0,9) #guard against the terrible chance that 
-    #not all nNbrs values are realised. 
-    nNbrs[as.integer(names(nv))+1]<-nv
-    names(nNbrs)<-0:8
-    sim$landscapeAttr<-list(cellSize=cellSize,nFlammable=nFlammable,
-                          burnyArea=cellSize*nFlammable, nNbrs=nNbrs)
+  nFlammable <- lapply(valsByZone, function(x) {
+    sum(1-getValues(sim$flammableMap)[x[,1]])
   })
+  
+  landscapeAttr <- purrr::transpose(list(cellSize=rep(list(cellSize), length(nFlammable)), 
+                        nFlammable=nFlammable,
+                        nNbrs=nNbrs,
+                        cellsByZone=lapply(valsByZone, function(x) x[,1])))
+  
+  
+  sim$landscapeAttr <- lapply(landscapeAttr, function(x) {
+    append(x, list(burnyArea=x$cellSize*x$nFlammable))
+  })
+  names(sim$landscapeAttr) <- names(valsByZone)
+  
+  sim$cellsByZone <- data.frame(cell=1:ncell(sim$flammableMap), zone=NA)
+  for(x in names(sim$landscapeAttr)) {
+    sim$cellsByZone[sim$landscapeAttr[[x]]$cellsByZone,"zone"] <- x
+  }
+  
   
   return(invisible(sim))
 }

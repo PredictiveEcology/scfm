@@ -63,24 +63,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     sim <- scheduleEvent(sim, time(sim)+params(sim)$scfmEscape$.plotInterval, "scfmEscape", "plot")
     
   } else if (eventType == "escape") {
-    if (length(sim$ignitionLoci)> 0){
-    
-    #note that ifesles won't work once these things are nonscalars.
-    p0 <- ifelse("scfmPars" %in% names(objs(sim)),
-                  sim$scfmPars$p0,
-                  params(sim)$scfmEscape$p0
-    )
-   # browser()
-    print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
-    sim$spreadState <- SpaDES::spread(landscape=sim$flammableMap,
-                              loci=sim$ignitionLoci,
-                              iterations=1,
-                              spreadProb=p0,
-                              mask=sim$flammableMap,
-                              directions=globals(sim)$neighbours,
-                              maxSize=globals(sim)$neighbours,
-                              returnIndices=TRUE, id=TRUE)
-    } 
+    sim <- sim$scfmEscapeEscape(sim)
     sim <- scheduleEvent(sim, time(sim)+params(sim)$scfmEscape$returnInterval, "scfmEscape", "escape")
     
     
@@ -101,7 +84,42 @@ scfmEscapeInit <- function(sim) {
   
   sim$spreadState <- NULL
   
+  if("scfmPars" %in% names(objs(sim))) {
+    if(length(sim$landscapeAttr) > 1) {
+      p0 <- raster(sim$flammableMap)
+      for(x in names(sim$landscapeAttr)) {
+        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$p0
+        p0[] <- p0[] * (1-sim$flammableMap[])
+      }
+    } else {
+      p0 <- sim$scfmPars[[1]]$p0
+    }
+    
+  } else {
+    p0 <- P(sim)$p0
+  }
+  sim$p0 <- p0
+  
+  
   return(invisible(sim))
 }
 
 
+scfmEscapeEscape <- function(sim) {
+  if (length(sim$ignitionLoci) > 0){
+    print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
+    # pull 
+    maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
+    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci,"zone"]]
+    
+    sim$spreadState <- SpaDES::spread(landscape=sim$flammableMap,
+                                      loci=sim$ignitionLoci,
+                                      iterations=1,
+                                      spreadProb=sim$p0,
+                                      #mask=sim$flammableMap,
+                                      directions=globals(sim)$neighbours,
+                                      maxSize=maxSizes,
+                                      returnIndices=TRUE, id=TRUE)
+  } 
+  return(invisible(sim))
+}

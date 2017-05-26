@@ -66,14 +66,14 @@ scfmRegimeInit = function(sim) {
 
   #curModule <- events(mySim)$module[1] #NOPE When I need it, it's checkpoint
   #in SpaDES 1.4+, place this in a R subdirectory of the module. All such R files are sources into the simlist
-  source(file.path(paths$modulePath, "scfmRegime", "TEutilsNew.R"), local=TRUE,echo=FALSE)
+  # Automatically sourced when put in R folder
+  #source(file.path(paths$modulePath, "scfmRegime", "TEutilsNew.R"), local=TRUE,echo=FALSE)
 
 
   #subset fires by cause and epoch.
   tmp<-sim$firePoints
 
   #extract and validate fireCause spec
-  browser()
   fc<-params(sim)$scfmRegime$fireCause
   causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
     
@@ -90,41 +90,48 @@ scfmRegimeInit = function(sim) {
   epochLength<-as.numeric(epoch[2]-epoch[1]+1)
   
   
-  #Poisson!!!
-
-  lapply(seq_len(NROW(sim$studyArea)), function(polyRowIndex) {
-    browser()
-      
+  # Assign polygon label to SpatialPoints of fires object
+  tmp[["ECOREGION"]] <- over(tmp, sim$studyArea[, "ECOREGION"])
+  
+  # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
+  cellSize <- sim$landscapeAttr[[1]]$cellSize
+  
+  sim$scfmRegime<-lapply(names(sim$landscapeAttr), function(polygonType) {
+    tmpA <- tmp[unlist(tmp[["ECOREGION"]])==polygonType,]
+    landAttr <- sim$landscapeAttr[[polygonType]]
     
-    nFires<-dim(tmp)[1]
-    rate<-nFires/(epochLength * sim$landscapeAttr$burnyArea)   # fires per ha per yr
+    nFires<-dim(tmpA)[1]
+    rate<-nFires/(epochLength * landAttr$burnyArea)   # fires per ha per yr
   
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
-    xVec<-tmp$SIZE_HA[tmp$SIZE_HA > sim$landscapeAttr$cellSize]
+    xVec<-tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
     pEscape<-length(xVec)/nFires
     xBar<-mean(xVec)
     lxBar<-mean(log(xVec))
     xMax<-max(xVec)
   
-    zVec<-log(xVec/sim$landscapeAttr$cellSize)
+    zVec<-log(xVec/cellSize)
     if (length(zVec)<100)
       warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
     #later, this would sim$HannonDayiha
     hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-    maxFireSize<-exp(hdList$That) * sim$landscapeAttr$cellSize
+    maxFireSize<-exp(hdList$That) * cellSize
     #verify estimation results are reasonable. That=-1 indicates convergence failure.
     #
     #need to addd a name or code for basic verification by Driver module, and time field
     #to allow for dynamic regeneration of disturbanceDriver pars.
-    sim$scfmRegime<-list(ignitionRate=rate,
-                         pEscape=pEscape,
-                         xBar=xBar,  #mean fire size
-                         lxBar=lxBar, #mean log(fire size)
-                         xMax=xMax,  #maximum observed size
-                         meanBigFireSize=mean(xVec[xVec>200]),
-                         emfs=maxFireSize) # Estimated Maximum Fire Size in ha
+    list(ignitionRate=rate,
+         pEscape=pEscape,
+         xBar=xBar,  #mean fire size
+         lxBar=lxBar, #mean log(fire size)
+         xMax=xMax,  #maximum observed size
+         #meanBigFireSize=mean(xVec[xVec>200]),
+         emfs=maxFireSize) # Estimated Maximum Fire Size in ha
   })
+  
+  names(sim$scfmRegime) <- names(sim$landscapeAttr)
+  
   
   return(invisible(sim))
 }
