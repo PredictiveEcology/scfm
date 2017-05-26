@@ -130,6 +130,7 @@ if(length(pointDataFilename)==0) {
   file.remove(dsnPath)
 }
 
+pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
 pointDataFilename <- pointDataFilename[grep(pattern = ".shp$", pointDataFilename)]
 
 #somebody don't like ~stevec. ahem, readOGR,
