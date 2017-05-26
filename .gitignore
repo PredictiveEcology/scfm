@@ -5,6 +5,7 @@
 .RData
 .Rhistory
 .Rproj.user
+*.zip
 appCache*
 last.dump.rda
 mySimDigestSaved.rds
@@ -16,5 +17,5 @@ R-Portable/
 rsconnect/shinyapps\.io/landweb/LandWebDemo\.dcf
 Thumbs.db
 cache/
-inputs/
+inputs/LandCoverOfCanada2005_V1_4/
 

@@ -34,7 +34,7 @@ cacheLoc<-file.path("cache")
 paths <- list(inputPath = "inputs",
               cachePath = cacheLoc,
               outputPath = "outputs")
-studyArea <- "MEDIUM" # can be SMALL, MEDIUM, LARGE, FULL
+studyArea <- "SMALL" # can be SMALL, MEDIUM, LARGE, FULL
 #saveDir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
@@ -119,24 +119,40 @@ library(SDMTools) #NOTE NEW
 #there is supposed to be someway to get simInit to read this, too, but the method are undocumented and I can not get them to work...s'matter of specifying the names arguments of readOGR, and also in what environment or package to look for the memoised version we just created here.
 if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
 
-dsnPath<-normalizePath(checkPath(file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","FirePoints.zip"),
-                                 create = TRUE))
-pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
 
-if(length(pointDataFilename)==0) {
-  download.file("http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip", 
-                destfile = dsnPath, method = "auto")
-  unzip(dsnPath, exdir = paths$inputPath)
-  file.remove(dsnPath)
+# Fire database
+  dsnPath<-normalizePath(checkPath(
+    file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","FirePoints.zip"), 
+    create = TRUE))
+  pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
+  
+  if(length(pointDataFilename)==0) {
+    download.file("http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip", 
+                  destfile = dsnPath, method = "auto")
+    unzip(dsnPath, exdir = paths$inputPath)
+    file.remove(dsnPath)
+  }
+  
+  pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", 
+                           full.names = TRUE)
+  pointDataFilename <- pointDataFilename[grep(pattern = ".shp$", pointDataFilename)]
+  
+  #somebody don't like ~stevec. ahem, readOGR,
+  if (!exists("firePointsInput")){
+      firePointsInput<-Cache(shapefile, pointDataFilename, cacheRepo = paths$cachePath)
+  }
+
+## LCC05
+if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))) {
+  dir.create("LandCoverOfCanada2005_V1_4")
+}
+filename <- "LCC2005_V1_4a.tif"
+if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename))) {
+  download.file("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip", filename, mode="wb")
+  unzip(filename, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
+  file.remove(filename)
 }
 
-pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
-pointDataFilename <- pointDataFilename[grep(pattern = ".shp$", pointDataFilename)]
-
-#somebody don't like ~stevec. ahem, readOGR,
-if (!exists("firePointsInput")){
-    firePointsInput<-Cache(shapefile, pointDataFilename, cacheRepo = paths$cachePath)
-}
 
 inputs <- data.frame(file=c(file.path("age", "age.tif"), 
                             file.path("LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"),

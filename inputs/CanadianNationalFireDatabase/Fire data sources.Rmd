@@ -1,0 +1,15 @@
+---
+title: "Fire data sources"
+author: "Eliot McIntire"
+date: "Friday, July 10, 2015"
+output: html_document
+---
+
+
+```{r}
+# Polygons
+# ftp://ftp.nofc.cfs.nrcan.gc.ca/pub/fire/nfdb/fire_poly/current_version/NFDB_poly.zip
+
+# Points
+#ftp://ftp.nofc.cfs.nrcan.gc.ca/pub/fire/nfdb/fire_pnt/current_version/NFDB_point.zip
+```

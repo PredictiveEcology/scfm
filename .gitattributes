@@ -1,0 +1,5 @@
+*.dbf filter=lfs diff=lfs merge=lfs -text
+*.shp filter=lfs diff=lfs merge=lfs -text
+*.shx filter=lfs diff=lfs merge=lfs -text
+*.sbn filter=lfs diff=lfs merge=lfs -text
+*.tif filter=lfs diff=lfs merge=lfs -text
