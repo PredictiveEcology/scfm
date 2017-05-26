@@ -142,14 +142,17 @@ if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
 
 ## LCC05
 if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))) {
-  dir.create("LandCoverOfCanada2005_V1_4")
+  dir.create(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))
 }
 filename <- "LCC2005_V1_4a.tif"
 remoteFilename <- "LandCoverOfCanada2005_V1_4.zip"
-if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename))) {
-  download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), remoteFilename, mode="wb")
-  unzip(remoteFilename)#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
-  file.remove(remoteFilename)
+localPath <- file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename)
+if (!file.exists(localPath)) {
+  download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), 
+                destfile = file.path(dirname(localPath), remoteFilename) , 
+                mode="wb")
+  unzip(file.path(dirname(localPath), remoteFilename), exdir = dirname(localPath))#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
+  file.remove(file.path(dirname(localPath), remoteFilename))
 }
 
 
