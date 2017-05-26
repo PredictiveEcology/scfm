@@ -85,7 +85,6 @@ genFireMapAttr<-function(sim){
   
   names(valsByPoly) <- sim$studyArea$ECOREGION
   uniqueZoneNames <- unique(sim$studyArea$ECOREGION)
-  browser()
   valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
     aa <- valsByPoly[names(valsByPoly)==ecoName] 
     if(is.list(aa)) aa <- do.call(rbind, aa)
@@ -113,7 +112,6 @@ genFireMapAttr<-function(sim){
     append(x, list(burnyArea=x$cellSize*x$nFlammable))
   })
   names(sim$landscapeAttr) <- names(valsByZone)
-  browser()
   sim$cellsByZone <- data.frame(cell=1:ncell(sim$flammableMap), zone=NA)
   for(x in names(sim$landscapeAttr)) {
     sim$cellsByZone[sim$landscapeAttr[[x]]$cellsByZone,"zone"] <- x

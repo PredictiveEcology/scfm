@@ -32,7 +32,7 @@ cacheLoc<-file.path("cache")
 paths <- list(inputPath = "inputs",
               cachePath = cacheLoc,
               outputPath = "outputs")
-studyArea <- "SMALL" # can be SMALL, MEDIUM, LARGE, FULL
+studyArea <- "FULL" # can be SMALL, MEDIUM, LARGE, FULL
 #saveDir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
@@ -47,7 +47,7 @@ paths <- list(inputPath = baseDir,
               outputPath = "outputs")
 
 studyArea<-shpStudyRegion 
-#studyArea <- studyArea[studyArea$ECOREGION=="87",]
+studyArea <- studyArea[studyArea$ECOREGION=="87",]
 
 Plot(studyArea, new=TRUE)
 
