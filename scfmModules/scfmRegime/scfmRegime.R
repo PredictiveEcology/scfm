@@ -103,20 +103,29 @@ scfmRegimeInit = function(sim) {
     nFires<-dim(tmpA)[1]
     rate<-nFires/(epochLength * landAttr$burnyArea)   # fires per ha per yr
   
+    pEscape <- 0
+    maxFireSize <- NA
+    xVec <- numeric(0)
+    
+    if(nFires > 0) {
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
-    xVec<-tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-    pEscape<-length(xVec)/nFires
+      xVec<-tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
+      pEscape<-length(xVec)/nFires
+      
+      zVec<-log(xVec/cellSize)
+      if (length(zVec) < 100)
+        warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
+      #later, this would sim$HannonDayiha
+      if(length(zVec) > 0) {
+        hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
+        maxFireSize<-exp(hdList$That) * cellSize
+      }
+      
+    } 
     xBar<-mean(xVec)
     lxBar<-mean(log(xVec))
     xMax<-max(xVec)
-  
-    zVec<-log(xVec/cellSize)
-    if (length(zVec)<100)
-      warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
-    #later, this would sim$HannonDayiha
-    hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-    maxFireSize<-exp(hdList$That) * cellSize
     #verify estimation results are reasonable. That=-1 indicates convergence failure.
     #
     #need to addd a name or code for basic verification by Driver module, and time field
@@ -132,6 +141,8 @@ scfmRegimeInit = function(sim) {
   
   names(sim$scfmRegime) <- names(sim$landscapeAttr)
   
+  
+  sim$firePoints <- tmp
   
   return(invisible(sim))
 }

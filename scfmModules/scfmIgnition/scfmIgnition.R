@@ -118,8 +118,11 @@ scfmIgnitionSave <- function(sim) {
 ### template for your event1
 scfmIgnitionIgnite <- function(sim) {
   
- #browser()
-  sim$ignitionLoci <- which(runif(raster::ncell(sim$flammableMap)) < sim$pIg[])
+  ignitions <- lapply(names(sim$landscapeAttr), function(polygonType) {
+    cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
+    which(runif(length(cells)) < sim$pIg[cells])
+  })
+  sim$ignitionLoci <- SpaDES:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
   
   return(invisible(sim))
 }

@@ -194,7 +194,6 @@ nZ<-length(Z)
 Zmax <- max(Z)
 zbar <- ExpBar(Z)
 
-
   if (Tspec == 0){
     step1 <- estimate(0,0,0)
     T0 <- step1$That

@@ -65,7 +65,7 @@ scfmCropInit <- function(sim) {
   #Project the study area into each input raster, then crop and mask; 
   #Then project result intpo sim projection.
  
-  studyAreaTmp <- sim$spTransform(sim$studyArea, CRSobj =vegProjection)
+  studyAreaTmp <- Cache(spTransform, sim$studyArea, CRSobj =vegProjection)
   sim$vegMap <-  sim$crop(sim$vegMapInit, studyAreaTmp)
   crs(sim$vegMap) <- vegProjection
   sim$vegMap <- sim$mask(sim$vegMap,studyAreaTmp) #

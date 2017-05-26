@@ -32,7 +32,7 @@ defineModule(sim, list(
 
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug=FALSE) {
   if (eventType=="init") {
-
+    
     sim <- scfmLandcoverInitCacheFunctions(sim)
     sim <- scfmLandcoverInitInit(sim)
     sim <- scheduleEvent(sim, params(sim)$scfmLandcoverInit$.plotInitialTime,
@@ -43,15 +43,15 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug=FALSE) {
     #browser()
     Plot(sim$vegMap, new=TRUE)
     Plot(sim$flammableMap, legend=FALSE) # this is failing probably due to a bug in Plot
-                                         # EJM is working on it 20160224
+    # EJM is working on it 20160224
     # schedule future event(s)
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.plotInterval, "scfmLandcoverInit", "plot")
   } else if (eventType=="save") {
     # schedule future event(s)
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.saveInterval, "scfmLandcoverInit", "save")
   } else {
-      warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
-                    "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
+    warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
+                  "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
   }
   return(invisible(sim))
 }
@@ -85,7 +85,9 @@ genFireMapAttr<-function(sim){
   
   names(valsByPoly) <- sim$studyArea$ECOREGION
   uniqueZoneNames <- unique(sim$studyArea$ECOREGION)
+  browser()
   valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
+    browser()
     aa <- valsByPoly[names(valsByPoly)==ecoName] 
     if(is.list(aa)) aa <- do.call(rbind, aa)
     aa
@@ -97,23 +99,22 @@ genFireMapAttr<-function(sim){
     nNbrs<-tabulate(x[,2]+1, 9)#depends on sfcmLandCoverInit
     names(nNbrs)<-0:8
     nNbrs
-    })
+  })
   
   nFlammable <- lapply(valsByZone, function(x) {
-    sum(1-getValues(sim$flammableMap)[x[,1]])
+    sum(1-getValues(sim$flammableMap)[x[,1]], na.rm=TRUE)
   })
   
   landscapeAttr <- purrr::transpose(list(cellSize=rep(list(cellSize), length(nFlammable)), 
-                        nFlammable=nFlammable,
-                        nNbrs=nNbrs,
-                        cellsByZone=lapply(valsByZone, function(x) x[,1])))
-  
+                                         nFlammable=nFlammable,
+                                         nNbrs=nNbrs,
+                                         cellsByZone=lapply(valsByZone, function(x) x[,1])))
   
   sim$landscapeAttr <- lapply(landscapeAttr, function(x) {
     append(x, list(burnyArea=x$cellSize*x$nFlammable))
   })
   names(sim$landscapeAttr) <- names(valsByZone)
-  
+  browser()
   sim$cellsByZone <- data.frame(cell=1:ncell(sim$flammableMap), zone=NA)
   for(x in names(sim$landscapeAttr)) {
     sim$cellsByZone[sim$landscapeAttr[[x]]$cellsByZone,"zone"] <- x
@@ -130,14 +131,14 @@ scfmLandcoverInitInit = function(sim) {
   nonFlammClasses<-c(36,37,38,39)
   oldClass <- 0:39
   newClass <- ifelse(oldClass %in% nonFlammClasses,1,0)   #1 codes for non flammable 
-                                                          #see mask argument for SpaDES::spread()
+  #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
   sim$flammableMap <- ratify(reclassify(sim$vegMap, flammableTable,count=TRUE))
   if ("Mask" %in% names(objs(sim))){
     sim$flammableMap <- sim$flammableMap * sim$Mask
   }
   #the count options should cause that "a column with frequencies is added. 
-
+  
   #setColors(sim$flammableMap, n=2) <- c("blue","red")
   setColors(sim$flammableMap,2) <- colorRampPalette(c("blue", "red"))(2) 
   
@@ -152,7 +153,7 @@ testFun<-function(x) {
 
 scfmLandcoverInitCacheFunctions <- function(sim) {
   # for slowp functions, add cached versions
- # browser()
+  # browser()
   if(params(sim)$scfmLandcoverInit$useCache) {
     sim$cacheLoc <- file.path(outputPath(sim), "scfmLandcoverInitCache") 
     if(!dir.exists(sim$cacheLoc) )
