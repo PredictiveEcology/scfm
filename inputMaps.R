@@ -5,14 +5,6 @@ library(rgeos)
 
 ####
 
-#CanadaMap <- readRDS(file.path(paths$inputPath, "CanadaMap.rds"))
-landisInputs <- readRDS(file.path(paths$inputPath, "landisInputs.rds"))
-spEcoReg <- readRDS(file.path(paths$inputPath, "SpEcoReg.rds"))
-
-seralStageData <- readRDS(file.path(paths$inputPath, "seralStageData.rds"))
-vegTypeData <- readRDS(file.path(paths$inputPath, "vegTypeData.rds"))
-availableRegions <- unique(vegTypeData$ecoregion)
-
 # Study area original shapefile
 loadShpAndMakeValid <- function(file) {
   shapefile(file) %>% gBuffer(byid=TRUE, width=0)
