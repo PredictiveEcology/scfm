@@ -120,7 +120,11 @@ scfmIgnitionIgnite <- function(sim) {
   
   ignitions <- lapply(names(sim$landscapeAttr), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
-    cells[which(runif(length(cells)) < sim$pIg[cells])]
+    if(length(sim$pIg)>1) {
+      cells[which(runif(length(cells)) < sim$pIg[cells])]
+    } else {
+      cells[which(runif(length(cells)) < sim$pIg)]
+    }
   })
   sim$ignitionLoci <- SpaDES:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
   
