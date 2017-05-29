@@ -49,6 +49,7 @@ paths <- list(inputPath = baseDir,
 studyArea<-shpStudyRegion 
 studyArea <- studyArea[studyArea$ECOREGION=="87",]
 
+dev()
 Plot(studyArea, new=TRUE)
 
 ```
