@@ -57,7 +57,10 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     # ! ----- EDIT BELOW ----- ! #
     # do stuff for this event
     # sim$burnMap[sim$burnMap[]>0]<-1
-    Plot(sim$burnMap, title="Fire map", legendRange=c(0,1), cols =c("white", "red"), new=TRUE)#length(sim$ignitionLoci)))
+
+    Plot(sim$burnMap, title="Fire map", legendRange=c(0,1), 
+         #cols=c("white", "red"), 
+         new=FALSE)#length(sim$ignitionLoci)))
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmSpread$.plotInterval,
                          "scfmSpread", "plot")
    
@@ -111,7 +114,7 @@ scfmSpreadInit <- function(sim) {
   #            params(sim)$scfmSpread$pSpread
   #           )
   
-  setColors(sim$burnMap,n=10) <- colorRampPalette(c("yellow", "red"))(10)
+  setColors(sim$burnMap,n=2) <- colorRampPalette(c("transparent", "red"))(2)
   
   # ! ----- STOP EDITING ----- ! #
 

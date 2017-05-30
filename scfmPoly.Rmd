@@ -72,7 +72,7 @@ library(raster)
 library(SDMTools) #NOTE NEW
 
 #there is supposed to be someway to get simInit to read this, too, but the method are undocumented and I can not get them to work...s'matter of specifying the names arguments of readOGR, and also in what environment or package to look for the memoised version we just created here.
-if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
+#if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
 
 
 # Fire database
@@ -193,7 +193,7 @@ objects <- list(firePointsInput = firePointsInput,
 try(rm(mySim))
 dev()
 mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
-tmpSim<- spades(mySim,debug=TRUE)
+tmpSim<- spades(mySim,debug=TRUE)#, .plotInitialTime = NA)
 ```
 
 
