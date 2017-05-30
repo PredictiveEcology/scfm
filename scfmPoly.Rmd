@@ -8,18 +8,7 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Loading a shapefile
 
-
-
-![Ecoregions names and numeric IDs](figures/ecoregions_e.png)
-
-You can find similar maps for the other ecozones of Canada [here](http://www.ecozones.ca/english/zone/).
-
-This is how I know that the numeric code the Athabasca Plains is 87. We will see how a simple shapefile can be extracted from a bigger, more complex one, using the standard R indexing syntax. This works the class methods for SpatialPointsDataFrame inherit characteristics of data frames.
-
-So in the following code, re read the shapefile, extract one ecoRegion and store it in a
-SpatialPointsDataFrame called studyArea. We also Plot the entire original shapefile, and the chosen ecoRegion.
 
 ```{r loadShp, echo=FALSE}
 library(rgdal)
@@ -32,7 +21,7 @@ cacheLoc<-file.path("cache")
 paths <- list(inputPath = "inputs",
               cachePath = cacheLoc,
               outputPath = "outputs")
-studyArea <- "FULL" # can be SMALL, MEDIUM, LARGE, FULL
+studyArea <- "LARGE" # can be SMALL, MEDIUM, LARGE, FULL
 #saveDir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
 #dataDir<-file.path("/Users/stevec/Dropbox/SpaDES/Data/LandWEB/shp")
@@ -49,7 +38,6 @@ paths <- list(inputPath = baseDir,
 studyArea<-shpStudyRegion 
 studyArea <- studyArea[studyArea$ECOREGION=="87",]
 
-dev()
 Plot(studyArea, new=TRUE)
 
 ```
