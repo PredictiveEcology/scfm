@@ -65,8 +65,8 @@ doEvent.classifyAge = function(sim, eventTime, eventType, debug = FALSE) {
 
 ### template initialization
 classifyAgeInit <- function(sim) {
-  if (!("ageClassMap" %in% names(objs(sim)))){
-      if ("ageMap" %in% names(objs(sim))){
+  if (!("ageClassMap" %in% ls(sim))){
+      if ("ageMap" %in% ls(sim)){
         sim$ageClassMap<-sim$ageMap
         sim$ageClassMap[]<-NA
       }

@@ -89,7 +89,7 @@ scfmSpreadInit <- function(sim) {
   
   sim$burnMap <- sim$flammableMap * 0  # 0 * NA = NA
   
-  if("scfmPars" %in% names(objs(sim))) {
+  if("scfmPars" %in% ls(sim)) {
     if(length(sim$landscapeAttr) > 1) {
       pSpread <- raster(sim$flammableMap)
       for(x in names(sim$landscapeAttr)) {
@@ -106,7 +106,7 @@ scfmSpreadInit <- function(sim) {
   sim$pSpread <- pSpread
   
   
-  # pSpread <- ifelse("scfmPars" %in% names(objs(sim)),
+  # pSpread <- ifelse("scfmPars" %in% ls(sim),
   #            sim$scfmPars$pSpread,
   #            params(sim)$scfmSpread$pSpread
   #           )

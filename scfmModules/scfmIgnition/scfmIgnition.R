@@ -75,8 +75,8 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 
 scfmIgnitionInit <- function(sim) {
   #browser()
-  if (!("flammableMap" %in% names(objs(sim)))){
-    if ("ageMap" %in% names(objs(sim))){
+  if (!("flammableMap" %in% ls(sim))){
+    if ("ageMap" %in% ls(sim)){
       sim$flammableMap<-sim$ageMap
       sim$flammableMap[]<-0
     }
@@ -88,7 +88,7 @@ scfmIgnitionInit <- function(sim) {
   
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
-  if("scfmPars" %in% names(objs(sim))) {
+  if("scfmPars" %in% ls(sim)) {
     if(length(sim$landscapeAttr) > 1) {
       pIg <- raster(sim$flammableMap)
       for(x in names(sim$landscapeAttr)) {

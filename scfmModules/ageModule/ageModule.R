@@ -99,7 +99,7 @@ ageModuleInit <- function(sim) {
 
   # # ! ----- EDIT BELOW ----- ! #
   
-  if (!("ageMap" %in% names(objs(sim)))){
+  if (!("ageMap" %in% ls(sim))){
     N<-sim$mapDim
     x<-raster::extent(c(0,N-1,0,N-1))
     sim$ageMap<-raster(x,nrows=N, ncols=N,vals=params(sim)$ageModule$initialAge) %>%

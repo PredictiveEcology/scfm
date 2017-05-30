@@ -84,7 +84,7 @@ scfmEscapeInit <- function(sim) {
   
   sim$spreadState <- NULL
   
-  if("scfmPars" %in% names(objs(sim))) {
+  if("scfmPars" %in% ls(sim)) {
     if(length(sim$landscapeAttr) > 1) {
       p0 <- raster(sim$flammableMap)
       for(x in names(sim$landscapeAttr)) {
