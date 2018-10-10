@@ -49,7 +49,7 @@ Now in this excercise we build a map classifier and then use package _SDMTools_ 
 
 The function we will use is SDMTool::ClassStat()
 
-```{r Data2ModelsPlusPatches echo=TRUE}
+```{r Data2ModelsPlusPatches, echo=TRUE}
 library(SpaDES)
 library(igraph)
 library(spatial.tools)
@@ -172,7 +172,7 @@ library(SDMTools) #NOTE NEW
   #modules<-list("scfmParent")
   modules <- list("scfmCrop","scfmLandcoverInit", "scfmRegime", "scfmDriver","ageModule", "scfmIgnition","scfmEscape", "scfmSpread","classifyAge") # "caribou"
               
-  paths[["modulePath"]] <- "scfmModules"
+  paths[["modulePath"]] <- "modules"
   
   
   shape <- Cache(shapefile, file.path(baseDir,"shpLandWEB.shp"))
