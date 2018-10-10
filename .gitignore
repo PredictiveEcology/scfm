@@ -8,3 +8,6 @@ cache/
 outputs/
 
 ## inputs/ has its own .gitignore file
+inputs/CanadianNationalFireDatabase/NFDB_poly\.zip
+
+inputs/age/Thumbs\.db
