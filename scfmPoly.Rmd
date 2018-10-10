@@ -3,6 +3,8 @@ title: "Experiments with Fire and Caribou"
 author: "Steve Cumming"
 date: "April 13, 2017"
 output: pdf_document
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -11,9 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ```{r loadShp, echo=FALSE}
+library(magrittr)
 library(rgdal)
 library(SpaDES)
-library(magrittr)
 
 baseDir <- file.path("inputs")
 cacheLoc<-file.path("cache")
@@ -35,13 +37,11 @@ paths <- list(inputPath = baseDir,
               cachePath = cacheLoc,
               outputPath = "outputs")
 
-studyArea<-shpStudyRegion 
-studyArea <- studyArea[studyArea$ECOREGION=="87",]
+studyArea <- shpStudyRegion 
+studyArea <- studyArea[studyArea$ECOREGION == "87",]
 
-Plot(studyArea, new=TRUE)
-
+Plot(studyArea, new = TRUE)
 ```
-
 
 ## Classification and Patch Metrics
 
@@ -64,12 +64,12 @@ library(SDMTools) #NOTE NEW
 
 
 # Fire database
-  dsnPath<-normalizePath(checkPath(
-    file.path(baseDir,"CanadianNationalFireDatabase","NFDB_point","FirePoints.zip"), 
-    create = TRUE))
+  dsnPath <- checkPath(
+    file.path(baseDir, "CanadianNationalFireDatabase", "NFDB_point", "FirePoints.zip"), 
+    create = TRUE)
   pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
   
-  if(length(pointDataFilename)==0) {
+  if (length(pointDataFilename) == 0) {
     download.file("http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip", 
                   destfile = dsnPath, method = "auto")
     unzip(dsnPath, exdir = paths$inputPath)
@@ -190,6 +190,3 @@ library(SDMTools) #NOTE NEW
   mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
   tmpSim<- spades(mySim,debug=TRUE)#, .plotInitialTime = NA)
 ```
-
-
-
