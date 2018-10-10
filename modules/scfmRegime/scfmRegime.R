@@ -25,7 +25,7 @@ defineModule(sim, list(
     other=rep(NA_character_,3),
     stringsAsFactors=FALSE),
   outputObjects=data.frame(
-    objectName=c("scfmRegime"),
+    objectName=c("scfmRegimePars"),
     objectClass=c("list"),
     other=rep(NA_character_,1),
     stringsAsFactors=FALSE)
@@ -97,6 +97,7 @@ scfmRegimeInit = function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmRegime<-lapply(names(sim$landscapeAttr), function(polygonType) {
+  sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), function(polygonType) {
     tmpA <- tmp[unlist(tmp[["ECOREGION"]])==polygonType,]
     landAttr <- sim$landscapeAttr[[polygonType]]
     
@@ -139,7 +140,7 @@ scfmRegimeInit = function(sim) {
          emfs=maxFireSize) # Estimated Maximum Fire Size in ha
   })
   
-  names(sim$scfmRegime) <- names(sim$landscapeAttr)
+  names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   
   
   sim$firePoints <- tmp

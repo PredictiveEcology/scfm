@@ -16,7 +16,7 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
-  inputObjects=data.frame(objectName=c("scfmRegime","landscapeAttr"),
+  inputObjects=data.frame(objectName=c("scfmRegimePars","landscapeAttr"),
                           objectClass=c("list","list"), 
                           sourceURL="",
                           other=rep(NA_character_,2), 
@@ -76,7 +76,7 @@ scfmDriverInit = function(sim) {
   
   sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
   
-    regime <- sim$scfmRegime[[polygonType]]
+    regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
       
     if (FALSE) {
@@ -85,7 +85,7 @@ scfmDriverInit = function(sim) {
       m.glm<-glm(x~y,family=gaussian)
       mfs<-regime$xBar/cellSize #mean size escaped fires in cells
       pJmp<-sum(m.glm$coeff*c(1,log(mfs)))
-      #mfs <- sim$scfmRegime$lxBar - log(cellSize)
+      #mfs <- sim$scfmRegimePars$lxBar - log(cellSize)
       #pjmp <- sum(m.glm$coeff*c(1,mfs))
     }
     else {
