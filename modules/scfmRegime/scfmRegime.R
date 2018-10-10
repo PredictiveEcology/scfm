@@ -60,7 +60,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
 ### template initilization
 
 
-scfmRegimeInit = function(sim) {
+scfmRegimeInit <- function(sim) {
 
   #browser()
 
@@ -96,7 +96,6 @@ scfmRegimeInit = function(sim) {
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
-  sim$scfmRegime<-lapply(names(sim$landscapeAttr), function(polygonType) {
   sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), function(polygonType) {
     tmpA <- tmp[unlist(tmp[["ECOREGION"]])==polygonType,]
     landAttr <- sim$landscapeAttr[[polygonType]]
