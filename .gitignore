@@ -1,9 +1,9 @@
 \.DS_Store
-*.Rproj
 .Rapp.history
 .RData
 .Rhistory
-.Rproj.user
+*.Rproj
+.Rproj.user/
 cache/
 outputs/
 
