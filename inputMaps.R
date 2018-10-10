@@ -10,7 +10,7 @@ loadShpAndMakeValid <- function(file) {
   shapefile(file) %>% gBuffer(byid=TRUE, width=0)
 }
 
-shpStudyRegionFull <- SpaDES::Cache(loadShpAndMakeValid, 
+shpStudyRegionFull <- Cache(loadShpAndMakeValid, 
                                     file=file.path(paths$inputPath,"shpLandWEB.shp"),
               cacheRepo = paths$cachePath)
 shpStudyRegionFull$fireReturnInterval <- shpStudyRegionFull$LTHRC

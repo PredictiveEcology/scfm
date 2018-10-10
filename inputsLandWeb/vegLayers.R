@@ -24,7 +24,7 @@ LandWebStudyAreaRawPoly <- file.path("C:","Eliot","GitHub","LandWeb","inputs",ol
 
 PaulOnGoogleDrive <- Cache(writeRaster, PaulOnGoogleDrive, filename = "PaulSppFilled.tif", datatype = "INT2U", 
                            overwrite = TRUE)
-shpStudyRegionFull <- SpaDES::Cache(loadShpAndMakeValid, file=LandWebStudyAreaRawPoly)
+shpStudyRegionFull <- Cache(loadShpAndMakeValid, file=LandWebStudyAreaRawPoly)
 studyAreaTooBig <- sp::spTransform(shpStudyRegionFull, crs(PaulOnGoogleDrive))
 studyAreaTooBig$AREA <- round(studyAreaTooBig$AREA,0)
 
