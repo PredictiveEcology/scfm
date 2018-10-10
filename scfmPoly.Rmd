@@ -176,7 +176,7 @@ library(SDMTools) #NOTE NEW
   paths[["modulePath"]] <- "modules"
   
   
-  shape <- Cache(shapefile, file.path(baseDir,"shpLandWEB.shp"))
+  shape <- Cache(shapefile, file.path(baseDir, "shpLandWEB.shp"))
   studyArea <- shape[shape$ECOREGION == 87,] #we have chosen Athabasca Plains in northern SK
                                              #we happen to know the numeric code is 87 (easier to type)
   Plot(studyArea)
