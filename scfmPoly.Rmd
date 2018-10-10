@@ -192,6 +192,7 @@ library(SDMTools) #NOTE NEW
 ```
 
 ```{r simInitAndSpaDES}
-  mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
-  tmpSim<- spades(mySim,debug=TRUE)#, .plotInitialTime = NA)
+  mySim <- simInit(times = times, params = parameters, modules = modules,
+                   paths = paths, objects = objects, inputs = inputs) 
+  tmpSim <- spades(mySim, debug = TRUE)#, .plotInitialTime = NA)
 ```
