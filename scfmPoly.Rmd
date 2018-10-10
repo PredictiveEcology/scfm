@@ -64,9 +64,8 @@ library(SDMTools) #NOTE NEW
 
 
 # Fire database
-  dsnPath <- checkPath(
-    file.path(baseDir, "CanadianNationalFireDatabase", "NFDB_point", "FirePoints.zip"), 
-    create = TRUE)
+  dsnPath <- checkPath(file.path(baseDir, "CanadianNationalFireDatabase", "NFDB_point"),  create = TRUE) %>% 
+    file.path(., "FirePoints.zip")
   pointDataFilename <- dir(file.path(paths$inputPath), pattern = "NFDB_point", full.names = TRUE)
   
   if (length(pointDataFilename) == 0) {
