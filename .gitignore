@@ -1,26 +1,10 @@
-*.log
+\.DS_Store
 *.Rproj
 .Rapp.history
 .RData
 .Rhistory
 .Rproj.user
-*.zip
-appCache*
-last.dump.rda
-mySimDigestSaved.rds
-mySimSaved.rds
-outputs*
-packrat/lib*/
-packrat/src/
-R-Portable/
-rsconnect/shinyapps\.io/landweb/LandWebDemo\.dcf
-Thumbs.db
 cache/
-inputs/LandCoverOfCanada2005_V1_4/
+outputs/
 
-
-\.Rproj\.user\.bak/shared/notebooks/
-
-\.Rproj\.user\.bak/99762CAE/
-
-\.DS_Store
+## inputs/ has its own .gitignore file
