@@ -82,106 +82,113 @@ library(SDMTools) #NOTE NEW
   
   #somebody don't like ~stevec. ahem, readOGR,
   if (!exists("firePointsInput")){
-      firePointsInput<-Cache(shapefile, pointDataFilename, cacheRepo = paths$cachePath)
+    library(sf)
+    loadShapefile <- function(filename) {
+      s1 <- st_read(filename, stringsAsFactors=FALSE);
+      as(s1, "Spatial")
+    }
+    firePointsInput <- Cache(loadShapefile, pointDataFilename, cacheRepo = paths$cachePath)
+    # firePointsInput<-Cache(shapefile, asPath(pointDataFilename), 
+    #                          cacheRepo = paths$cachePath)
   }
 
 ## LCC05
-if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))) {
-  dir.create(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))
-}
-filename <- "LCC2005_V1_4a.tif"
-remoteFilename <- "LandCoverOfCanada2005_V1_4.zip"
-localPath <- file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename)
-if (!file.exists(localPath)) {
-  download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), 
-                destfile = file.path(dirname(localPath), remoteFilename) , 
-                mode="wb")
-  unzip(file.path(dirname(localPath), remoteFilename), exdir = dirname(localPath))#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
-  file.remove(file.path(dirname(localPath), remoteFilename))
-}
-
-
-inputs <- data.frame(file=c(file.path("age", "age.tif"), 
-                            file.path("LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"),
-                            file.path("spread_firesize_curves.csv"),
-                            file.path("FiresN1000MinFiresSize2NoLakes.csv")),
-                     fun=c("raster","raster","read.csv", "read.csv"),
-                     package=c("raster","raster","utils", "utils"),
-                     objectName=c("ageMapInit","vegMapInit","spreadCalibrationTable","cTable2"))
-
-times <- list(start=0, end=30, timeunit="year")
-
-plotInit <- NA #times$start+1
-defaultInterval<-1
-defaultInitialSaveTime<-NA
-
-parameters <- list(.globals=list("neighbours"=8),
-                   .progress=list(type=NA, interval=1), #was type="graphical"
-                   scfmCrop=list(useCache=TRUE),
-                   scfmLandcoverInit=list(useCache=TRUE),
-                   scfmRegime=list(fireEpoch=c(1971,2010),fireCause=c("L")),
-   ageModule = list(
-    initialAge=100, 
-    maxAge=200, 
-    returnInterval = defaultInterval, 
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultInterval,
-    .saveInitialTime = defaultInitialSaveTime, 
-    .saveInterval=defaultInterval),
-   scfmIgnition = list(
-    pIgnition=0.0002, 
-    returnInterval = defaultInterval, 
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultInterval,
-    .saveInitialTime = defaultInitialSaveTime, 
-    .saveInterval = defaultInterval),
-  scfmEscape = list(
-    p0=0.1, 
-    returnInterval = defaultInterval, 
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultInterval,
-    .saveInitialTime = defaultInitialSaveTime, 
-    .saveInterval = defaultInterval),
-  scfmSpread = list(
-    pSpread=0.235, 
-    returnInterval = defaultInterval, 
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultInterval,
-    .saveInitialTime = defaultInitialSaveTime, 
-    .saveInterval = defaultInterval),
-  classifyAge = list(
-    startTime = times$start,
-    returnInterval = 5,
-    .plotInitialTime = NA,#times$start,
-    .plotInterval = 5,
-    howOldIsOld = 120
+  if (!file.exists(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))) {
+    dir.create(file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4"))
+  }
+  filename <- "LCC2005_V1_4a.tif"
+  remoteFilename <- "LandCoverOfCanada2005_V1_4.zip"
+  localPath <- file.path(paths$inputPath, "LandCoverOfCanada2005_V1_4", filename)
+  if (!file.exists(localPath)) {
+    download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), 
+                  destfile = file.path(dirname(localPath), remoteFilename) , 
+                  mode="wb")
+    unzip(file.path(dirname(localPath), remoteFilename), exdir = dirname(localPath))#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
+    file.remove(file.path(dirname(localPath), remoteFilename))
+  }
+  
+  
+  inputs <- data.frame(file=c(file.path("age", "age.tif"), 
+                              file.path("LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"),
+                              file.path("spread_firesize_curves.csv"),
+                              file.path("FiresN1000MinFiresSize2NoLakes.csv")),
+                       fun=c("raster","raster","read.csv", "read.csv"),
+                       package=c("raster","raster","utils", "utils"),
+                       objectName=c("ageMapInit","vegMapInit","spreadCalibrationTable","cTable2"))
+  
+  times <- list(start=0, end=30, timeunit="year")
+  
+  plotInit <- NA #times$start+1
+  defaultInterval<-1
+  defaultInitialSaveTime<-NA
+  
+  parameters <- list(.globals=list("neighbours"=8),
+                     .progress=list(type=NA, interval=1), #was type="graphical"
+                     scfmCrop=list(useCache=TRUE, .useCache = "init"),
+                     scfmLandcoverInit=list(useCache=TRUE, .useCache = "init"),
+                     scfmRegime=list(fireEpoch=c(1971,2010),fireCause=c("L")),
+     ageModule = list(
+      initialAge=100, 
+      maxAge=200, 
+      returnInterval = defaultInterval, 
+      startTime = times$start,
+      .plotInitialTime = times$start,
+      .plotInterval = defaultInterval,
+      .saveInitialTime = defaultInitialSaveTime, 
+      .saveInterval=defaultInterval),
+     scfmIgnition = list(
+      pIgnition=0.0002, 
+      returnInterval = defaultInterval, 
+      startTime = times$start,
+      .plotInitialTime = NA,
+      .plotInterval = defaultInterval,
+      .saveInitialTime = defaultInitialSaveTime, 
+      .saveInterval = defaultInterval),
+    scfmEscape = list(
+      p0=0.1, 
+      returnInterval = defaultInterval, 
+      startTime = times$start,
+      .plotInitialTime = NA,
+      .plotInterval = defaultInterval,
+      .saveInitialTime = defaultInitialSaveTime, 
+      .saveInterval = defaultInterval),
+    scfmSpread = list(
+      pSpread=0.235, 
+      returnInterval = defaultInterval, 
+      startTime = times$start,
+      .plotInitialTime = times$start,
+      .plotInterval = defaultInterval,
+      .saveInitialTime = defaultInitialSaveTime, 
+      .saveInterval = defaultInterval),
+    classifyAge = list(
+      startTime = times$start,
+      returnInterval = 5,
+      .plotInitialTime = NA,#times$start,
+      .plotInterval = 5,
+      howOldIsOld = 120
+    )
   )
-)
-#
-#modules<-list("scfmParent")
-modules <- list("scfmCrop","scfmLandcoverInit", "scfmRegime", "scfmDriver","ageModule", "scfmIgnition","scfmEscape", "scfmSpread","classifyAge") # "caribou"
-            
-paths[["modulePath"]] <- "scfmModules"
-
-
-#shape <- readOGR(dsn = file.path(baseDir,"LandWEB", "shp"), layer = "ltfrcycles3")
-#studyArea<-shape[shape$ECOREGION==87,] #we have chosen Athabasca Plains in northern SK
-                                       #we happen to know the numeric code is 87 (easier to type)
-Plot(studyArea)
-
-objects <- list(firePointsInput = firePointsInput,
-                studyArea = studyArea,
-                cacheLoc = cacheLoc
-                )
-
-try(rm(mySim))
-dev()
-mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
-tmpSim<- spades(mySim,debug=TRUE)#, .plotInitialTime = NA)
+  #
+  #modules<-list("scfmParent")
+  modules <- list("scfmCrop","scfmLandcoverInit", "scfmRegime", "scfmDriver","ageModule", "scfmIgnition","scfmEscape", "scfmSpread","classifyAge") # "caribou"
+              
+  paths[["modulePath"]] <- "scfmModules"
+  
+  
+  shape <- Cache(shapefile, file.path(baseDir,"shpLandWEB.shp"))
+  studyArea<-shape[shape$ECOREGION==87,] #we have chosen Athabasca Plains in northern SK
+                                         #we happen to know the numeric code is 87 (easier to type)
+  Plot(studyArea)
+  
+  objects <- list(firePointsInput = firePointsInput,
+                  studyArea = studyArea,
+                  cacheLoc = cacheLoc
+                  )
+  
+  try(rm(mySim))
+  dev()
+  mySim <- simInit(times=times, params=parameters, modules=modules,paths=paths, objects=objects,inputs=inputs) 
+  tmpSim<- spades(mySim,debug=TRUE)#, .plotInitialTime = NA)
 ```
 
 

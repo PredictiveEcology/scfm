@@ -126,8 +126,8 @@ scfmIgnitionIgnite <- function(sim) {
       cells[which(runif(length(cells)) < sim$pIg)]
     }
   })
-  #randomise sequence to remove any effects of correlation between location in map and sequence of spread. 
-  sim$ignitionLoci <- SpaDES:::resample(unlist(ignitions)) # beware case where only 1 fire... see ?sample example
+  
+  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
   
   return(invisible(sim))
 }

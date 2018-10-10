@@ -26,9 +26,9 @@ The following code illustrates the agemodule integrated with the three stabe bur
 ```{r scfmModule}
 library(SpaDES)
 library(magrittr)
-savedir<-setwd("/Users/stevec/Dropbox/Courses/7043H17/Lab")
-inputDir <- file.path(tempdir(), "inputs") %>% checkPath(create = TRUE)
-outputDir <- file.path(tempdir(), "outputs")
+savedir<-file.path("outputs")
+inputDir <- file.path("inputs") 
+outputDir <- file.path("outputs")
 
 timeunit<-"year"
 times <- list(start = 0, end = 50)
@@ -90,7 +90,7 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
 
 set.seed(2343)
 #spades(mySim)
-setwd(savedir)
+#setwd(savedir)
 ```
 
 
@@ -116,46 +116,46 @@ saveLazy <- function(..., file) {
 ```{r model-inputs, eval=FALSE}
 # download data (these are large files!)
 
-baseDir <- "~/Dropbox/SpaDES/Data"
+baseDir <- "inputs"
 
 if (TRUE){
-require("rgdal")
-require("memoise")
-require("magrittr")
+  require("rgdal")
+  require("memoise")
+  require("magrittr")
+  require("raster")
 
-
-tmp<-file.path(baseDir,"spread_firesize_curves.csv")
-
-if (file.exists(tmp)){
-  spreadCalibrationTable<-read.table(tmp,header=T,sep=",")
-} else {
-  stop("No Calibration Table")
-}
-
-if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
-cacheLoc<-file.path("/tmp/cacheSpaDES")
-
-if (!file.exists(file.path(baseDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"))) {
-  url <- "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"
-  download.file(url = url,
-                destfile = file.path(baseDir, "LandCoverOfCanada2005_V1_4.zip"))
-  unzip(zipfile = file.path(baseDir, "LandCoverOfCanada2005_V1_4.zip"),
-        exdir = file.path(baseDir, "LandCoverOfCanada2005_V1_4"))
-}
-
-if (!file.exists(file.path(baseDir, "age", "age.tif"))) {
-  dir.create(file.path(baseDir, "age"))
-  url <- "ftp://ftp.daac.ornl.gov/data/nacp/NA_TreeAge//data/can_age04_1km.tif"
-  download.file(url = url, destfile = file.path(baseDir, "age", "age.tif"))
-}
+  tmp<-file.path(baseDir,"spread_firesize_curves.csv")
+  
+  if (file.exists(tmp)){
+    spreadCalibrationTable<-read.table(tmp,header=T,sep=",")
+  } else {
+    stop("No Calibration Table")
+  }
+  
+  if(!exists("readOGRmem")) readOGRmem <- memoise(readOGR)
+  cacheLoc<-file.path("/tmp/cacheSpaDES")
+  
+  if (!file.exists(file.path(baseDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"))) {
+    url <- "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"
+    download.file(url = url,
+                  destfile = file.path(baseDir, "LandCoverOfCanada2005_V1_4.zip"))
+    unzip(zipfile = file.path(baseDir, "LandCoverOfCanada2005_V1_4.zip"),
+          exdir = file.path(baseDir, "LandCoverOfCanada2005_V1_4"))
+  }
+  
+  if (!file.exists(file.path(baseDir, "age", "age.tif"))) {
+    dir.create(file.path(baseDir, "age"))
+    url <- "ftp://ftp.daac.ornl.gov/data/nacp/NA_TreeAge//data/can_age04_1km.tif"
+    download.file(url = url, destfile = file.path(baseDir, "age", "age.tif"))
+  }
 }
 # load data
-savedir<-setwd(baseDir)
-ageMapInit <- raster::raster(file.path(baseDir, "age", "age.tif"))
-lcc05 <- raster::raster(file.path(baseDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"))
+#savedir<-setwd(baseDir)
+ageMapInit <- raster(file.path(baseDir, "age", "age.tif"))
+lcc05 <- raster(file.path(baseDir, "LandCoverOfCanada2005_V1_4", "LCC2005_V1_4a.tif"))
 lcc05CRS <- crs(lcc05)
 firePointsInput<-readOGRmem(dsn="CanadianNationalFireDatabase/NFDB_point/",layer="NFDB_point_20141222")
-setwd(savedir)
+#setwd(savedir)
 
 #this is where you would read in your shapefile if you had one.
 # Random polygon

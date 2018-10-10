@@ -127,7 +127,7 @@ scfmSpreadBurnemup <- function(sim){ #name is a homage to Walters and Hillborne
   activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   maxSizes <- maxSizes[sim$cellsByZone[activeLoci,"zone"]]
   
-  sim$burnDT <- SpaDES::spread(sim$flammableMap, 
+  sim$burnDT <- SpaDES.tools::spread(sim$flammableMap, 
                  spreadProb=sim$pSpread,
                  spreadState=sim$spreadState,
                  #mask=sim$flammableMap, #this should work but it don't
