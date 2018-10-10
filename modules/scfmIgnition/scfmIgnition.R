@@ -126,7 +126,8 @@ scfmIgnitionIgnite <- function(sim) {
       cells[which(runif(length(cells)) < sim$pIg)]
     }
   })
-  sim$ignitionLoci <- SpaDES:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
+  
+  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
   
   return(invisible(sim))
 }

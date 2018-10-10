@@ -27,9 +27,9 @@ defineModule(sim, list(
                             objectClass=c("SpatialPolygons","RasterLayer", "RasterLayer", "SpatialPoints",    "character"),
                             sourceURL="",
                            other=rep(NA_character_, 5L), stringsAsFactors=FALSE),
-    outputObjects=data.frame(objectName=c("vegMap", "ageMapInit", "firePoints"), #these are the names that matter for dependencies
-                             objectClass=c("RasterLayer", "RasterLayer", "SpatialPoints"),
-                             other=rep(NA_character_, 3L), stringsAsFactors=FALSE)
+    outputObjects=data.frame(objectName=c("vegMap", "ageMapInit", "firePoints", "ageMap"), #these are the names that matter for dependencies
+                             objectClass=c("RasterLayer", "RasterLayer", "SpatialPoints", "RasterLayer"),
+                             other=rep(NA_character_, 4L), stringsAsFactors=FALSE)
 ))
 
 #Data are in ~stevec/Dropbox/SpaDES/Data/CanadianNationalFireDatabase as of 2015.07.10
