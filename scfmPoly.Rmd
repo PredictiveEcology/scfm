@@ -101,7 +101,7 @@ library(SDMTools) #NOTE NEW
   if (!file.exists(localPath)) {
     download.file(file.path("ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m", remoteFilename), 
                   destfile = file.path(dirname(localPath), remoteFilename) , 
-                  mode="wb")
+                  mode = "wb")
     unzip(file.path(dirname(localPath), remoteFilename), exdir = dirname(localPath))#, files="LandCoverOfCanada2005_V1_4/LCC2005_V1_4a.tif")
     file.remove(file.path(dirname(localPath), remoteFilename))
   }
@@ -126,7 +126,7 @@ library(SDMTools) #NOTE NEW
     .progress = list(type = NA, interval = 1), #was type="graphical"
     scfmCrop = list(useCache = TRUE, .useCache = "init"),
     scfmLandcoverInit = list(useCache = TRUE, .useCache = "init"),
-    scfmRegime = list(fireEpoch = c(1971, 2010), fireCause =c("L")),
+    scfmRegime = list(fireEpoch = c(1971, 2010), fireCause = c("L")),
     ageModule = list(
       initialAge = 100, 
       maxAge = 200, 
