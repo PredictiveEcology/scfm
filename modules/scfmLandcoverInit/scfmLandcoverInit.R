@@ -20,14 +20,18 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA_real_,  NA, NA, desc="Initial time for saving"),
     defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc="Interval between save events"),
     defineParameter("useCache", "logical", TRUE, NA, NA, desc="Use cache")),
-  inputObjects=data.frame(objectName=c("vegMap","studyArea"),
-                          objectClass=c("RasterLayer","SpatialPolygonsDataFrame"),
-                          sourceURL="",
-                          other=NA_character_, stringsAsFactors=FALSE),
-  outputObjects=data.frame(objectName=c("flammableMap", "landscapeAttr", "cellsByZone"), #mapAttr are all things the fir
-                           objectClass=c("RasterLayer", "list", "data.frame"),
-                           other=rep(NA_character_, 3L), 
-                           stringsAsFactors=FALSE)
+  inputObjects = bind_rows(
+    expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+                 sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "a map of stand age")
+  ),
+  outputObjects = bind_rows(
+    createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
+    createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = "")
+  )
 ))
 
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug=FALSE) {
@@ -168,7 +172,6 @@ scfmLandcoverInitInit = function(sim) {
 testFun<-function(x) {
   sum(na.omit(x)==1)
 }
-
 # scfmLandcoverInitCacheFunctions <- function(sim) {
 #   # for slowp functions, add cached versions
 #   # browser()
@@ -192,3 +195,52 @@ testFun<-function(x) {
 #   
 #   return(invisible(sim))
 # }
+
+.inputObjects <- function(sim) {
+ browser()
+ dPath <- dataPath(sim) #where files will be downloaded 
+ cacheTags = c(currentModule(sim), "function:.inputObjects")
+ 
+ if (!suppliedElsewhere("studyArea", sim)) {
+   message("study area not supplied. Using ....")
+   
+   #source shapefile from ecodistict in input folder. Use ecodistrict 348
+   studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
+   SA <- prepInputs(targetFile  = studyAreaFilename,
+                    fun = "raster::shapefile",
+                    url = extractURL(objectName = "studyArea"), 
+                    archive = "ecodistrict_shp.zip",
+                    filename2 = TRUE,
+                    userTags = c(cacheTags, "studyArea"))
+    
+   SA <- sp::spTransform(SA, "need a CRS object for landcover")
+   sim$studyArea <- SA 
+ }
+ 
+ 
+ if (!suppliedElsewhere("vegMap", sim)) {
+   message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4")
+   
+   vegMapFilename <- file.path(dPath, "LandCoverOfCanada2005_V1_4")
+   vegMap <- Cache(prepInputs, 
+                    targetFile = vegMapFilename,
+                    url = extractURL(objectName = "vegMap"),
+                    archive = "LandCoverOfCanada2005_V1_4.zip",
+                    destinationPath = asPath(dPath),
+                    studyArea = sim$studyArea, 
+                    filename2 = TRUE,
+                    userTags = c(cacheTags, "vegMap"))
+   sim$vegMap <- vegMap
+ }
+ 
+ if (!suppliedElsewhere("ageMap", sim)) {
+   message("age map not supplied. Using default")
+   
+   ageMapFilename <- file.path(dPath, "age.tif")
+   ageMap <- prepInputs(targetFile = ageMapFilename, 
+                        url = extractURL(objectName = "ageMap"),
+                        archive = "<name of zip/tar archive>")
+ }
+  
+}
+

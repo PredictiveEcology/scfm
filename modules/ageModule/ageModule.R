@@ -24,18 +24,11 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")
   ),
-  inputObjects = data.frame(
-    objectName = c("flammableMap"),
-    objectClass =c("RasterLayer"),
-    sourceURL = "",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  inputObjects = bind_rows(
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation")
   ),
-  outputObjects = data.frame(
-    objectName = "ageMap",
-    objectClass = "RasterLayer",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  outputObjects = bind_rows(
+    createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
   )
 ))
 

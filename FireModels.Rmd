@@ -80,7 +80,7 @@ objects <- list(mapDim=mapDim) #note that these definitions are critical
 
 paths <- list(
     cachePath = file.path(outputDir, "cache"),
-    modulePath = file.path("scfmModules"),
+    modulePath = file.path("modules"),
     inputPath = inputDir,
     outputPath = outputDir
 )

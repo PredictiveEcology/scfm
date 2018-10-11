@@ -23,18 +23,13 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first save event should occur"),
     defineParameter(".saveInterval", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first save event should occur")
   ),
-  inputObjects = data.frame(
-    objectName = c("scfmPars","flammableMap","landscapeAttr"),
-    objectClass = c("list","RasterLayer","list"),
-    sourceURL = "",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  inputObjects = bind_rows(
+    expectsInput(objectName = "scfrmPars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc ="")
   ),
-  outputObjects = data.frame(
-    objectName = "ignitionLoci",
-    objectClass = "numeric",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  outputObjects = bind_rows(
+    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
   )
 ))
 
