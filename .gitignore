@@ -4,8 +4,8 @@
 .Rhistory
 *.Rproj
 .Rproj.user/
+.Rproj.user
 cache/
 outputs/
 
 ## inputs/ has its own .gitignore file
-.Rproj.user
