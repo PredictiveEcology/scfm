@@ -38,20 +38,23 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug=FALSE) {
   if (eventType=="init") {
     
     #sim <- scfmLandcoverInitCacheFunctions(sim)
-    sim <- scfmLandcoverInitInit(sim)
+    sim <- Init(sim)
     sim <- scheduleEvent(sim, params(sim)$scfmLandcoverInit$.plotInitialTime,
                          "scfmLandcoverInit", "plot")
     sim <- scheduleEvent(sim, params(sim)$scfmLandcoverInit$.saveInitialTime,
                          "scfmLandcoverInit", "save")
+  
   } else if (eventType=="plot") {
     Plot(sim$vegMap, new=TRUE)
     Plot(sim$flammableMap, legend=FALSE) # this is failing probably due to a bug in Plot
     # EJM is working on it 20160224
     # schedule future event(s)
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.plotInterval, "scfmLandcoverInit", "plot")
+    
   } else if (eventType=="save") {
     # schedule future event(s)
     sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.saveInterval, "scfmLandcoverInit", "save")
+  
   } else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
                   "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
@@ -137,28 +140,16 @@ genFireMapAttr<-function(flammableMap, studyArea, neighbours){
 }
 
 ### template initilization
-scfmLandcoverInitInit = function(sim) {
+Init = function(sim) {
   # these classes are LCC05 specific
-  #browser()
+  browser()
   nonFlammClasses<-c(36,37,38,39)
   oldClass <- 0:39
   newClass <- ifelse(oldClass %in% nonFlammClasses,1,0)   #1 codes for non flammable 
   #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
 
-  makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
-    flammableMap <- ratify(reclassify(vegMap, flammableTable,count=TRUE))
-    if ("Mask" %in% lsSimObjs){
-      flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
-    }
-    #the count options should cause that "a column with frequencies is added. 
-    
-    #setColors(sim$flammableMap, n=2) <- c("blue","red")
-    setColors(flammableMap,2) <- colorRampPalette(c("blue", "red"))(2) 
-    #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif", 
-    #                            datatype = "INT2U", overwrite=TRUE)
-    flammableMap
-  }
+  
   sim$flammableMap <- Cache(makeFlammableMap, sim$vegMap, flammableTable, ls(sim))
   
   
@@ -195,52 +186,71 @@ testFun<-function(x) {
 #   
 #   return(invisible(sim))
 # }
+makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
+  browser()
+  flammableMap <- ratify(reclassify(vegMap, flammableTable,count=TRUE))
+  if ("Mask" %in% lsSimObjs){
+    flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
+  }
+  #the count options should cause that "a column with frequencies is added. 
+  
+  #setColors(sim$flammableMap, n=2) <- c("blue","red")
+  setColors(flammableMap,2) <- colorRampPalette(c("blue", "red"))(2) 
+  #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif", 
+  #                            datatype = "INT2U", overwrite=TRUE)
+  flammableMap
+}
 
 .inputObjects <- function(sim) {
- browser()
- dPath <- dataPath(sim) #where files will be downloaded 
+
+ dPath <- inputPath(sim) #where files will be downloaded 
  cacheTags = c(currentModule(sim), "function:.inputObjects")
- 
+ browser()
  if (!suppliedElsewhere("studyArea", sim)) {
-   message("study area not supplied. Using ....")
+   message("study area not supplied. Using Ecodistrict 348")
    
    #source shapefile from ecodistict in input folder. Use ecodistrict 348
    studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
-   SA <- prepInputs(targetFile  = studyAreaFilename,
-                    fun = "raster::shapefile",
-                    url = extractURL(objectName = "studyArea"), 
-                    archive = "ecodistrict_shp.zip",
-                    filename2 = TRUE,
-                    userTags = c(cacheTags, "studyArea"))
+   SA <- Cache(prepInputs, 
+                  targetFile  = studyAreaFilename,
+                  fun = "raster::shapefile",
+                  url = extractURL(objectName = "studyArea"), 
+                  archive = "ecodistrict_shp.zip",
+                  filename2 = TRUE,
+                  userTags = c(cacheTags, "studyArea"),
+                  destinationPath = dPath)
     
-   SA <- sp::spTransform(SA, "need a CRS object for landcover")
+   SA <- SA[SA$ECODISTRIC == 348,]
    sim$studyArea <- SA 
  }
  
  
  if (!suppliedElsewhere("vegMap", sim)) {
-   message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4")
+   message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
    
-   vegMapFilename <- file.path(dPath, "LandCoverOfCanada2005_V1_4")
-   vegMap <- Cache(prepInputs, 
+   vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
+   vegMap <- Cache(prepInputs,
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
-                    destinationPath = asPath(dPath),
+                    destinationPath = dPath,
                     studyArea = sim$studyArea, 
                     filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"))
+                    userTags = c(cacheTags, "vegMap"),
+                    useSAcrs = TRUE)
    sim$vegMap <- vegMap
  }
  
  if (!suppliedElsewhere("ageMap", sim)) {
    message("age map not supplied. Using default")
-   
-   ageMapFilename <- file.path(dPath, "age.tif")
-   ageMap <- prepInputs(targetFile = ageMapFilename, 
-                        url = extractURL(objectName = "ageMap"),
-                        archive = "<name of zip/tar archive>")
- }
   
+   ageMapFilename <- file.path(dPath, "age.tif")
+   ageMap <- Cache(prepInputs,
+                   targetFile = ageMapFilename,
+                   studyArea = sim$studyArea,
+                   rasterToMatch = sim$vegMap,
+                   destinationPath = file.path(dPath, "age"))
+ }
+return(invisible(sim))
 }
 

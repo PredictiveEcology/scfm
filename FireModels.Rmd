@@ -74,7 +74,7 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("ageModule", "scfmIgnition","scfmEscape", "scfmSpread") #,"ignitionModule")
+modules <- list("scfmIgnition","scfmEscape", "scfmSpread", "scfmLandcoverInit") #,"ignitionModule", "ageModule")
 
 objects <- list(mapDim=mapDim) #note that these definitions are critical
 
@@ -89,7 +89,7 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
 set.seed(2343)
-#spades(mySim)
+outSim <- spades(mySim, progress = FALSE)
 #setwd(savedir)
 ```
 

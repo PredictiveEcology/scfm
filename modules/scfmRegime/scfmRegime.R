@@ -18,17 +18,14 @@ defineModule(sim, list(
     defineParameter("fireCause", "character", c("L"), NA, NA,  "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1961,1990), NA, NA, "start of normal period")
   ),
-  inputObjects=data.frame(
-    objectName=c("firePoints","flammableMap","landscapeAttr"),
-    objectClass=c("SpatialPointsDataFrame", "RasterLayer", "list"),
-    sourceURL="",
-    other=rep(NA_character_,3),
-    stringsAsFactors=FALSE),
-  outputObjects=data.frame(
-    objectName=c("scfmRegimePars"),
-    objectClass=c("list"),
-    other=rep(NA_character_,1),
-    stringsAsFactors=FALSE)
+  inputObjects = bind_rows(
+    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = ""),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+  ),
+  outputObjects = bind_rows(
+   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
+    )
 ))
 
 
@@ -177,4 +174,18 @@ scfmRegimeEvent1 = function(sim) {
   return(invisible(sim))
 }
 
-
+.inputObjects <- function(sim) {
+  dPath <- inputPath(sim)
+  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  if (!notSuppliedElsehwere("firePoints", sim)) {
+    
+    firePointsFilename <- file.path(dPath, "NFDB_point.shp")
+    firePoints <- prepInputs(targetFile = firePointsFilename, 
+                             destinationPath = "<where this data lives>",
+                             archive = "only if data is in a zip", 
+                             studyArea = sim$studyArea) #check whether landcover sourced first, as predicted
+    
+  }
+  
+  return(invisible(sim))
+}
