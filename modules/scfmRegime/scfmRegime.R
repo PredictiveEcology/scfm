@@ -58,7 +58,7 @@ Init <- function(sim) {
   if(any(!(fc %in% causeSet)))
       stop("illegal fireCause: ", fc)
   tmp<-subset(tmp,CAUSE %in% fc)
-
+  
   #extract and validate fireEpoch
   epoch<-P(sim)$fireEpoch
   if (length(epoch)!=2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1]>epoch[2])
@@ -67,18 +67,18 @@ Init <- function(sim) {
   
   epochLength<-as.numeric(epoch[2]-epoch[1]+1)
   
-  
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- P(sim)$fireRegimePolygonLayer
   tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, frpl])
+  sim$firePoints <- tmp
   
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), function(polygonType) {
-    tmpA <- tmp[unlist(tmp[["ECOREGION"]])==polygonType,]
+    tmpA <- tmp[unlist(tmp[[frpl]])==polygonType,]
     landAttr <- sim$landscapeAttr[[polygonType]]
     
     nFires<-dim(tmpA)[1]
@@ -101,6 +101,7 @@ Init <- function(sim) {
       if(length(zVec) > 0) {
         hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
         maxFireSize<-exp(hdList$That) * cellSize
+        #error checking needed here.
       }
       
     } 
@@ -121,9 +122,7 @@ Init <- function(sim) {
   })
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
-  
-  
-  sim$firePoints <- tmp
+
   
   return(invisible(sim))
 }
