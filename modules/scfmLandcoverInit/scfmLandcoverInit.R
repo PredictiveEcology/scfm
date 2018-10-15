@@ -142,15 +142,15 @@ genFireMapAttr<-function(flammableMap, studyArea, neighbours){
 ### template initilization
 Init = function(sim) {
   # these classes are LCC05 specific
-  browser()
+  
   nonFlammClasses<-c(36,37,38,39)
   oldClass <- 0:39
   newClass <- ifelse(oldClass %in% nonFlammClasses,1,0)   #1 codes for non flammable 
   #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
 
-  
-  sim$flammableMap <- Cache(makeFlammableMap, sim$vegMap, flammableTable, ls(sim))
+  browser()
+  sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
   
   
   # This makes sim$landscapeAttr & sim$cellsByZone
