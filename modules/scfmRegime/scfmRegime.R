@@ -191,7 +191,7 @@ scfmRegimeEvent1 = function(sim) {
     zipContents <- list.files(file.path(dPath, "NFDB_point"), all.files = TRUE, full.names = TRUE)
     outFile <- grep(pattern = "*.shp$", x = zipContents, value = TRUE)
     
-    browser()
+    #browser()
     firePoints <- Cache(rgdal::readOGR, outFile)
     firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea))
     firePoints <- firePoints[sim$studyArea,]
