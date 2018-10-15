@@ -74,7 +74,7 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("scfmIgnition","scfmEscape", "scfmSpread", "scfmLandcoverInit") #,"ignitionModule", "ageModule")
+modules <- list("scfmIgnition","scfmEscape", "scfmSpread", "scfmLandcoverInit", "scfmRegime") #,"ignitionModule", "ageModule")
 
 objects <- list(mapDim=mapDim) #note that these definitions are critical
 

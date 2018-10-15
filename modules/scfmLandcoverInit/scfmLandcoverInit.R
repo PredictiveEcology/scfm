@@ -205,7 +205,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 
  dPath <- inputPath(sim) #where files will be downloaded 
  cacheTags = c(currentModule(sim), "function:.inputObjects")
- browser()
+
  if (!suppliedElsewhere("studyArea", sim)) {
    message("study area not supplied. Using Ecodistrict 348")
    
@@ -218,12 +218,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                   archive = "ecodistrict_shp.zip",
                   filename2 = TRUE,
                   userTags = c(cacheTags, "studyArea"),
-                  destinationPath = dPath)
+                  destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
     
    SA <- SA[SA$ECODISTRIC == 348,]
    sim$studyArea <- SA 
  }
- 
  
  if (!suppliedElsewhere("vegMap", sim)) {
    message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
@@ -236,21 +235,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     destinationPath = dPath,
                     studyArea = sim$studyArea, 
                     filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"),
-                    useSAcrs = TRUE)
+                    userTags = c(cacheTags, "vegMap"))
    sim$vegMap <- vegMap
+   sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
  }
- 
- if (!suppliedElsewhere("ageMap", sim)) {
-   message("age map not supplied. Using default")
-  
-   ageMapFilename <- file.path(dPath, "age.tif")
-   ageMap <- Cache(prepInputs,
-                   targetFile = ageMapFilename,
-                   studyArea = sim$studyArea,
-                   rasterToMatch = sim$vegMap,
-                   destinationPath = file.path(dPath, "age"))
- }
+
 return(invisible(sim))
 }
 

@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit="year",
   citation=list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs=list(),
+  reqdPkgs=list("rgdal"),
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
@@ -19,7 +19,8 @@ defineModule(sim, list(
     defineParameter("fireEpoch", "numeric", c(1961,1990), NA, NA, "start of normal period")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = ""),
+    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
+                 sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
@@ -175,17 +176,28 @@ scfmRegimeEvent1 = function(sim) {
 }
 
 .inputObjects <- function(sim) {
+  
   dPath <- inputPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
-  if (!notSuppliedElsehwere("firePoints", sim)) {
+  
+  if (!suppliedElsewhere("firePoints", sim)) {
+    if (!dir.exists(file.path(dPath, "NFDB_point"))) {
+     
+      download.file(url = extractURL(objectName = "firePoints"), 
+                    destfile = file.path(dPath, "NFDB_point.zip"))
+      unzip(zipfile = file.path(dPath, "NFDB_point.zip"), exdir = file.path(dPath, "NFDB_point"))
+    }
+  
+    zipContents <- list.files(file.path(dPath, "NFDB_point"), all.files = TRUE, full.names = TRUE)
+    outFile <- grep(pattern = "*.shp$", x = zipContents, value = TRUE)
     
-    firePointsFilename <- file.path(dPath, "NFDB_point.shp")
-    firePoints <- prepInputs(targetFile = firePointsFilename, 
-                             destinationPath = "<where this data lives>",
-                             archive = "only if data is in a zip", 
-                             studyArea = sim$studyArea) #check whether landcover sourced first, as predicted
+    firePoints <- Cache(rgdal::readOGR, outFile)
+    firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea))
+    firePoints <- firePoints[sim$studyArea,]
+    
     
   }
   
   return(invisible(sim))
 }
+  
