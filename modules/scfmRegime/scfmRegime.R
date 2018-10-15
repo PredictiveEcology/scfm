@@ -86,16 +86,16 @@ Init <- function(sim) {
     if(nFires > 0) {
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
-      xVec<-tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-      pEscape<-length(xVec)/nFires
+      xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
+      pEscape <- length(xVec)/nFires
       
-      zVec<-log(xVec/cellSize)
+      zVec < -log(xVec/cellSize)
       if (length(zVec) < 100)
         warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
       #later, this would sim$HannonDayiha
       if(length(zVec) > 0) {
-        hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-        maxFireSize<-exp(hdList$That) * cellSize
+        hdList <- HannonDayiha(zVec) #defined in sourced TEutilsNew.R
+        maxFireSize <- exp(hdList$That) * cellSize
       }
       
     } 
@@ -122,7 +122,6 @@ Init <- function(sim) {
   
   return(invisible(sim))
 }
-
 
 
 .inputObjects <- function(sim) {

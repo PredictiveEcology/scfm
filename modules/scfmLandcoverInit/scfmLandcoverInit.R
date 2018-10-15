@@ -24,8 +24,7 @@ defineModule(sim, list(
     expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "a map of stand age")
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
@@ -219,7 +218,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                   filename2 = TRUE,
                   userTags = c(cacheTags, "studyArea"),
                   destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-    
+ 
    SA <- SA[SA$ECODISTRIC == 348,]
    sim$studyArea <- SA 
  }
