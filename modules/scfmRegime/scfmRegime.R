@@ -15,8 +15,9 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("fireCause", "character", c("L"), NA, NA,  "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1961,1990), NA, NA, "start of normal period")
+    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,  "subset of c(H,H-PB,L,Re,U)"),
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
+    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_)
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -50,7 +51,8 @@ Init <- function(sim) {
   tmp<-sim$firePoints
 
   #extract and validate fireCause spec
-  fc<-params(sim)$scfmRegime$fireCause
+  fc<-P(sim)$fireCause
+  #should verify CAUSE is a column in the table...
   causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
     
   if(any(!(fc %in% causeSet)))
@@ -58,7 +60,7 @@ Init <- function(sim) {
   tmp<-subset(tmp,CAUSE %in% fc)
 
   #extract and validate fireEpoch
-  epoch<-params(sim)$scfmRegime$fireEpoch
+  epoch<-P(sim)$fireEpoch
   if (length(epoch)!=2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1]>epoch[2])
       stop("illegal fireEpoch: ",epoch)
   tmp<-subset(tmp, YEAR>=epoch[1] & YEAR<=epoch[2])
@@ -67,7 +69,10 @@ Init <- function(sim) {
   
   
   # Assign polygon label to SpatialPoints of fires object
-  tmp[["ECOREGION"]] <- over(tmp, sim$studyArea[, "ECOREGION"])
+  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
+  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
+  frpl <- P(sim)$fireRegimePolygonLayer
+  tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, frpl])
   
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
