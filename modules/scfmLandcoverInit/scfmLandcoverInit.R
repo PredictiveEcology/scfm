@@ -163,29 +163,7 @@ Init = function(sim) {
 testFun<-function(x) {
   sum(na.omit(x)==1)
 }
-# scfmLandcoverInitCacheFunctions <- function(sim) {
-#   # for slowp functions, add cached versions
-#   # browser()
-#   if(params(sim)$scfmLandcoverInit$useCache) {
-#     sim$cacheLoc <- file.path(outputPath(sim), "scfmLandcoverInitCache") 
-#     if(!dir.exists(sim$cacheLoc) )
-#       createEmptyRepo(file.path(outputPath(sim), "scfmLandcoverInitCache"))
-#     
-#     sim$focal <- function(...) {
-#       archivist::cache(cacheRepo=sim$cacheLoc, FUN=raster::focal, ...)
-#     }
-#     
-#     # sim$Frabjous <-function(...){
-#     #   archivist::cache(cacheRepo=sim$cacheLoc, FUN=sim$testFun, ...)
-#     # }
-#     
-#   } else {
-#     #sim$Frabjous <- function(x){sum(na.omit(x)==1)}
-#     sim$focal <- raster::focal
-#   }
-#   
-#   return(invisible(sim))
-# }
+
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   browser()
   flammableMap <- ratify(reclassify(vegMap, flammableTable,count=TRUE))
