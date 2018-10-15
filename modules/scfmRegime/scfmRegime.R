@@ -46,7 +46,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
 
 
 Init <- function(sim) {
-
+  browser()
   tmp<-sim$firePoints
 
   #extract and validate fireCause spec
