@@ -35,40 +35,18 @@ defineModule(sim, list(
 
 doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
   if (eventType=="init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
-
-    # do stuff for this event
-    # browser()
-    #genlandscapeAttr() now called in scfmLandcoverInit.R
-    scfmRegimeInit(sim)
+    Init(sim)
   }
    else {
-      warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
+    warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
                     "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
     }
   return(invisible(sim))
 }
 
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
 
-### template initilization
+Init <- function(sim) {
 
-
-scfmRegimeInit <- function(sim) {
-
-  #browser()
-
-  #curModule <- events(mySim)$module[1] #NOPE When I need it, it's checkpoint
-  #in SpaDES 1.4+, place this in a R subdirectory of the module. All such R files are sources into the simlist
-  # Automatically sourced when put in R folder
-  #source(file.path(paths$modulePath, "scfmRegime", "TEutilsNew.R"), local=TRUE,echo=FALSE)
-
-
-  #subset fires by cause and epoch.
   tmp<-sim$firePoints
 
   #extract and validate fireCause spec
@@ -145,35 +123,7 @@ scfmRegimeInit <- function(sim) {
   return(invisible(sim))
 }
 
-### template for save events
-scfmRegimeSave = function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
 
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for plot events
-scfmRegimePlot = function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  #Plot("object")
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
-
-### template for your event1
-scfmRegimeEvent1 = function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-
-
-
-  # ! ----- STOP EDITING ----- ! #
-  return(invisible(sim))
-}
 
 .inputObjects <- function(sim) {
   
@@ -196,7 +146,7 @@ scfmRegimeEvent1 = function(sim) {
     firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea))
     firePoints <- firePoints[sim$studyArea,]
     
-  sim$firePoints <- firePoints
+    sim$firePoints <- firePoints
   }
   
   return(invisible(sim))
