@@ -59,7 +59,7 @@ escapeProbDelta <- function(p0,w,hatPE){
 }
 
 Init <- function(sim) {
-  browser()
+  
   #this table contains calibration data for several landscape sizes
   #and several min fire sizes (1 or 2 cells), organised by collumn.
   #The data were made by Steve Cumming in June 2013 for a whole other purpose.
@@ -67,7 +67,7 @@ Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
-    browser()
+   
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
       
@@ -82,9 +82,9 @@ Init <- function(sim) {
     }
     else {
       #we know this table was produced with MinFireSize=2cells.
-      #browser()
-      y <- sim$cTable2$y
-      x <- sim$cTable2$p
+      browser()
+      y <- sim$cTable2$y #What are these supposed to be?
+      x <- sim$cTable2$p 
       m.lw <- lowess(y~x,iter=2)
       if (sum(diff(m.lw$y)<0)>0)
         warning("lowess curve non-monotone. Proceed with caution")
