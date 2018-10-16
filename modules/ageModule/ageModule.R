@@ -137,10 +137,13 @@ ageModuleAge <- function(sim) {
     message("age map not supplied. Using default")
     
     ageMapFilename <- file.path(dPath, "age.tif")
-    ageMap <- Cache(prepInputs,
-                      targetFile = ageMapFilename,
+    ageMap <- prepInputs(targetFile = ageMapFilename,
                       studyArea = sim$studyArea,
                       rasterToMatch = sim$vegMap,
                       destinationPath = file.path(dPath, "age"))
+    
+    sim$ageMap <- ageMap
+    
   }
+  return(invisible(sim))
 }

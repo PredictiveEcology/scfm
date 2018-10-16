@@ -146,7 +146,6 @@ Init <- function(sim) {
 }
 
 
-
 .inputObjects <- function(sim) {
   
   dPath <- inputPath(sim)
