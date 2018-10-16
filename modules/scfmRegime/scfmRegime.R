@@ -47,7 +47,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
 
 
 Init <- function(sim) {
-  
+  browser()
   calcZonalRegimePars <- function(polygonID) {
     
     idx <- firePoly == polygonType
@@ -60,7 +60,7 @@ Init <- function(sim) {
     pEscape <- xBar <- xMax <- 0 #NA might be better, but would take more downstream work SGC 15.10.2018
     maxFireSize <- lxBar <- NA
     xVec <- numeric(0)
-    
+    browser()
     if (nFires > 0) {
       #calculate escaped fires
       #careful to subtract cellSize where appropriate
@@ -108,10 +108,10 @@ Init <- function(sim) {
           )
   }
   
-  tmp<-sim$firePoints
+  tmp <- sim$firePoints
 
   #extract and validate fireCause spec
-  fc<-P(sim)$fireCause
+  fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
   causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
     
@@ -127,7 +127,7 @@ Init <- function(sim) {
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
   
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-  browser()
+  
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
@@ -139,11 +139,12 @@ Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   firePolys <- unlist(sim$firePoints[[frpl]])
-  
+    
+    nFires <- length(firePolys)
     pEscape <- 0
     maxFireSize <- NA
     xVec <- numeric(0)
-    
+    browser
     if (nFires > 0) {
       #calculate escaped fires
       #careful to subtract cellSize where appropriate
@@ -208,19 +209,17 @@ Init <- function(sim) {
       )
     }
     
-    zipContents <-
-      list.files(file.path(dPath, "NFDB_point"),
-                 all.files = TRUE,
-                 full.names = TRUE)
-    outFile <-
-      grep(pattern = "*.shp$",
-           x = zipContents,
-           value = TRUE)
+    zipContents <- list.files(file.path(dPath, "NFDB_point"),
+                              all.files = TRUE,
+                              full.names = TRUE)
+    
+    outFile <- grep(pattern = "*.shp$",
+                    x = zipContents,
+                    value = TRUE)
     
     #browser()
     firePoints <- Cache(rgdal::readOGR, outFile)
-    firePoints <-
-      spTransform(firePoints, CRSobj = crs(sim$studyArea))
+    firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea))
     firePoints <- firePoints[sim$studyArea, ]
     
     sim$firePoints <- firePoints
