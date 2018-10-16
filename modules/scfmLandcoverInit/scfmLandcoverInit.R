@@ -235,7 +235,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
       flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
   }
   #the count options should cause that "a column with frequencies is added.
-  browser()
+  
   #setColors(sim$flammableMap, n=2) <- c("blue","red")
   setColors(flammableMap, 2) <- colorRampPalette(c("blue", "red"))(2)
   #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif",
