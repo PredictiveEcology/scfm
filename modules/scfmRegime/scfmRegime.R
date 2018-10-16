@@ -104,18 +104,19 @@ Init <- function(sim) {
   
   sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars, 
                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                              firePoints = tmp)
+                              firePoints = sim$firePoints)
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, firePoints = tmp) {
+calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, 
+                                firePoints = sim$firePoints) {
   browser()
   idx <- firePolys == polygonID
-  tmpA <- sim$firePoints[idx, ]
-  landAttr <- sim$landscapeAttr[[polygonID]]
+  tmpA <- firePoints[idx, ]
+  landAttr <- landscapeAttr[[polygonID]]
   
   nFires <- dim(tmpA)[1]
   rate <-
