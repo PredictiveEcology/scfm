@@ -182,7 +182,7 @@ Init <- function(sim) {
       #meanBigFireSize=mean(xVec[xVec>200]),
       emfs = maxFireSize
     ) # Estimated Maximum Fire Size in ha
-  })
+
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   

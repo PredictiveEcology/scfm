@@ -85,6 +85,12 @@ paths <- list(
     outputPath = outputDir
 )
 
+setPaths(cachePath = paths$cachePath, 
+         modulePath = paths$modulePath, 
+         inputPath = paths$inputPath, 
+         outputPath = paths$outputPath)
+getPaths()
+
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 

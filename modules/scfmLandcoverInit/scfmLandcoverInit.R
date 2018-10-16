@@ -266,23 +266,22 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
   }
-  browser()
+  
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-    
+   
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-    vegMap <- Cache(
-      prepInputs, targetFile = vegMapFilename,
-      url = extractURL(objectName = "vegMap"),
-      archive = "LandCoverOfCanada2005_V1_4.zip",
-      destinationPath = dPath,
-      studyArea = sim$studyArea,
-      filename2 = TRUE,
-      userTags = c(cacheTags, "vegMap")
-      )
+    vegMap <- Cache(prepInputs, 
+                    targetFile = vegMapFilename,
+                    url = extractURL(objectName = "vegMap"),
+                    archive = "LandCoverOfCanada2005_V1_4.zip",
+                    destinationPath = dPath,
+                    studyArea = sim$studyArea,
+                    filename2 = TRUE,
+                    userTags = c(cacheTags, "vegMap"))
+    
     sim$vegMap <- vegMap
-    sim$studyArea <-
-      spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
+    sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
   }
   
   return(invisible(sim))
