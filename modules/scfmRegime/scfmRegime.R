@@ -15,9 +15,9 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,  "subset of c(H,H-PB,L,Re,U)"),
+    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_)
+    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_, desc = "")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -27,7 +27,7 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
-    )
+  )
 ))
 
 
@@ -122,9 +122,9 @@ Init <- function(sim) {
   epoch<-P(sim)$fireEpoch
   if (length(epoch)!=2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1]>epoch[2])
       stop("illegal fireEpoch: ",epoch)
-  tmp<-subset(tmp, YEAR>=epoch[1] & YEAR<=epoch[2])
+  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
   
-  epochLength<-as.numeric(epoch[2]-epoch[1]+1)
+  epochLength<-as.numeric(epoch[2]- epoch[1]+1)
   
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 

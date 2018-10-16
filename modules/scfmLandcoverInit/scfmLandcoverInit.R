@@ -15,11 +15,11 @@ defineModule(sim, list(
   citation=list(),
   reqdPkgs=list("raster", "purrr"),
   parameters=rbind(
-    defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc="Initial time for plotting"),
-    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc="Interval between plotting"),
-    defineParameter(".saveInitialTime", "numeric", NA_real_,  NA, NA, desc="Initial time for saving"),
-    defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc="Interval between save events"),
-    defineParameter("useCache", "logical", TRUE, NA, NA, desc="Use cache")),
+    defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
+    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
+    defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
+    defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
+    defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache")),
   inputObjects = bind_rows(
     expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
@@ -34,30 +34,36 @@ defineModule(sim, list(
 ))
 
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug=FALSE) {
-  if (eventType=="init") {
+  switch(
+    eventType,
+    init = {
+      
+      #sim <- scfmLandcoverInitCacheFunctions(sim)
+      sim <- Init(sim)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime,
+                           "scfmLandcoverInit", "plot")
+      sim <- scheduleEvent(sim, P(sim)$.saveInitialTime,
+                           "scfmLandcoverInit", "save")
     
-    #sim <- scfmLandcoverInitCacheFunctions(sim)
-    sim <- Init(sim)
-    sim <- scheduleEvent(sim, params(sim)$scfmLandcoverInit$.plotInitialTime,
-                         "scfmLandcoverInit", "plot")
-    sim <- scheduleEvent(sim, params(sim)$scfmLandcoverInit$.saveInitialTime,
-                         "scfmLandcoverInit", "save")
-  
-  } else if (eventType=="plot") {
-    Plot(sim$vegMap, new=TRUE)
-    Plot(sim$flammableMap, legend=FALSE) # this is failing probably due to a bug in Plot
-    # EJM is working on it 20160224
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.plotInterval, "scfmLandcoverInit", "plot")
+    },
+    plot =  {
+      browser()
+      Plot(sim$vegMap, new=TRUE)
+      Plot(sim$flammableMap, legend=FALSE) # this is failing probably due to a bug in Plot
+      # EJM is working on it 20160224
+      # schedule future event(s)
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
+      
+    },
+    save = {
+      # schedule future event(s)
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
+    },
     
-  } else if (eventType=="save") {
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmLandcoverInit$.saveInterval, "scfmLandcoverInit", "save")
-  
-  } else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
-                  "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
-  }
+                    "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
+    
+  )
   return(invisible(sim))
 }
 
@@ -148,7 +154,6 @@ Init = function(sim) {
   #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
 
-  browser()
   sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
   
   
@@ -164,7 +169,7 @@ testFun<-function(x) {
 }
 
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
-  browser()
+ 
   flammableMap <- ratify(reclassify(vegMap, flammableTable,count=TRUE))
   if ("Mask" %in% lsSimObjs){
     flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
