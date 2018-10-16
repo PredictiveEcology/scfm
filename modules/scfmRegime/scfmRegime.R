@@ -47,66 +47,6 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
 
 
 Init <- function(sim) {
-  browser()
-  calcZonalRegimePars <- function(polygonID) {
-    
-    idx <- firePoly == polygonType
-    tmpA <- sim$firePoints[idx,]
-    landAttr <- sim$landscapeAttr[[polygonID]]
-    
-    nFires<-dim(tmpA)[1]
-    rate<-nFires/(epochLength * landAttr$burnyArea)   # fires per ha per yr
-    
-    pEscape <- xBar <- xMax <- 0 #NA might be better, but would take more downstream work SGC 15.10.2018
-    maxFireSize <- lxBar <- NA
-    xVec <- numeric(0)
-    browser()
-    if (nFires > 0) {
-      #calculate escaped fires
-      #careful to subtract cellSize where appropriate
-      xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-      
-      if (length(xVec) > 0) {
-        pEscape<-length(xVec)/nFires
-        xBar<-mean(xVec)
-        lxBar<-mean(log(xVec))
-        xMax<-max(xVec)
-        
-        zVec<-log(xVec/cellSize)
-        if (length(zVec) < 50)
-          warning(sprintf("Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\
-                           \n\tConsider using a larger area and/or longer epoch.", polygonID))
-        hdList<-HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
-        That <- hdlist$That
-        if (That == -1){
-          warning(sprintf("Hannon-Dahiya convergence failure in zone %s.\n
-                           \tUsing sample maximum fire size", firePoly))
-          maxFireSize <- xMax  #just to be safe, respecify here
-        }
-        else {
-          maxFireSize <- exp(That) * cellSize
-          if (!(maxFireSize > xMax)){
-            warning(sprintf("Dodgy maxSize estimate in zone %s.\n\tUsing sample maximum fire size.", firePoly))
-            maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
-          }
-          maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
-        }
-      }
-    }
-    
-    #verify estimation results are reasonable. That=-1 indicates convergence failure.
-    #
-    #need to addd a name or code for basic verification by Driver module, and time field
-    #to allow for dynamic regeneration of disturbanceDriver pars.
-    return(list(ignitionRate=rate,
-                 pEscape=pEscape,
-                 xBar=xBar,        #mean fire size
-                 lxBar=lxBar,      #mean log(fire size)
-                 xMax=xMax,        #maximum observed size
-                 emfs=maxFireSize  #Estimated Maximum Fire Size in ha
-              )
-          )
-  }
   
   tmp <- sim$firePoints
 
@@ -127,7 +67,7 @@ Init <- function(sim) {
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
   
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-  
+  browser()
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
@@ -137,7 +77,7 @@ Init <- function(sim) {
   
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-  
+  #####Run caclcZonalRegime
   firePolys <- unlist(sim$firePoints[[frpl]])
     
     nFires <- length(firePolys)
@@ -190,6 +130,88 @@ Init <- function(sim) {
   
   return(invisible(sim))
 }
+
+calcZonalRegimePars <- function(polygonID) {
+  idx <- firePoly == polygonType
+  tmpA <- sim$firePoints[idx, ]
+  landAttr <- sim$landscapeAttr[[polygonID]]
+  
+  nFires <- dim(tmpA)[1]
+  rate <-
+    nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
+  
+  pEscape <- 0
+  xBar <- 0
+  xMax <- 0
+   #NA might be better, but would take more downstream work SGC 15.10.2018
+  maxFireSize <- lxBar <- NA
+  xVec <- numeric(0)
+  
+  if (nFires > 0) {
+    #calculate escaped fires
+    #careful to subtract cellSize where appropriate
+    xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
+    
+    if (length(xVec) > 0) {
+      pEscape <- length(xVec) / nFires
+      xBar <- mean(xVec)
+      lxBar <- mean(log(xVec))
+      xMax <- max(xVec)
+      
+      zVec <- log(xVec / cellSize)
+      if (length(zVec) < 50)
+        warning(
+          sprintf(
+            "Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\
+            \n\tConsider using a larger area and/or longer epoch.",
+            polygonID
+          )
+        )
+      hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
+      That <- hdlist$That
+      if (That == -1) {
+        warning(
+          sprintf(
+            "Hannon-Dahiya convergence failure in zone %s.\n
+            \tUsing sample maximum fire size",
+            firePoly
+          )
+        )
+        maxFireSize <- xMax  #just to be safe, respecify here
+      }
+      else {
+        maxFireSize <- exp(That) * cellSize
+        if (!(maxFireSize > xMax)) {
+          warning(
+            sprintf(
+              "Dodgy maxSize estimate in zone %s.\n\tUsing sample maximum fire size.",
+              firePoly
+            )
+          )
+          maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
+        }
+        maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
+      }
+    }
+  }
+  
+  #verify estimation results are reasonable. That=-1 indicates convergence failure.
+  #
+  #need to addd a name or code for basic verification by Driver module, and time field
+  #to allow for dynamic regeneration of disturbanceDriver pars.
+  return(list(ignitionRate = rate,
+              pEscape = pEscape,
+              xBar = xBar,
+              #mean fire size
+              lxBar = lxBar,
+              #mean log(fire size)
+              xMax = xMax,
+              #maximum observed size
+              emfs = maxFireSize  #Estimated Maximum Fire Size in ha
+              )
+          )
+}
+
 
 
 .inputObjects <- function(sim) {
