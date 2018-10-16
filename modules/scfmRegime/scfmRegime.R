@@ -17,7 +17,7 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_, desc = "")
+    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_, desc = "shapefile layer to define zonation")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -74,19 +74,20 @@ Init <- function(sim) {
         
         zVec<-log(xVec/cellSize)
         if (length(zVec) < 50)
-          warning("Less than 50 \"large\" fires. T estimates may be unstable. 
-                  \nConsider using a larger area and/or longer epoch.")
+          warning(sprintf("Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\
+                           \n\tConsider using a larger area and/or longer epoch.", polygonID))
         hdList<-HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
         That <- hdlist$That
         if (That == -1){
-          warning("Convergence failure")
-          maxFireSize <- NA  #just to be safe, respecify here
+          warning(sprintf("Hannon-Dahiya convergence failure in zone %s.\n
+                           \tUsing sample maximum fire size", firePoly))
+          maxFireSize <- xMax  #just to be safe, respecify here
         }
         else {
           maxFireSize <- exp(That) * cellSize
           if (!(maxFireSize > xMax)){
-            warning("dodgy maxSize estimate, using sample max")
-            maxFireSize <- xMax #there is an empirical multiplier we could use instead
+            warning(sprintf("Dodgy maxSize estimate in zone %s.\n\tUsing sample maximum fire size.", firePoly))
+            maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
           }
           maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
         }
@@ -124,7 +125,7 @@ Init <- function(sim) {
       stop("illegal fireEpoch: ",epoch)
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
   
-  epochLength<-as.numeric(epoch[2]- epoch[1]+1)
+  epochLength<-as.numeric(epoch[2] - epoch[1]+1)
   
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
