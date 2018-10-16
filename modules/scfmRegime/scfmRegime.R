@@ -67,7 +67,29 @@ Init <- function(sim) {
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
   
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-  browser()
+  # browser() #this was line 90 in the master branch
+  # Assign polygon label to SpatialPoints of fires object
+  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
+  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
+  tmp<-sim$firePoints
+  
+  #extract and validate fireCause spec
+  fc<-P(sim)$fireCause
+  #should verify CAUSE is a column in the table...
+  causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
+  
+  if(any(!(fc %in% causeSet)))
+    stop("illegal fireCause: ", fc)
+  tmp<-subset(tmp,CAUSE %in% fc)
+  
+  #extract and validate fireEpoch
+  epoch<-P(sim)$fireEpoch
+  if (length(epoch)!=2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1]>epoch[2])
+    stop("illegal fireEpoch: ",epoch)
+  tmp<-subset(tmp, YEAR>=epoch[1] & YEAR<=epoch[2])
+  
+  epochLength<-as.numeric(epoch[2]-epoch[1]+1)
+  
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
@@ -77,54 +99,10 @@ Init <- function(sim) {
   
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-  #####Run caclcZonalRegime
+  
   firePolys <- unlist(sim$firePoints[[frpl]])
-    
-    nFires <- length(firePolys)
-    pEscape <- 0
-    maxFireSize <- NA
-    xVec <- numeric(0)
-    browser
-    if (nFires > 0) {
-      #calculate escaped fires
-      #careful to subtract cellSize where appropriate
-      xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-      pEscape <- length(xVec) / nFires
-      
-      zVec <- log(xVec / cellSize)
-      if (length(zVec) < 100)
-        warning(
-          "Less than 100 \"large\" fires. That estimates may be unstable.\n",
-          "Consider using a larger area and/or longer epoch."
-        )
-      #later, this would sim$HannonDayiha
-      if (length(zVec) > 0) {
-        hdList <- HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-        maxFireSize <- exp(hdList$That) * cellSize
-        #error checking needed here.
-      }
-      
-    }
-    xBar <- mean(xVec)
-    lxBar <- mean(log(xVec))
-    xMax <- max(xVec)
-    #verify estimation results are reasonable. That=-1 indicates convergence failure.
-    #
-    #need to addd a name or code for basic verification by Driver module, and time field
-    #to allow for dynamic regeneration of disturbanceDriver pars.
-    list(
-      ignitionRate = rate,
-      pEscape = pEscape,
-      xBar = xBar,
-      #mean fire size
-      lxBar = lxBar,
-      #mean log(fire size)
-      xMax = xMax,
-      #maximum observed size
-      #meanBigFireSize=mean(xVec[xVec>200]),
-      emfs = maxFireSize
-    ) # Estimated Maximum Fire Size in ha
-
+  
+  sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), calcZonalRegimePars)
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   
@@ -132,6 +110,7 @@ Init <- function(sim) {
 }
 
 calcZonalRegimePars <- function(polygonID) {
+  browser()
   idx <- firePoly == polygonType
   tmpA <- sim$firePoints[idx, ]
   landAttr <- sim$landscapeAttr[[polygonID]]
