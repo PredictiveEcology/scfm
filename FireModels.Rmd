@@ -76,7 +76,7 @@ parameters <- list(
 
 modules <- list("scfmIgnition", "scfmLandcoverInit", "scfmRegime", "ageModule", "scfmSpread", "scfmEscape") 
 
-objects <- list(mapDim=mapDim) #note that these definitions are critical
+objects <- list(mapDim = mapDim) #note that these definitions are critical
 
 paths <- list(
     cachePath = file.path(outputDir, "cache"),

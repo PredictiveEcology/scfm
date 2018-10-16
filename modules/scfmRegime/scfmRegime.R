@@ -89,37 +89,45 @@ Init <- function(sim) {
     maxFireSize <- NA
     xVec <- numeric(0)
     
-    if(nFires > 0) {
-    #calculate escaped fires
-    #careful to subtract cellSize where appropriate
+    if (nFires > 0) {
+      #calculate escaped fires
+      #careful to subtract cellSize where appropriate
       xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-      pEscape <- length(xVec)/nFires
+      pEscape <- length(xVec) / nFires
       
-      zVec <- log(xVec/cellSize)
+      zVec <- log(xVec / cellSize)
       if (length(zVec) < 100)
-        warning("Less than 100 \"large\" fires. That estimates may be unstable.\nConsider using a larger area and/or longer epoch.")
+        warning(
+          "Less than 100 \"large\" fires. That estimates may be unstable.\n",
+          "Consider using a larger area and/or longer epoch."
+        )
       #later, this would sim$HannonDayiha
-      if(length(zVec) > 0) {
-        hdList<-HannonDayiha(zVec) #defined in sourced TEutilsNew.R
-        maxFireSize<-exp(hdList$That) * cellSize
+      if (length(zVec) > 0) {
+        hdList <- HannonDayiha(zVec) #defined in sourced TEutilsNew.R
+        maxFireSize <- exp(hdList$That) * cellSize
         #error checking needed here.
       }
       
-    } 
-    xBar<-mean(xVec)
-    lxBar<-mean(log(xVec))
-    xMax<-max(xVec)
+    }
+    xBar <- mean(xVec)
+    lxBar <- mean(log(xVec))
+    xMax <- max(xVec)
     #verify estimation results are reasonable. That=-1 indicates convergence failure.
     #
     #need to addd a name or code for basic verification by Driver module, and time field
     #to allow for dynamic regeneration of disturbanceDriver pars.
-    list(ignitionRate=rate,
-         pEscape=pEscape,
-         xBar=xBar,  #mean fire size
-         lxBar=lxBar, #mean log(fire size)
-         xMax=xMax,  #maximum observed size
-         #meanBigFireSize=mean(xVec[xVec>200]),
-         emfs=maxFireSize) # Estimated Maximum Fire Size in ha
+    list(
+      ignitionRate = rate,
+      pEscape = pEscape,
+      xBar = xBar,
+      #mean fire size
+      lxBar = lxBar,
+      #mean log(fire size)
+      xMax = xMax,
+      #maximum observed size
+      #meanBigFireSize=mean(xVec[xVec>200]),
+      emfs = maxFireSize
+    ) # Estimated Maximum Fire Size in ha
   })
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
