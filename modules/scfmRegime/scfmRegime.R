@@ -104,7 +104,7 @@ Init <- function(sim) {
   
   sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars, 
                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                              firePoints = sim$firePoints)
+                              firePoints = sim$firePoints, epochLength = epochLength)
   
   names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   
@@ -112,15 +112,14 @@ Init <- function(sim) {
 }
 
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, 
-                                firePoints = sim$firePoints) {
+                                firePoints = sim$firePoints, epochLength = epochLength) {
   browser()
   idx <- firePolys == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
-  
+  cellSize = landAttr$cellSize
   nFires <- dim(tmpA)[1]
-  rate <-
-    nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
+  rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
   
   pEscape <- 0
   xBar <- 0
@@ -150,13 +149,13 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
           )
         )
       hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
-      That <- hdlist$That
+      That <- hdList$That
       if (That == -1) {
         warning(
           sprintf(
             "Hannon-Dahiya convergence failure in zone %s.\n
             \tUsing sample maximum fire size",
-            firePoly
+            polygonID
           )
         )
         maxFireSize <- xMax  #just to be safe, respecify here
@@ -167,12 +166,12 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
           warning(
             sprintf(
               "Dodgy maxSize estimate in zone %s.\n\tUsing sample maximum fire size.",
-              firePoly
+              polygonID
             )
           )
-          maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
+          maxFireSize <- xMax
         }
-        maxFireSize <- ifelse(maxFireSize > xMax, maxFir)
+       
       }
     }
   }
