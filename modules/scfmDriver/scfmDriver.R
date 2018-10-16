@@ -16,38 +16,30 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
-  inputObjects=data.frame(objectName=c("scfmRegimePars","landscapeAttr"),
-                          objectClass=c("list","list"), 
-                          sourceURL="",
-                          other=rep(NA_character_,2), 
-                          stringsAsFactors=FALSE),
-  
-  outputObjects=data.frame(objectName=c("scfmPars"),
-                          objectClass=c("list"),
-                          other=NA_character_, stringsAsFactors=FALSE)
+  inputObjects = bind_rows(
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+  ),
+  outputObjects = bind_rows(
+    createsOutput(objectName="scfmPars", objectClass = "list", desc = "")
+  )                      
 ))
-
-
 
 ## event types
 #   - type `init` is required for initiliazation
 
-doEvent.scfmDriver = function(sim, eventTime, eventType, debug=FALSE) {
-  if (eventType=="init") {
-    sim<-scfmDriverInit(sim)
-  } else {
-      warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
+doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
+  switch(
+    eventType,
+      init = {
+        sim <- Init(sim)
+      },
+    
+    warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
                     "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
-    }
+  )
   return(invisible(sim))
 }
-
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
-
-### template initilization
 
 
 # 1 - (1-p0)**N = pEscape
@@ -55,19 +47,19 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug=FALSE) {
 # (1 - pEscape)**1/N = 1 - p0
 # p0 = 1 - (1 - pEscape)**1/N
 
-hatP0<-function(pEscape,n=8){
+hatP0 <- function(pEscape,n=8){
   1 - (1-pEscape)**(1/n)
 }
 
 #a real clever boots would minimise the abs log odds ratio. 
 #be my guest.
 
-escapeProbDelta<-function(p0,w,hatPE){
+escapeProbDelta <- function(p0,w,hatPE){
   abs(sum(w*(1-(1-p0)**(0:8)))-hatPE)  
 }
 
-scfmDriverInit = function(sim) {
-
+Init <- function(sim) {
+  browser()
   #this table contains calibration data for several landscape sizes
   #and several min fire sizes (1 or 2 cells), organised by collumn.
   #The data were made by Steve Cumming in June 2013 for a whole other purpose.
@@ -75,7 +67,7 @@ scfmDriverInit = function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
-  
+    browser()
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
       
@@ -100,8 +92,8 @@ scfmDriverInit = function(sim) {
       pJmp <- approx(m.lw$y,m.lw$x,targetSize,rule=2)$y
     }
     #browser()
-    w<-landAttr$nNbrs
-    w<-w/sum(w)
+    w <- landAttr$nNbrs
+    w <- w/sum(w)
     hatPE<-regime$pEscape
     if(hatPE == 0) { # no fires in polygon zone escapted
       foo <- 0 

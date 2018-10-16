@@ -154,7 +154,6 @@ Init = function(sim) {
   #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
 
-  browser()
   sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
   
   
