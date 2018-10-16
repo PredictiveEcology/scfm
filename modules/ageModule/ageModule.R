@@ -15,10 +15,10 @@ defineModule(sim, list(
   documentation = list("README.txt", "ageModule.Rmd"),
   reqdPkgs = list("raster","RColorBrewer"),
   parameters = rbind(
-    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, "initial age"),
-    defineParameter("maxAge","numeric", 200, 0, 2**16-1, "maximum age for plotting"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc="Time interval between aging aevents"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc="Simulation time at which to initiate aging"),
+    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
+    defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging aevents"),
+    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
@@ -137,7 +137,7 @@ ageModuleAge <- function(sim) {
     message("age map not supplied. Using default")
     
     ageMapFilename <- file.path(dPath, "age.tif")
-    ageMap <- prepInputs(targetFile = ageMapFilename,
+    ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
                       studyArea = sim$studyArea,
                       rasterToMatch = sim$vegMap,
                       destinationPath = file.path(dPath, "age"))
