@@ -18,7 +18,8 @@ defineModule(sim, list(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "cTable2", objectClass = "data.frame", desc = "A csv containing results of fire experiment")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName="scfmPars", objectClass = "list", desc = "")
@@ -130,5 +131,15 @@ Init <- function(sim) {
   
   return(invisible(sim))
 }
- 
+
+.inputObjects <- function(sim) {
+  
+  if (!suppliedElsewhere("cTable2", sim)) {
+    cTable2 <- read.csv(file.path(dataPath(sim), "FiresN1000MinFiresSize2NoLakes.csv"))
+    sim$cTable2 <- cTable2
+    }
+
+  
+  return(invisible(sim))
+}
 

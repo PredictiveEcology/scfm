@@ -78,7 +78,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug =
            
          },
          plot =  {
-           browser()
+           
            Plot(sim$vegMap, new = TRUE)
            Plot(sim$flammableMap, legend = FALSE) # this is failing probably due to a bug in Plot
            # EJM is working on it 20160224

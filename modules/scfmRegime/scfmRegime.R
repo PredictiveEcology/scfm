@@ -113,7 +113,7 @@ Init <- function(sim) {
 
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, 
                                 firePoints = sim$firePoints, epochLength = epochLength) {
-  browser()
+  
   idx <- firePolys == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
