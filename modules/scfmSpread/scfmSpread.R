@@ -21,7 +21,8 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")
+    defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours")
   ),
   inputObjects = data.frame(
     objectName = c("scfmPars","spreadState","flammableMap"),
@@ -127,13 +128,14 @@ scfmSpreadBurnemup <- function(sim){ #name is a homage to Walters and Hillborne
   activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   maxSizes <- maxSizes[sim$cellsByZone[activeLoci,"zone"]]
   
-  sim$burnDT <- SpaDES.tools::spread(sim$flammableMap, 
-                 spreadProb=sim$pSpread,
-                 spreadState=sim$spreadState,
-                 #mask=sim$flammableMap, #this should work but it don't
-                 directions=globals(sim)$neighbours,
-                 maxSize=maxSizes, returnIndices = TRUE, 
-                 id=TRUE)
+  sim$burnDT <- SpaDES.tools::spread(sim$flammableMap,
+                                     spreadProb = sim$pSpread,
+                                     spreadState = sim$spreadState,
+                                     #mask=sim$flammableMap, #this should work but it don't
+                                     directions = P(sim)$neighbours,
+                                     maxSize = maxSizes, 
+                                     returnIndices = TRUE, 
+                                     id = TRUE)
   sim$burnMap[sim$burnDT$indices] <- 1
   idx<-which(sim$burnMap[] != 0)
   if (length(idx)>0){

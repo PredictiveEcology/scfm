@@ -47,6 +47,11 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
 
 Init <- function(sim) {
   
+  #Verify studyArea is in same projection
+  if (!identicalCRS(sim$studyArea, sim$vegMap)) {
+    sim$studyArea <- Cache(spTransform, sim$studyArea, CRSobj = crs(sim$vegMap))
+  }
+  
   tmp <- sim$firePoints
 
   #extract and validate fireCause spec
@@ -93,7 +98,7 @@ Init <- function(sim) {
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- P(sim)$fireRegimePolygonLayer
-  #browser
+  
   tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, frpl])
   sim$firePoints <- tmp
   
