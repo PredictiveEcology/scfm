@@ -93,6 +93,7 @@ Init <- function(sim) {
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- P(sim)$fireRegimePolygonLayer
+  #browser
   tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, frpl])
   sim$firePoints <- tmp
   

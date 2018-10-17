@@ -20,7 +20,8 @@ defineModule(sim,list(
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
-      defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache")
+      defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
@@ -84,18 +85,16 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   else if (neighbours == 4)
     w <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3, ncol = 3)
   else
-    stop("illegal global neighbours spec")
+    stop("illegal neighbours spec")
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
   
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <-
-      Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
+    neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
     #neighMapVals <- getValues(neighMap)
     
     # extract table for each polygon
-    valsByPoly <-
-      Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
+    valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
     #browser()
     
     names(valsByPoly) <- studyArea$ECOREGION
@@ -164,7 +163,7 @@ Init = function(sim) {
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
                 sim$studyArea,
-                globals(sim)$neighbours)
+                P(sim)$neighbours)
                 list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
   
   return(invisible(sim))

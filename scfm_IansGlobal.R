@@ -11,7 +11,6 @@ defaultInterval <- 1.0
 defaultPlotInterval <- 1.0
 defaultInitialSaveTime <- NA #don't be saving nuffink
 parameters <- list(
-  .globals = list("neighbours"=8), # globals(sim)$neighbours
   .progress = list(type = "text", interval = 1),
   ageModule = list(
     initialAge=100, 
@@ -48,8 +47,8 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("scfmIgnition")
-#"scfmLandcoverInit", ,"ageModule","scfmRegime", "scfmEscape", "scfmSpread", "scfmDriver"
+modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime", "scfmEscape", "scfmSpread", "scfmDriver")
+#
 objects <- list(mapDim = mapDim) #note that these definitions are critical
 
 paths <- list(
@@ -69,3 +68,15 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
 
 set.seed(2343)
 outSim <- spades(mySim, progress = FALSE)
+
+
+#### Test with multiple study Areas ####
+ecoDistricts <- shapefile(file.path(paths$inputPath, "Ecodistricts", "ecodistricts.shp"))
+subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
+objects <- list(studyArea = subEcoDistricts)
+#test
+mySim <- simInit(times = times, params = parameters, modules = modules,
+                 objects = objects, paths = paths)
+
+set.seed(2343)
+outSim <- spades(mySim, progress = FALSE, debug = TRUE)

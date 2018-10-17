@@ -107,9 +107,10 @@ Ignite <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  
+
+  dPath <- inputPath(sim)
   if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- read.csv(file.path(dataPath(sim), "FiresN1000MinFiresSize2NoLakes.csv"))
+    cTable2 <- read.csv(file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"))
     sim$cTable2 <- cTable2
   }
   
