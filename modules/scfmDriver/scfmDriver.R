@@ -97,7 +97,7 @@ Init <- function(sim) {
                     tol=1e-4,
                     w=w,
                     hatPE=hatPE)
-      foo <-res$minimum
+      foo <-res[["minimum"]]
       #It is almost obvious that the true minimum must occurr within the interval specified in the 
       #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
       #monotone.
