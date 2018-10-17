@@ -15,7 +15,7 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParemater("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
+    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
@@ -91,7 +91,7 @@ Init <- function(sim) {
     } else if (hatPE == 1) { # all fires in polygon zone escaped
       foo <- 1
     } else {
-      res<-optimise(sim$escapeProbDelta,
+      res <- optimise(escapeProbDelta,
                     interval=c(hatP0(hatPE,P(sim)$neighbours),
                                hatP0(hatPE,floor(sum(w*0:8)))),
                     tol=1e-4,
