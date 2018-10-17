@@ -24,18 +24,13 @@ defineModule(sim, list(
     defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events")
   ),
-  inputObjects = data.frame(
-    objectName = c("scfmPars","ignitionLoci","flammableMap"),
-    objectClass = c("list","numeric", "RasterLayer"),
-    sourceURL = c("","",""),
-    other = c(NA_character_,NA_character_,NA_character_), 
-    stringsAsFactors = FALSE
+  inputObjects = bind_rows(
+    expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
   ),
-  outputObjects = data.frame(
-    objectName = c("spreadState"),
-    objectClass =c("data.table"),
-    other = c(NA_character_),
-    stringsAsFactors = FALSE
+  outputObjects = bind_rows(
+    createsOutput(objectName = "spreadState", objectClass = "data.table", desc= "")
   )
 ))
 

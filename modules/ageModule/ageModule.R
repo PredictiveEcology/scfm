@@ -55,9 +55,9 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
   } else if (eventType == "plot") {
     # ! ----- EDIT BELOW ----- ! #
     # do stuff for this event
-    Plot(sim$ageMap, legendRange=c(0,params(sim)$ageModule$maxAge))
+    Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
     sim <- scheduleEvent(sim, 
-                         time(sim) + params(sim)$ageModule$.plotInterval,
+                         time(sim) + P(sim)$.plotInterval,
                          "ageModule", "plot")
     # ! ----- STOP EDITING ----- ! #
   }  else {
@@ -76,7 +76,7 @@ ageModuleInit <- function(sim) {
   if (!("ageMap" %in% ls(sim))){
     N <- sim$mapDim
     x <- raster::extent(c(0,N-1,0,N-1))
-    sim$ageMap <- raster(x, nrows = N, ncols = N, vals = P(sim)$ageModule$initialAge) %>%
+    sim$ageMap <- raster(x, nrows = N, ncols = N, vals = P(sim)$initialAge) %>%
       setColors(n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
   }
   else {
@@ -101,9 +101,7 @@ ageModuleSave <- function(sim) {
 
 ageModuleAge <- function(sim) {
   
-  sim$ageMap <- setValues(sim$ageMap, 
-                          pmin(P(sim)$ageModule$maxAge, getValues(sim$ageMap)+
-                                             P(sim)$ageModule$returnInterval))
+  sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
   
   return(invisible(sim))
 }
