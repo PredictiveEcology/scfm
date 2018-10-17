@@ -83,8 +83,8 @@ Init <- function(sim) {
     }
     else {
       #we know this table was produced with MinFireSize=2cells.
-      browser()
-      y <- sim$cTable2$y #What are these supposed to be?
+      
+      y <- sim$cTable2$y 
       x <- sim$cTable2$p 
       m.lw <- lowess(y~x,iter=2)
       if (sum(diff(m.lw$y)<0)>0)
@@ -101,9 +101,10 @@ Init <- function(sim) {
     } else if (hatPE == 1) { # all fires in polygon zone escaped
       foo <- 1
     } else {
-      foo<-optimise(sim$escapeProbDelta,
-                    interval=c(sim$hatP0(hatPE,globals(sim)$neighbours),
-                               sim$hatP0(hatPE,floor(sum(w*0:8)))),
+      browser()
+      foo <- optimise(escapeProbDelta,
+                    interval=c(hatP0(hatPE,globals(sim)$neighbours),
+                               hatP0(hatPE,floor(sum(w*0:8)))),
                     tol=1e6,
                     w=w,
                     hatPE=hatPE)$minimum
@@ -123,7 +124,7 @@ Init <- function(sim) {
     
     list(pSpread=pJmp,
          p0=foo,
-         naiveP0=sim$hatP0(regime$pEscape,8), 
+         naiveP0=hatP0(regime$pEscape,8), 
          pIgnition=pIgnition,
          maxBurnCells=as.integer(round(regime$emfs/cellSize)))
   })
