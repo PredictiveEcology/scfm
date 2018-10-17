@@ -15,7 +15,7 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.3,1, 10, "scale xMax by this is HD estimator fails "),
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_, desc = "shapefile layer to define zonation")
   ),
   inputObjects = bind_rows(

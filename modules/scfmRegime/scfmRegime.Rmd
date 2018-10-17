@@ -8,6 +8,11 @@ output: pdf_document
 Module documentation should be written so that others can use your module.
 This is a template for module documentation, and should be changed.
 
+Parameter _empiricalMaxSizeFactor_ is used to derive max from mean fire size when the statistical estimator fails; 
+
+Hi Steve,
+
+I did a bit more digging. I mixed the numbers up. The 1.3 value was calculated from the hexagons (10,000km^2, n=484), and the 1.2 value from the ecoregions (n=62). 
 ## Plotting
 
 Write what is plotted.
