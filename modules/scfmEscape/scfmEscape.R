@@ -96,6 +96,7 @@ Init <- function(sim) {
 
 
 Escape <- function(sim) {
+  
   if (length(sim$ignitionLoci) > 0){
     # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
     maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
@@ -117,7 +118,7 @@ Escape <- function(sim) {
 #same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
   dPath <- inputPath(sim)
-  if (!suppliedElsewhere(ageMap, sim)) {
+  if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     ageMapFilename <- file.path(dPath, "age.tif")
     ageMap <- Cache(
