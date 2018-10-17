@@ -15,7 +15,7 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParemater("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
+    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
@@ -74,7 +74,7 @@ Init <- function(sim) {
     landAttr <- sim$landscapeAttr[[polygonType]]
       
     #we know this table was produced with MinFireSize=2cells.
-     browser()
+    
      y <- sim$cTable2$y #What are these supposed to be?
      x <- sim$cTable2$p 
      m.lw <- lowess(y~x,iter=2)
@@ -91,7 +91,7 @@ Init <- function(sim) {
     } else if (hatPE == 1) { # all fires in polygon zone escaped
       foo <- 1
     } else {
-      res<-optimise(sim$escapeProbDelta,
+      res <- optimise(escapeProbDelta,
                     interval=c(hatP0(hatPE,P(sim)$neighbours),
                                hatP0(hatPE,floor(sum(w*0:8)))),
                     tol=1e-4,
@@ -103,18 +103,18 @@ Init <- function(sim) {
       #monotone.
     }
     #don't forget to scale by number of years, as well.
-    rate<-regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on 
+    rate <- regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on 
                                                                    #an annual time step. How to test / enforce?
     pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
                       #for Poisson rate << 1, the expected values are the same, partially accounting
                       #for multiple arrivals within years. Formerly, I used a poorer approximation
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
     
-    return(list(pSpread=pJmp,
-           p0=foo,
-           naiveP0=sim$hatP0(regime$pEscape,8), 
-           pIgnition=pIgnition,
-           maxBurnCells=as.integer(round(regime$emfs/cellSize)))
+    return(list(pSpread = pJmp,
+                p0 = foo,
+                naiveP0 = hatP0(regime$pEscape,8), 
+                pIgnition = pIgnition,
+                maxBurnCells = as.integer(round(regime$emfs/cellSize)))
     )
   })
   
