@@ -32,41 +32,20 @@ defineModule(
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache")
     ),
     inputObjects = bind_rows(
-      expectsInput(
-        objectName = "vegMap",
-        objectClass = "RasterLayer",
-        desc = "",
-        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"
-      ),
-      expectsInput(
-        objectName = "studyArea",
-        objectClass = "SpatialPolygonsDataFrame",
-        desc = "",
-        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"
-      )
+      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
+      expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
     ),
     outputObjects = bind_rows(
-      createsOutput(
-        objectName = "flammableMap",
-        objectClass = "RasterLayer",
-        desc = ""
-      ),
-      createsOutput(
-        objectName = "landscapeAttr",
-        objectClass = "list",
-        desc = ""
-      ),
-      createsOutput(
-        objectName = "cellsByZone",
-        objectClass = "data.frame",
-        desc = ""
-      )
+      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = "")
     )
   )
 )
 
-doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug =
-                                       FALSE) {
+doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
          init = {
            #sim <- scfmLandcoverInitCacheFunctions(sim)
@@ -78,37 +57,21 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug =
            
          },
          plot =  {
-           
            Plot(sim$vegMap, new = TRUE)
            Plot(sim$flammableMap, legend = FALSE) # this is failing probably due to a bug in Plot
            # EJM is working on it 20160224
            # schedule future event(s)
-           sim <-
-             scheduleEvent(sim,
-                           time(sim) + P(sim)$.plotInterval,
-                           "scfmLandcoverInit",
-                           "plot")
-           
+           sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
+  
          },
          save = {
-           # schedule future event(s)
-           sim <-
-             scheduleEvent(sim,
-                           time(sim) + P(sim)$.saveInterval,
-                           "scfmLandcoverInit",
-                           "save")
+           
+           sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
          },
          
-         warning(
-           paste(
-             "Undefined event type: '",
-             events(sim)[1, "eventType", with = FALSE],
-             "' in module '",
-             events(sim)[1, "moduleName", with = FALSE],
-             "'",
-             sep = ""
-           )
-         ))
+         warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
+             "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
+  
   return(invisible(sim))
 }
 
@@ -165,34 +128,29 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
       sum(1 - getValues(flammableMap)[x[, 1]], na.rm = TRUE)
     })
     
-    landscapeAttr <-
-      purrr::transpose(list(
-        cellSize = rep(list(cellSize), length(nFlammable)),
-        nFlammable = nFlammable,
-        nNbrs = nNbrs,
-        cellsByZone = lapply(valsByZone, function(x)
-          x[, 1])
-      ))
+    landscapeAttr <- purrr::transpose(list(cellSize = rep(list(cellSize), length(nFlammable)),
+                                           nFlammable = nFlammable,
+                                           nNbrs = nNbrs,
+                                           cellsByZone = lapply(valsByZone, function(x) x[, 1])))
     
     landscapeAttr <- lapply(landscapeAttr, function(x) {
       append(x, list(burnyArea = x$cellSize * x$nFlammable))
     })
     names(landscapeAttr) <- names(valsByZone)
-    landscapeAttr
     
+    return(landscapeAttr)
   }
   
-  landscapeAttr <-
-    Cache(makeLandscapeAttr, flammableMap, w, studyArea)
+  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
   
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-    cellsByZone <-
-      data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
+    cellsByZone <-data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
-    }
-    cellsByZone
+      }
+    return(cellsByZone)
   }
+  
   cellsByZone <- Cache(cellsByZoneFn, flammableMap, landscapeAttr)
   
   return(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone))
@@ -204,22 +162,19 @@ Init = function(sim) {
   
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39
-  newClass <-
-    ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
+  newClass <- ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
   #see mask argument for SpaDES::spread()
   flammableTable <- cbind(oldClass, newClass)
   
-  sim$flammableMap <-
-    makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
+  sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
   
   
   # This makes sim$landscapeAttr & sim$cellsByZone
-  outs <-
-    Cache(genFireMapAttr,
-          sim$flammableMap,
-          sim$studyArea,
-          globals(sim)$neighbours)
-  list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
+  outs <- Cache(genFireMapAttr,
+                sim$flammableMap,
+                sim$studyArea,
+                globals(sim)$neighbours)
+                list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
   
   return(invisible(sim))
 }
@@ -231,8 +186,7 @@ testFun <- function(x) {
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
   if ("Mask" %in% lsSimObjs) {
-    flammableMap <-
-      flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
+    flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
   }
   #the count options should cause that "a column with frequencies is added.
   
@@ -252,16 +206,14 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
     studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
-    SA <- Cache(
-      prepInputs,
-      targetFile  = studyAreaFilename,
-      fun = "raster::shapefile",
-      url = extractURL(objectName = "studyArea"),
-      archive = "ecodistrict_shp.zip",
-      filename2 = TRUE,
-      userTags = c(cacheTags, "studyArea"),
-      destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts")
-    )
+    SA <- Cache(prepInputs,
+                targetFile  = studyAreaFilename,
+                fun = "raster::shapefile",
+                url = extractURL(objectName = "studyArea"),
+                archive = "ecodistrict_shp.zip",
+                filename2 = TRUE,
+                userTags = c(cacheTags, "studyArea"),
+                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
     
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
