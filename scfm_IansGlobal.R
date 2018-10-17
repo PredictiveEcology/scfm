@@ -77,6 +77,7 @@ objects <- list(studyArea = subEcoDistricts)
 #test
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
-
+dev.off()
+dev()
 set.seed(2343)
 outSim <- spades(mySim, progress = FALSE, debug = TRUE)

@@ -59,10 +59,6 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   #browser()
-  if (!("flammableMap" %in% ls(sim))){
-      sim$flammableMap <- sim$ageMap
-      sim$flammableMap[] <- 0
-  }
   
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
@@ -107,13 +103,25 @@ Ignite <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
   dPath <- inputPath(sim)
-  if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- read.csv(file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"))
-    sim$cTable2 <- cTable2
-  }
   
+  if (!suppliedElsewhere(ageMap, sim)) {
+    message("age map not supplied. Using default")
+    
+    ageMapFilename <- file.path(dPath, "age.tif")
+    ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
+                    studyArea = sim$studyArea,
+                    rasterToMatch = sim$vegMap,
+                    destinationPath = file.path(dPath, "age"))
+    
+    sim$ageMap <- ageMap
+    
+  }
+  if (!suppliedElsewhere(flammableMap, sim)){
+    sim$flammableMap <- sim$ageMap
+    sim$flammableMap[] <- sim$ageMap[] * 0
+  }
   
   return(invisible(sim))
 }
+
