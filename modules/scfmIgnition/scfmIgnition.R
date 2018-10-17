@@ -67,14 +67,14 @@ Init <- function(sim) {
       pIg <- raster(sim$flammableMap)
       for(x in names(sim$landscapeAttr)) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pIgnition
-        pIg[] <- pIg[] * (1-sim$flammableMap[])
       }
+      pIg[] <- pIg[] * (1-sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
-      pIg <- sim$scfmPars[[1]]$pIgnition
+      pIg <- sim$scfmPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
     
   } else {
-    pIg <- P(sim)$pIgnition
+    pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
   }
   sim$pIg <- pIg
   
@@ -96,8 +96,8 @@ Ignite <- function(sim) {
     }
   })
   #resample generates a random permutation of the elements of ignitions
-  #so that we don't always sequence in map index order.
-  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
+  #so that we don't always sequence in map index order. EJM pointed this out.
+  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) 
   
   return(invisible(sim))
 }
