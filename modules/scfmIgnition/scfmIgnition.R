@@ -60,14 +60,8 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   #browser()
   if (!("flammableMap" %in% ls(sim))){
-    if ("ageMap" %in% ls(sim)){
-      sim$flammableMap<-sim$ageMap
-      sim$flammableMap[]<-0
-    }
-    else {
-      stop("need to give me something!")
-    }
-
+      sim$flammableMap <- sim$ageMap
+      sim$flammableMap[] <- 0
   }
   
   #if either of these is a map, it needs to have NAs in the right place
@@ -112,4 +106,13 @@ Ignite <- function(sim) {
   return(invisible(sim))
 }
 
-
+.inputObjects <- function(sim) {
+  
+  if (!suppliedElsewhere("cTable2", sim)) {
+    cTable2 <- read.csv(file.path(dataPath(sim), "FiresN1000MinFiresSize2NoLakes.csv"))
+    sim$cTable2 <- cTable2
+  }
+  
+  
+  return(invisible(sim))
+}

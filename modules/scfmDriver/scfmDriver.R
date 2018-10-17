@@ -122,15 +122,3 @@ Init <- function(sim) {
   
   return(invisible(sim))
 }
-
-.inputObjects <- function(sim) {
-  
-  if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- read.csv(file.path(dataPath(sim), "FiresN1000MinFiresSize2NoLakes.csv"))
-    sim$cTable2 <- cTable2
-    }
-
-  
-  return(invisible(sim))
-}
-
