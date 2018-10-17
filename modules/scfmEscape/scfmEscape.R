@@ -45,10 +45,10 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     ### (use `checkObject` or similar)
     
     # do stuff for this event
-    sim <- sim$scfmEscapeInit(sim)
+    sim <- Init(sim)
     
     # schedule future event(s)
-    sim <- scheduleEvent(sim, params(sim)$scfmEscape$startTime, "scfmEscape", "escape")
+    sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
     #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.plotInitialTime, "scfmEscape", "plot")
     #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
   } else if (eventType == "plot") {
@@ -56,11 +56,11 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     values(sim$tmpRaster)[sim$spreadState[,indices]]<-2 #this reference method is believed to be faster
     values(sim$tmpRaster)[sim$loci]<-1    #mark the initials specialy
     Plot(sim$tmpRaster) 
-    sim <- scheduleEvent(sim, time(sim)+params(sim)$scfmEscape$.plotInterval, "scfmEscape", "plot")
+    sim <- scheduleEvent(sim, time(sim)+P(sim)$.plotInterval, "scfmEscape", "plot")
     
   } else if (eventType == "escape") {
-    sim <- sim$scfmEscapeEscape(sim)
-    sim <- scheduleEvent(sim, time(sim)+params(sim)$scfmEscape$returnInterval, "scfmEscape", "escape")
+    sim <- Escape(sim)
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
     
     
   } else {
@@ -76,7 +76,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
 #   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initilization
-scfmEscapeInit <- function(sim) {
+Init <- function(sim) {
   
   sim$spreadState <- NULL
   
@@ -101,7 +101,7 @@ scfmEscapeInit <- function(sim) {
 }
 
 
-scfmEscapeEscape <- function(sim) {
+Escape <- function(sim) {
   if (length(sim$ignitionLoci) > 0){
     print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
     # pull 
