@@ -79,8 +79,8 @@ Init <- function(sim) {
       p0 <- raster(sim$flammableMap)
       for(x in names(sim$landscapeAttr)) {
         p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$p0
-        p0[] <- p0[] * (1-sim$flammableMap[])
       }
+      p0[] <- p0[] * (1-sim$flammableMap[])
     } else {
       p0 <- sim$scfmPars[[1]]$p0
     }
