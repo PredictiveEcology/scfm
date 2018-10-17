@@ -72,27 +72,16 @@ Init <- function(sim) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
       
-    if (FALSE) {
-      y<-log(sim$spreadCalibrationTable[,paste("ls",1e3,"fs",2,sep="")])
-      x<-sim$spreadCalibrationTable$pjmp
-      m.glm<-glm(x~y,family=gaussian)
-      mfs<-regime$xBar/cellSize #mean size escaped fires in cells
-      pJmp<-sum(m.glm$coeff*c(1,log(mfs)))
-      #mfs <- sim$scfmRegimePars$lxBar - log(cellSize)
-      #pjmp <- sum(m.glm$coeff*c(1,mfs))
-    }
-    else {
-      #we know this table was produced with MinFireSize=2cells.
-      
-      y <- sim$cTable2$y 
-      x <- sim$cTable2$p 
-      m.lw <- lowess(y~x,iter=2)
-      if (sum(diff(m.lw$y)<0)>0)
-        warning("lowess curve non-monotone. Proceed with caution")
+    #we know this table was produced with MinFireSize=2cells.
+     browser()
+     y <- sim$cTable2$y #What are these supposed to be?
+     x <- sim$cTable2$p 
+     m.lw <- lowess(y~x,iter=2)
+     if (sum(diff(m.lw$y)<0)>0)
+        warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
       targetSize <- regime$xBar/cellSize - 1 
       pJmp <- approx(m.lw$y,m.lw$x,targetSize,rule=2)$y
-    }
-    #browser()
+  
     w <- landAttr$nNbrs
     w <- w/sum(w)
     hatPE<-regime$pEscape
@@ -107,13 +96,13 @@ Init <- function(sim) {
                                hatP0(hatPE,floor(sum(w*0:8)))),
                     tol=1e6,
                     w=w,
-                    hatPE=hatPE)$minimum
-    } 
-    #do some sanity tests to ensure convergence
-    #also, it is almost obvious that the true minimum must occurr within the interval specified in the 
-    #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
-    #monotone.
-    
+                    hatPE=hatPE)
+      #MISSING: checks for convergence on the optimise object. 
+      foo <-res$minimum
+      #It is almost obvious that the true minimum must occurr within the interval specified in the 
+      #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
+      #monotone.
+    }
     #don't forget to scale by number of years, as well.
     rate<-regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on 
                                                                    #an annual time step. How to test / enforce?
@@ -122,12 +111,14 @@ Init <- function(sim) {
                       #for multiple arrivals within years. Formerly, I used a poorer approximation
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
     
-    list(pSpread=pJmp,
-         p0=foo,
-         naiveP0=hatP0(regime$pEscape,8), 
-         pIgnition=pIgnition,
-         maxBurnCells=as.integer(round(regime$emfs/cellSize)))
+    return(list(pSpread=pJmp,
+           p0=foo,
+           naiveP0=sim$hatP0(regime$pEscape,8), 
+           pIgnition=pIgnition,
+           maxBurnCells=as.integer(round(regime$emfs/cellSize)))
+    )
   })
+  
   names(sim$scfmPars) <- names(sim$landscapeAttr)
   
   return(invisible(sim))
