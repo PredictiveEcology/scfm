@@ -19,12 +19,10 @@ defineModule(sim, list(
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc="interval between main events"),
     defineParameter("startTime", "numeric", 0, NA, NA, desc="Simulation time at which to initiate ignitions"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first save event should occur")
+    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "scfrmPars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc ="")
   ),
@@ -37,38 +35,29 @@ defineModule(sim, list(
 #   - type `init` is required for initialiazation
 
 doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
-  if (eventType == "init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
-
-    # do stuff for this event
-    sim <- sim$scfmIgnitionInit(sim)
-
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, params(sim)$scfmIgnition$startTime, "scfmIgnition", "ignite")
-    sim <- scheduleEvent(sim, params(sim)$scfmIgnition$.plotInitialTime, "scfmIgnition", "plot")
-    sim <- scheduleEvent(sim, params(sim)$scfmIgnition$.saveInitialTime, "scfmIgnition", "save")
-  } else if (eventType == "plot") {
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmIgnition$.plotInterval, "scfmIgnition", "plot")
-  } else if (eventType == "save") {
-  } else if (eventType == "ignite") {
-    sim <- scfmIgnitionIgnite(sim)
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmIgnition$returnInterval, "scfmIgnition", "ignite")
-    # ! ----- STOP EDITING ----- ! #
-  } else {
+  switch (
+    eventType, 
+    init = {
+      sim <- Init(sim)
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite")
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot")
+    },
+    plot = {
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot")
+    },
+    ignite = {
+      sim <- Ignite(sim)
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite")
+    },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+  )
   return(invisible(sim))
 }
 
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 
-scfmIgnitionInit <- function(sim) {
+Init <- function(sim) {
   #browser()
   if (!("flammableMap" %in% ls(sim))){
     if ("ageMap" %in% ls(sim)){
@@ -95,7 +84,7 @@ scfmIgnitionInit <- function(sim) {
     }
     
   } else {
-    pIg <- params(sim)$scfmIgnition$pIgnition
+    pIg <- P(sim)$pIgnition
   }
   sim$pIg <- pIg
   
@@ -104,15 +93,10 @@ scfmIgnitionInit <- function(sim) {
   return(invisible(sim))
 }
 
-### template for save events
-scfmIgnitionSave <- function(sim) {
-  sim <- saveFiles(sim)
-  return(invisible(sim))
-}
 
 ### template for your event1
-scfmIgnitionIgnite <- function(sim) {
-  
+Ignite <- function(sim) {
+  sim$ignitionLoci <- NULL #initialise FFS
   ignitions <- lapply(names(sim$landscapeAttr), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
     if(length(sim$pIg)>1) {
@@ -121,7 +105,8 @@ scfmIgnitionIgnite <- function(sim) {
       cells[which(runif(length(cells)) < sim$pIg)]
     }
   })
-  
+  #resample generates a random permutation of the elements of ignitions
+  #so that we don't always sequence in map index order.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) # case where only 1 fire... see ?sample example
   
   return(invisible(sim))
