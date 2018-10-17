@@ -5,7 +5,7 @@ inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
 timeunit<-"year"
-times <- list(start = 0, end = 50)
+times <- list(start = 0, end = 10)
 mapDim <- 200
 defaultInterval <- 1.0
 defaultPlotInterval <- 1.0

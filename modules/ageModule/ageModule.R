@@ -20,9 +20,7 @@ defineModule(sim, list(
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging aevents"),
     defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")
+    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation")
@@ -62,30 +60,13 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
                          time(sim) + params(sim)$ageModule$.plotInterval,
                          "ageModule", "plot")
     # ! ----- STOP EDITING ----- ! #
-  } else if (eventType == "save") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-
-    # e.g., call your custom functions/methods here
-    # you can define your own methods below this `doEvent` function
-
-    # schedule future event(s)
-
-    # e.g.,
-    # sim <- scheduleEvent(sim, time(sim) + increment, "ageModule", "save")
-
-    # ! ----- STOP EDITING ----- ! #
-  } else {
+  }  else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   }
   return(invisible(sim))
 }
 
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initilization
 ageModuleInit <- function(sim) {
@@ -93,20 +74,17 @@ ageModuleInit <- function(sim) {
   # # ! ----- EDIT BELOW ----- ! #
   
   if (!("ageMap" %in% ls(sim))){
-    N<-sim$mapDim
-    x<-raster::extent(c(0,N-1,0,N-1))
-    sim$ageMap<-raster(x,nrows=N, ncols=N,vals=params(sim)$ageModule$initialAge) %>%
-      setColors(n=10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
+    N <- sim$mapDim
+    x <- raster::extent(c(0,N-1,0,N-1))
+    sim$ageMap <- raster(x, nrows = N, ncols = N, vals = P(sim)$ageModule$initialAge) %>%
+      setColors(n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
   }
   else {
     # we will use our colour choices, not whatever may have come with the loaded map.
-    setColors(sim$ageMap,n=10,colorRampPalette(c("LightGreen", "DarkGreen"))(10))
+    setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
   }
   
    #temporary until we buid the rest of the modules
-  
-   
-  # ! ----- STOP EDITING ----- ! #
 
   return(invisible(sim))
 }
@@ -124,8 +102,8 @@ ageModuleSave <- function(sim) {
 ageModuleAge <- function(sim) {
   
   sim$ageMap <- setValues(sim$ageMap, 
-                          pmin(params(sim)$ageModule$maxAge, getValues(sim$ageMap)+
-                                             params(sim)$ageModule$returnInterval))
+                          pmin(P(sim)$ageModule$maxAge, getValues(sim$ageMap)+
+                                             P(sim)$ageModule$returnInterval))
   
   return(invisible(sim))
 }

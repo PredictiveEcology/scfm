@@ -13,8 +13,6 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmRegime.Rmd"),
   reqdPkgs=list("rgdal"),
   parameters=rbind(
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.3,1, 10, "scale xMax by this is HD estimator fails "),
