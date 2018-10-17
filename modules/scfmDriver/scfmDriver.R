@@ -14,7 +14,8 @@ defineModule(sim, list(
   reqdPkgs=list("stats"),
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")),
+    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
+    defineParemater("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
@@ -91,12 +92,11 @@ Init <- function(sim) {
       foo <- 1
     } else {
       res<-optimise(sim$escapeProbDelta,
-                    interval=c(sim$hatP0(hatPE,globals(sim)$neighbours),
-                               sim$hatP0(hatPE,floor(sum(w*0:8)))),
-                    tol=1e6,
+                    interval=c(hatP0(hatPE,P(sim)$neighbours),
+                               hatP0(hatPE,floor(sum(w*0:8)))),
+                    tol=1e-4,
                     w=w,
                     hatPE=hatPE)
-      #MISSING: checks for convergence on the optimise object. 
       foo <-res$minimum
       #It is almost obvious that the true minimum must occurr within the interval specified in the 
       #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
