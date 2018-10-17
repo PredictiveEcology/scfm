@@ -18,11 +18,12 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events")
+    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
+    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
+    defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
+    defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events"),
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
@@ -107,14 +108,15 @@ scfmEscapeEscape <- function(sim) {
     maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci,"zone"]]
     
-    sim$spreadState <- SpaDES.tools::spread(landscape=sim$flammableMap,
-                                      loci=sim$ignitionLoci,
-                                      iterations=1,
-                                      spreadProb=sim$p0,
+    sim$spreadState <- SpaDES.tools::spread(landscape = sim$flammableMap,
+                                      loci = sim$ignitionLoci,
+                                      iterations = 1,
+                                      spreadProb = sim$p0,
                                       #mask=sim$flammableMap,
-                                      directions=globals(sim)$neighbours,
-                                      maxSize=maxSizes,
-                                      returnIndices=TRUE, id=TRUE)
+                                      directions = P(sim)$neighbours,
+                                      maxSize = maxSizes,
+                                      returnIndices = TRUE, 
+                                      id = TRUE)
   } 
   return(invisible(sim))
 }

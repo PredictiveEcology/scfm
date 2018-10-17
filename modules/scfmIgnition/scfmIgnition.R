@@ -15,11 +15,11 @@ defineModule(sim, list(
   reqdPkgs = list(),
   parameters = rbind(
     #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
-    defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc="per cell and time ignition probability"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc="interval between main events"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc="Simulation time at which to initiate ignitions"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc="This describes the simulation time at which the first plot event should occur")
+    defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
+    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate ignitions"),
+    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),

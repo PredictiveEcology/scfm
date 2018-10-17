@@ -48,8 +48,8 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime", "scfmEscape", "scfmSpread", "scfmDriver")
-
+modules <- list("scfmIgnition")
+#"scfmLandcoverInit", ,"ageModule","scfmRegime", "scfmEscape", "scfmSpread", "scfmDriver"
 objects <- list(mapDim = mapDim) #note that these definitions are critical
 
 paths <- list(
