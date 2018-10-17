@@ -20,8 +20,8 @@ defineModule(sim, list(
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
+    #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
+    #defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
     defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
@@ -40,33 +40,27 @@ defineModule(sim, list(
 #   - type `init` is required for initiliazation
 
 doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
-  if (eventType == "init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
-    
-    # do stuff for this event
-    sim <- Init(sim)
-    
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
-    #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.plotInitialTime, "scfmEscape", "plot")
-    #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
-  } else if (eventType == "plot") {
-    
-    values(sim$tmpRaster)[sim$spreadState[,indices]]<-2 #this reference method is believed to be faster
-    values(sim$tmpRaster)[sim$loci]<-1    #mark the initials specialy
-    Plot(sim$tmpRaster) 
-    sim <- scheduleEvent(sim, time(sim)+P(sim)$.plotInterval, "scfmEscape", "plot")
-    
-  } else if (eventType == "escape") {
-    sim <- Escape(sim)
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
-    
-    
-  } else {
+  switch(
+    eventType,
+    init = {
+      sim <- Init(sim)
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
+      sim <- scheduleEvent(sim, params(sim)$scfmEscape$.plotInitialTime, "scfmEscape", "plot")
+      #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
+    },
+    plot = {
+      values(sim$tmpRaster)[sim$spreadState[,indices]]<-2 #this reference method is believed to be faster
+      values(sim$tmpRaster)[sim$ignitionLoci]<-1          #mark the initials specialy
+      Plot(sim$tmpRaster) 
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
+    },
+    escape = {
+      sim <- Escape(sim)
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
+    },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+  )
   return(invisible(sim))
 }
 
@@ -103,10 +97,9 @@ Init <- function(sim) {
 
 Escape <- function(sim) {
   if (length(sim$ignitionLoci) > 0){
-    print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
-    # pull 
+    # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
     maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
-    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci,"zone"]]
+    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci,"zone"]] #steve does not believe this
     
     sim$spreadState <- SpaDES.tools::spread(landscape = sim$flammableMap,
                                       loci = sim$ignitionLoci,
@@ -118,5 +111,27 @@ Escape <- function(sim) {
                                       returnIndices = TRUE, 
                                       id = TRUE)
   } 
+  return(invisible(sim))
+}
+
+#same model as scfmIgnition to enable standalone execution
+.inputObjects <- function(sim) {
+  dPath <- inputPath(sim)
+  if (!suppliedElsewhere(ageMap, sim)) {
+    message("age map not supplied. Using default")
+    ageMapFilename <- file.path(dPath, "age.tif")
+    ageMap <- Cache(
+      prepInputs,
+      targetFile = ageMapFilename,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$vegMap,
+      destinationPath = file.path(dPath, "age")
+    )
+    sim$ageMap <- ageMap
+  }
+  if (!suppliedElsewhere(flammableMap, sim)) {
+    sim$flammableMap <- sim$ageMap
+    sim$flammableMap[] <- sim$ageMap[] * 0
+  }
   return(invisible(sim))
 }
