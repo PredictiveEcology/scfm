@@ -183,7 +183,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   setColors(flammableMap, 2) <- colorRampPalette(c("blue", "red"))(2)
   #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif",
   #                            datatype = "INT2U", overwrite=TRUE)
-  flammableMap
+  return(flammableMap)
 }
 
 .inputObjects <- function(sim) {
