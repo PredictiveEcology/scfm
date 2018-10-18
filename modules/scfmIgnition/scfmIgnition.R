@@ -103,7 +103,7 @@ Ignite <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- inputPath(sim)
+  dPath <- dataPath(sim)
   
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
@@ -119,7 +119,7 @@ Ignite <- function(sim) {
   }
   if (!suppliedElsewhere(flammableMap, sim)){
     sim$flammableMap <- sim$ageMap
-    sim$flammableMap[] <- sim$ageMap[] * 0
+    sim$flammableMap[] <- setValues(sim$flammableMap, values = getValues(sim$ageMap) * 0)
   }
   
   return(invisible(sim))

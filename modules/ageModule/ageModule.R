@@ -107,11 +107,12 @@ ageModuleAge <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- inputPath(sim)
+  dPath <- dataPath(sim)
   
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     
+   
     ageMapFilename <- file.path(dPath, "age.tif")
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
                       studyArea = sim$studyArea,

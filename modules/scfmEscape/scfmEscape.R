@@ -117,7 +117,7 @@ Escape <- function(sim) {
 
 #same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
-  dPath <- inputPath(sim)
+  dPath <- dataPath(sim)
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     ageMapFilename <- file.path(dPath, "age.tif")
