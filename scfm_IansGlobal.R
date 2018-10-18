@@ -47,7 +47,7 @@ parameters <- list(
 )
 
 modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime",
-                "scfmEscape", "scfmSpread", "scfmDriver")
+                "scfmEscape", "scfmSpread", "andisonDriver")
 
 objects <- list(mapDim = mapDim) #note that these definitions are critical
 

@@ -19,17 +19,22 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "cTable2", objectClass = "data.frame", desc = "A csv containing results of fire experiment")
+    expectsInput(objectName = "cTable2", objectClass = "data.frame", 
+                 desc = "A csv containing results of fire experiment", 
+                 sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
+    expectsInput(objectName = "AndisonFRI", objectClass = "spatialPolygonsDataFrame", desc = "Dave's FRI data", 
+                 sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName="scfmPars", objectClass = "list", desc = "")
+    createsOutput(objectName="scfmPars", objectClass = "list", desc = ""),
+    createsOutput(objectName = "meanFRI", objectClass = "lsit", desc = "list of mean FRI over studyArea polygons")
   )                      
 ))
 
 ## event types
 #   - type `init` is required for initiliazation
 
-doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
+doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
       init = {
@@ -61,7 +66,7 @@ escapeProbDelta <- function(p0,w,hatPE){
 
 odds <- function(p)p/(1-p)
 
-oddsRatio(p,q) <- function(p,q) odds(p)/odds(q)
+oddsRatio <- function(p,q) odds(p)/odds(q)
 
 calcp <-function(q,or){ # given q and or(p,q), solve for p
   x <- or * odds(q)
@@ -70,7 +75,7 @@ calcp <-function(q,or){ # given q and or(p,q), solve for p
 
 Init <- function(sim) {
   
-  sim <- initFRI(sim) #IAN to write this for sim$andisonFRI[[polygonType]] from shapefile record LTHFC 
+  sim <- initFRI(sim) #IAN to write this for sim$meanFRI[[polygonType]] from shapefile record LTHFC 
   
  
   cellSize <- sim$landscapeAttr[[1]]$cellSize
@@ -79,7 +84,7 @@ Init <- function(sim) {
    
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-    fri <- sim$andisonFRI[[polygonType]]  #need to dereference to an numeric
+    fri <- sim$meanFRI[[polygonType]]  #need to dereference to an numeric
     fri <- ifelse(fri < 20, 20, fri)
     targetAAB <- landAttr$burnyArea / fri
     
@@ -90,7 +95,6 @@ Init <- function(sim) {
     scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
     ratio <- targetAAB/scfmAAB
     if (ratio < 0.05){
-      else
         warning(sprintf("AAB ratio %5.3f in %s: no action taken",ratio, polygonType))
     }
     else{
@@ -177,14 +181,41 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
+initFRI <- function(sim) {
+  #This is temporary
+  return(invisible(sim))
+}
+
+
 .inputObjects <- function(sim) {
   
-  dPath <- inputPath(sim)
+  dPath <- dataPath(sim)
   if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- read.csv(file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"))
+    cTable2 <- Cache(prepInputs,
+                     targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
+                     url = extractURL(objectName = "cTable2", sim), 
+                     fun = "read.csv",
+                     destinationPath = dPath,
+                     overwrite = TRUE,
+                     filename2 = TRUE)
+    
+    
     sim$cTable2 <- cTable2
   }
-  # Ian: here we need to read the shapefile again, or access it
   
+  # Ian: here we need to read the shapefile again, or access it
+  if (!suppliedElsewhere("AndisonFRI", sim)) {
+    
+    AndisonFRI <- Cache(prepInputs,
+                        url = extractURL(objectName = "AndisonFRI", sim),
+                        destinationPath = dPath,
+                        studyArea = sim$studyArea,
+                        userTags = "AndisonFRI",
+                        filename2 = TRUE,
+                        useSAcrs = TRUE)
+    
+    sim$AndisonFRI <- AndisonFRI
+    
+  }
   return(invisible(sim))
 }
