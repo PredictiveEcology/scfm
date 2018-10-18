@@ -108,6 +108,12 @@ Init <- function(sim) {
          ratio <- targetAAB/scfmAAB
          #caution this step could over-correct, too
     }
+    if (ratio < 0.95){
+    #we got this way by dialing up pEscape, so dial it back down again, and we're apples.
+      pEscape <- pEscape * ratio
+      scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+      ratio <- targetAAB/scfmAAB
+    }
     if (ratio > 1.05){
       mfs <- mfs * max(ratio, 2)
       scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
