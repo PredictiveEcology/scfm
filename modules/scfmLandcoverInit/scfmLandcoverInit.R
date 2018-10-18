@@ -222,8 +222,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
                     studyArea = sim$studyArea,
-                    filename2 = "SmallLCC2005_V1_4a.tif",
-                    overwrite = TRUE)#, ## overwrite not being passed from Cache to prepIpnuts ??
+                    filename2 = "SmallLCC2005_V1_4a.tif")#,
                     #userTags = c(cacheTags, "vegMap"),
                     #showSimilar = TRUE)
     options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
