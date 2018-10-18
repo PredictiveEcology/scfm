@@ -102,7 +102,6 @@ ageModuleSave <- function(sim) {
 }
 
 ageModuleAge <- function(sim) {
-  
   sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
   
   return(invisible(sim))
@@ -116,11 +115,13 @@ ageModuleAge <- function(sim) {
     
    
     ageMapFilename <- file.path(dPath, "age.tif")
+    options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
-                      url = extractURL(objectName = "ageMap"), 
-                      studyArea = sim$studyArea,
-                      rasterToMatch = sim$vegMap,
-                      destinationPath = file.path(dPath, "age"))
+                    url = extractURL(objectName = "ageMap"),
+                    studyArea = sim$studyArea,
+                    rasterToMatch = sim$vegMap,
+                    destinationPath = file.path(dPath, "age"))
+    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
     
     sim$ageMap <- ageMap
     

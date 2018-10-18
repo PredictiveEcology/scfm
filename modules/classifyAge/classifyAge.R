@@ -4,7 +4,7 @@ defineModule(sim, list(
   name = "classifyAge",
   description = "produce a binary map of old forest cells",
   keywords = c("insert key words here"),
-  authors = c(person(c("First", "Middle"), "Last", email="email@example.com", role=c("aut", "cre"))),
+  authors = c(person(c("First", "Middle"), "Last", email = "email@example.com", role = c("aut", "cre"))),
   childModules = character(0),
   version = numeric_version("1.3.1"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -50,9 +50,9 @@ doEvent.classifyAge = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "classifyAge", "plot")
   } else if (eventType == "plot") {
     Plot(sim$ageClassMap) # uncomment this, replace with object to plot
-    sim <- scheduleEvent(sim, time(sim)+P(sim)$.plotInterval, "classifyAge", "plot")
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "classifyAge", "plot")
   } else if (eventType == "classify") {
-    sim$ageClassMap[] <-ifelse(sim$ageMap[] > P(sim)$howOldIsOld, 1, 0)
+    sim$ageClassMap[] <- ifelse(sim$ageMap[] > P(sim)$howOldIsOld, 1, 0)
     
     sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "classifyAge", "classify")
   } else {
@@ -62,13 +62,12 @@ doEvent.classifyAge = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-
 ### template initialization
 classifyAgeInit <- function(sim) {
-  if (!("ageClassMap" %in% ls(sim))){
-      if ("ageMap" %in% ls(sim)){
-        sim$ageClassMap<-sim$ageMap
-        sim$ageClassMap[]<-NA
+  if (!("ageClassMap" %in% ls(sim))) {
+      if ("ageMap" %in% ls(sim)) {
+        sim$ageClassMap <- sim$ageMap
+        sim$ageClassMap[] <- NA
       }
       else {
         stop("need to give me something!")
@@ -76,4 +75,3 @@ classifyAgeInit <- function(sim) {
     }
  return(invisible(sim))
 }
-
