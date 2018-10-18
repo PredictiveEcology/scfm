@@ -215,13 +215,14 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
     crsDefault <- CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")
     sim$studyArea <- spTransform(sim$studyArea, crsDefault)
-    vegMap <- prepInputs( 
+    vegMap <- Cache(prepInputs, 
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
                     studyArea = sim$studyArea,
-                    filename2 = TRUE)#,
+                    filename2 = TRUE,
+                    overwrite = TRUE)#,
                     #userTags = c(cacheTags, "vegMap"),
                     #showSimilar = TRUE)
     

@@ -20,7 +20,7 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "cTable2", objectClass = "data.frame", desc = "A csv containing results of fire experiment")
+    expectsInput(objectName = "cTable2", objectClass = "data.frame", desc = "A csv containing results of fire experiment", sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName="scfmPars", objectClass = "list", desc = "")
@@ -127,7 +127,13 @@ Init <- function(sim) {
   
   dPath <- dataPath(sim)
   if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- read.csv(file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"))
+    cTable2 <- Cache(prepInputs,
+                      targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
+                      url = extractURL(objectName = "cTable2", sim), 
+                      fun = "read.csv",
+                      destinationPath = dPath)
+                            
+   
     sim$cTable2 <- cTable2
   }
   

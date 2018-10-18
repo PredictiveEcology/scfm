@@ -23,7 +23,9 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation")
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "", 
+                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
@@ -115,6 +117,7 @@ ageModuleAge <- function(sim) {
    
     ageMapFilename <- file.path(dPath, "age.tif")
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
+                      url = extractURL(objectName = "ageMap"), 
                       studyArea = sim$studyArea,
                       rasterToMatch = sim$vegMap,
                       destinationPath = file.path(dPath, "age"))
