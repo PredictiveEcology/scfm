@@ -1,6 +1,5 @@
 library(SpaDES)
 library(magrittr)
-saveDir <- file.path("outputs")
 inputDir <- file.path("inputs") 
 outputDir <- file.path("outputs")
 
@@ -53,7 +52,7 @@ modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime",
 objects <- list(mapDim = mapDim) #note that these definitions are critical
 
 paths <- list(
-  cachePath = file.path(outputDir, "cache"),
+  cachePath = file.path("cache"),
   modulePath = file.path("modules"),
   inputPath = inputDir,
   outputPath = outputDir
