@@ -208,20 +208,5 @@ initFRI <- function(sim) {
     
     sim$cTable2 <- cTable2
   }
-  
-  # Ian: here we need to read the shapefile again, or access it
-  if (!suppliedElsewhere("AndisonFRI", sim)) {
-    
-    AndisonFRI <- Cache(prepInputs,
-                        url = extractURL(objectName = "AndisonFRI", sim),
-                        destinationPath = dPath,
-                        studyArea = sim$studyArea,
-                        userTags = "AndisonFRI",
-                        filename2 = TRUE,
-                        useSAcrs = TRUE)
-    
-    sim$AndisonFRI <- AndisonFRI
-    
-  }
   return(invisible(sim))
 }

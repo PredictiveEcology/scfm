@@ -27,7 +27,10 @@ defineModule(sim,list(
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
         sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
-        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
+        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+      expectsInput(objectName = "AndisonFRI", objectClass = "spatialPolygonsDataFrame", 
+                   desc = "Dave Andison's FRI data", 
+                   sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing")
     ),
     outputObjects = bind_rows(
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
@@ -229,6 +232,26 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     
     sim$vegMap <- vegMap
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
+  }
+  if (!suppliedElsewhere("AndisonFRI", sim)) {
+    browser()
+    AndisonFRI <- Cache(prepInputs,
+                        url = extractURL(objectName = "AndisonFRI", sim),
+                        destinationPath = dataPath(sim),
+                        userTags = "AndisonFRI",
+                        filename2 = TRUE)
+    
+    #check for duplicated long-term historic fire cycles
+    b <- duplicated(AndisonFRI$LTHFC)
+    
+    if (any(b)) {
+      AndisonFRI <- Cache(raster::aggregate, 
+                          AndisonFRI[AndisonFRI$LTHFC > 40,], 
+                          by = "LTHFC", 
+                          dissolve = TRUE)
+    }
+    
+    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea)
   }
   
   return(invisible(sim))
