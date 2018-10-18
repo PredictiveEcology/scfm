@@ -210,9 +210,10 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-    
+    browser()
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-    crsDefault <- CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")
+    crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+                            "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
     sim$studyArea <- spTransform(sim$studyArea, crsDefault)
     vegMap <- Cache(prepInputs, 
                     targetFile = vegMapFilename,
