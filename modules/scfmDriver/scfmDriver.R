@@ -20,7 +20,9 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "cTable2", objectClass = "data.frame", desc = "A csv containing results of fire experiment", sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd")
+    expectsInput(objectName = "cTable2", objectClass = "data.frame", 
+                 desc = "A csv containing results of fire experiment", 
+                 sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName="scfmPars", objectClass = "list", desc = "")
