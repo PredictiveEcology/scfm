@@ -133,7 +133,9 @@ Init <- function(sim) {
                       targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
                       url = extractURL(objectName = "cTable2", sim), 
                       fun = "read.csv",
-                      destinationPath = dPath)
+                      destinationPath = dPath,
+                      overwrite = TRUE,
+                     filename2 = "FiresN1000MinFiresSize2NoLakes.csv")
                             
    
     sim$cTable2 <- cTable2
