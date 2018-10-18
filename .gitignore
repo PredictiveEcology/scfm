@@ -7,7 +7,4 @@
 .Rproj.user
 cache/
 outputs/
-
-## inputs/ has its own .gitignore file
-
-inputs/age/age\.tif
+.httr-oauth

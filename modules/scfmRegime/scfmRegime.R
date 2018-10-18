@@ -202,11 +202,12 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
 .inputObjects <- function(sim) {
   
-  dPath <- inputPath(sim)
+  dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
   
   if (!suppliedElsewhere("firePoints", sim)) {
     if (!dir.exists(file.path(dPath, "NFDB_point"))) {
+     
       download.file(
         url = extractURL(objectName = "firePoints"),
         destfile = file.path(dPath, "NFDB_point.zip")

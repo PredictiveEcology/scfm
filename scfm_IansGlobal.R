@@ -1,10 +1,9 @@
 library(SpaDES)
 library(magrittr)
-savedir<-file.path("outputs")
 inputDir <- file.path("inputs") 
 outputDir <- file.path("outputs")
 
-timeunit<-"year"
+timeunit <- "year"
 times <- list(start = 0, end = 10)
 mapDim <- 200
 defaultInterval <- 1.0
@@ -13,16 +12,16 @@ defaultInitialSaveTime <- NA #don't be saving nuffink
 parameters <- list(
   .progress = list(type = "text", interval = 1),
   ageModule = list(
-    initialAge=100, 
-    maxAge=200, 
+    initialAge = 100, 
+    maxAge = 200, 
     returnInterval = defaultInterval, 
     startTime = times$start,
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime, 
-    .saveInterval=defaultInterval),
+    .saveInterval = defaultInterval),
   scfmIgnition = list(
-    pIgnition=0.0001,
+    pIgnition = 0.0001,
     returnInterval = defaultInterval,
     startTime = times$start,
     .plotInitialTime = NA,
@@ -30,7 +29,7 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmEscape = list(
-    p0=0.05,
+    p0 = 0.05,
     returnInterval = defaultInterval,
     startTime = times$start,
     .plotInitialTime = NA,
@@ -38,7 +37,7 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmSpread = list(
-    pSpread=0.235,
+    pSpread = 0.235,
     returnInterval = defaultInterval,
     startTime = times$start,
     .plotInitialTime = times$start,
@@ -47,12 +46,13 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime", "scfmEscape", "scfmSpread", "scfmDriver")
-#
+modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime",
+                "scfmEscape", "scfmSpread", "scfmDriver")
+
 objects <- list(mapDim = mapDim) #note that these definitions are critical
 
 paths <- list(
-  cachePath = file.path(outputDir, "cache"),
+  cachePath = file.path("cache"),
   modulePath = file.path("modules"),
   inputPath = inputDir,
   outputPath = outputDir
@@ -75,7 +75,7 @@ outSim <- spades(mySim, progress = FALSE)
 require(raster)
 ecoDistricts <- shapefile(file.path(paths$inputPath, "Ecodistricts", "ecodistricts.shp"))
 subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
-objects <- list(studyArea = subEcoDistricts)
+objects <- list(studyArea = subEcoDistricts, mapDim = mapDim)
 #test
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)

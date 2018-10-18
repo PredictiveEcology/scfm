@@ -62,7 +62,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
          },
          
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
-             "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
+                       "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
   
   return(invisible(sim))
 }
@@ -134,7 +134,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
   
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-    cellsByZone <-data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
+    cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
       }
@@ -158,8 +158,7 @@ Init = function(sim) {
   
   sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
   
-  
-  # This makes sim$landscapeAttr & sim$cellsByZone
+    # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
                 sim$studyArea,
@@ -188,7 +187,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- inputPath(sim) #where files will be downloaded
+  dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
   
   if (!suppliedElsewhere("studyArea", sim)) {
@@ -211,8 +210,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-   
+    browser()
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
+    crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+                            "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
+    sim$studyArea <- spTransform(sim$studyArea, crsDefault)
     vegMap <- Cache(prepInputs, 
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
@@ -220,7 +222,9 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     destinationPath = dPath,
                     studyArea = sim$studyArea,
                     filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"))
+                    overwrite = TRUE)#,
+                    #userTags = c(cacheTags, "vegMap"),
+                    #showSimilar = TRUE)
     
     sim$vegMap <- vegMap
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
