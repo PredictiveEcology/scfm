@@ -7,4 +7,4 @@
 .Rproj.user
 cache/
 outputs/
-
+.httr-oauth
