@@ -105,7 +105,7 @@ Ignite <- function(sim) {
 .inputObjects <- function(sim) {
   dPath <- inputPath(sim)
   
-  if (!suppliedElsewhere(ageMap, sim)) {
+  if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     
     ageMapFilename <- file.path(dPath, "age.tif")

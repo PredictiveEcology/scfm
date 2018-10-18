@@ -96,6 +96,7 @@ Init <- function(sim) {
 
 
 Escape <- function(sim) {
+  
   if (length(sim$ignitionLoci) > 0){
     # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
     maxSizes <- unlist(lapply(sim$scfmPars, function(x) x$maxBurnCells))
