@@ -117,7 +117,7 @@ Escape <- function(sim) {
 #same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
   dPath <- inputPath(sim)
-  if (!suppliedElsewhere(ageMap, sim)) {
+  if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     ageMapFilename <- file.path(dPath, "age.tif")
     ageMap <- Cache(
@@ -129,7 +129,7 @@ Escape <- function(sim) {
     )
     sim$ageMap <- ageMap
   }
-  if (!suppliedElsewhere(flammableMap, sim)) {
+  if (!suppliedElsewhere("flammableMap", sim)) {
     sim$flammableMap <- sim$ageMap
     sim$flammableMap[] <- sim$ageMap[] * 0
   }
