@@ -73,7 +73,7 @@ outSim <- spades(mySim, progress = FALSE)
 #### Test with multiple study Areas ####
 
 require(raster)
-ecoDistricts <- shapefile(file.path(paths$inputPath, "Ecodistricts", "ecodistricts.shp"))
+ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
 subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
 objects <- list(studyArea = subEcoDistricts, mapDim = mapDim)
 #test
