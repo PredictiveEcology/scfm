@@ -113,7 +113,6 @@ ageModuleAge <- function(sim) {
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     
-   
     ageMapFilename <- file.path(dPath, "age.tif")
     options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,

@@ -24,7 +24,9 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc ="")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc =""),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "", 
+                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
@@ -108,18 +110,17 @@ Ignite <- function(sim) {
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
     
+    browser()
     ageMapFilename <- file.path(dPath, "age.tif")
+    options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
+                    url = extractURL(objectName = "ageMap"),
                     studyArea = sim$studyArea,
                     rasterToMatch = sim$vegMap,
                     destinationPath = file.path(dPath, "age"))
+    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
     
     sim$ageMap <- ageMap
-    
-  }
-  if (!suppliedElsewhere(flammableMap, sim)){
-    sim$flammableMap <- sim$ageMap
-    sim$flammableMap[] <- setValues(sim$flammableMap, values = getValues(sim$ageMap) * 0)
   }
   
   return(invisible(sim))

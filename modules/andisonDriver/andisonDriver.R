@@ -14,7 +14,9 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
+    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
+    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
+    ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
@@ -22,12 +24,15 @@ defineModule(sim, list(
     expectsInput(objectName = "cTable2", objectClass = "data.frame", 
                  desc = "A csv containing results of fire experiment", 
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
-    expectsInput(objectName = "AndisonFRI", objectClass = "spatialPolygonsDataFrame", desc = "Dave's FRI data", 
-                 sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing")
+    expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI data", 
+                 sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing"),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName="scfmPars", objectClass = "list", desc = ""),
-    createsOutput(objectName = "meanFRI", objectClass = "lsit", desc = "list of mean FRI over studyArea polygons")
+    createsOutput(objectName= "scfmPars", objectClass = "list", desc = ""),
+    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                  desc = "Dave Andison's FRI data cropped by the studyArea")
   )                      
 ))
 
@@ -203,4 +208,54 @@ Init <- function(sim) {
     sim$cTable2 <- cTable2
   }
   return(invisible(sim))
+}
+
+
+.inputObjects <- function(sim) {
+  dPath <- dataPath(sim)
+  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("study area not supplied. Using Ecodistrict 348")
+    
+    #source shapefile from ecodistict in input folder. Use ecodistrict 348
+
+    SA <- Cache(prepInputs,
+                url = extractURL(objectName = "studyArea"),
+                archive = "ecodistrict_shp.zip",
+                filename2 = TRUE,
+                userTags = c(cacheTags, "studyArea"),
+                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
+    
+    SA <- SA[SA$ECODISTRIC == 348, ]
+    sim$studyArea <- SA
+    sim$studyArea$polyID <- row.names(sim$studyArea)
+  }
+  
+
+  if (!suppliedElsewhere("AndisonFRI", sim)) {
+    
+    AndisonFRI <- Cache(prepInputs,
+                        url = extractURL(objectName = "AndisonFRI", sim),
+                        destinationPath = dataPath(sim),
+                        userTags = "AndisonFRI",
+                        filename2 = TRUE)
+    
+    #check for duplicated long-term historic fire cycles
+    b <- duplicated(AndisonFRI$LTHFC)
+    
+    if (any(b)) {
+      AndisonFRI <- Cache(raster::aggregate, 
+                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI,], 
+                          by = "LTHFC", 
+                          dissolve = TRUE)
+    }
+    AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
+    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea)
+  }
+  
+  sim$studyArea <- sim$AndisonFRI
+  sim$studyArea$PolyID <- row.names(sim$studyArea)
+ 
+  return(invisible(sim)) 
 }

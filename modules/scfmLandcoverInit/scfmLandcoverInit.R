@@ -21,8 +21,7 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
-      defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
@@ -88,7 +87,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
   
-  makeLandscapeAttr <- function(flammableMap, weight, FRI) {
+  makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
     
     neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
     #neighMapVals <- getValues(neighMap)
@@ -175,6 +174,7 @@ testFun <- function(x) {
 
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
+  browser()
   if ("Mask" %in% lsSimObjs) {
     flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
   }
@@ -207,6 +207,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
+    sim$studyArea$polyID <- row.names(sim$studyArea)
   }
   
   if (!suppliedElsewhere("vegMap", sim)) {
@@ -230,26 +231,6 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     
     sim$vegMap <- vegMap
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
-  }
-  if (!suppliedElsewhere("AndisonFRI", sim)) {
-   
-    AndisonFRI <- Cache(prepInputs,
-                        url = extractURL(objectName = "AndisonFRI", sim),
-                        destinationPath = dataPath(sim),
-                        userTags = "AndisonFRI",
-                        filename2 = TRUE)
-    
-    #check for duplicated long-term historic fire cycles
-    b <- duplicated(AndisonFRI$LTHFC)
-    
-    if (any(b)) {
-      AndisonFRI <- Cache(raster::aggregate, 
-                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI,], 
-                          by = "LTHFC", 
-                          dissolve = TRUE)
-    }
-    AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
-    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea)
   }
   
   return(invisible(sim))
