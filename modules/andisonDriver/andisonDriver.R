@@ -94,6 +94,7 @@ Init <- function(sim) {
     
     scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
     ratio <- targetAAB/scfmAAB
+    browser()
     if (ratio < 0.05){
         warning(sprintf("AAB ratio %5.3f in %s: no action taken",ratio, polygonType))
     }

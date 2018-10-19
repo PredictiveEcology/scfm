@@ -70,18 +70,13 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
+genFireMapAttr <- function(flammableMap, AndisonFRI, neighbours) {
   #calculate the cell size, total area, and number of flammable cells, etc.
   #
   #All areas in ha
   #
   cellSize <- prod(res(flammableMap)) / 1e4 #in ha
   
-  ecoregionErrors <- as.numeric(studyArea$ECOREGION) == 0
-  if (any(ecoregionErrors)) {
-    warning("ECOREGION in studyArea has invalid values. Removing invalid values")
-    studyArea <- studyArea[!ecoregionErrors, ]
-  }
   
   if (neighbours == 8)
     w <- matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), nrow = 3, ncol = 3)
@@ -92,16 +87,16 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
   
-  makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
+  makeLandscapeAttr <- function(flammableMap, weight, FRI) {
     neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
     #neighMapVals <- getValues(neighMap)
     
     # extract table for each polygon
-    valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
+    valsByPoly <- Cache(extract, neighMap, FRI, cellnumbers = TRUE)
     #browser()
     
-    names(valsByPoly) <- studyArea$ECOREGION
-    uniqueZoneNames <- unique(studyArea$ECOREGION)
+    names(valsByPoly) <- row.names(FRI)
+    uniqueZoneNames <- unique(row.names(FRI))
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
@@ -134,7 +129,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     return(landscapeAttr)
   }
   
-  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
+  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, AndisonFRI)
   
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
     cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
@@ -164,7 +159,7 @@ Init = function(sim) {
     # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
-                sim$studyArea,
+                sim$AndisonFRI,
                 P(sim)$neighbours)
                 list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
   
@@ -250,7 +245,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                           by = "LTHFC", 
                           dissolve = TRUE)
     }
-    
+    AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
     sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea)
   }
   
