@@ -15,8 +15,7 @@ defineModule(sim, list(
   parameters=rbind(
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireRegimePolygonLayer", "character", "ECOREGION", NA_character_, NA_character_, desc = "shapefile layer to define zonation")
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails ")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -55,6 +54,7 @@ Init <- function(sim) {
   tmp <- sim$firePoints
 
   #extract and validate fireCause spec
+
   fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
   causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
@@ -78,7 +78,7 @@ Init <- function(sim) {
   tmp<-sim$firePoints
   
   #extract and validate fireCause spec
-  fc<-P(sim)$fireCause
+  fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
   causeSet <- if(is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
   
@@ -97,15 +97,18 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT 
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-  frpl <- P(sim)$fireRegimePolygonLayer
   
-  tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, frpl])
+  frpl <- row.names(sim$studyArea)
+  
+  sim$studyArea$PolyID <- row.names(sim$studyArea)
+  tmp[[frpl]] <- sp::over(tmp, sim$studyArea[, "PolyID"]) #gives studyArea row name to point
   sim$firePoints <- tmp
   
   # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-  
+ 
   firePolys <- unlist(sim$firePoints[[frpl]])
+  
   
   sim$scfmRegimePars <-lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars, 
                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
@@ -118,9 +121,9 @@ Init <- function(sim) {
 
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, 
                                 firePoints = sim$firePoints, epochLength = epochLength) {
-  
+  browser()
   idx <- firePolys == polygonID
-  tmpA <- firePoints[idx, ]
+  tmpA <- firePoints[idx, ] #STOP HERE
   landAttr <- landscapeAttr[[polygonID]]
   cellSize = landAttr$cellSize
   nFires <- dim(tmpA)[1]

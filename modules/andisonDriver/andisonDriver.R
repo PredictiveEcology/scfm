@@ -75,16 +75,14 @@ calcp <-function(q,or){ # given q and or(p,q), solve for p
 
 Init <- function(sim) {
   
-  sim <- initFRI(sim) #IAN to write this for sim$meanFRI[[polygonType]] from shapefile record LTHFC 
-  
- 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
-   
+    
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-    fri <- sim$meanFRI[[polygonType]]  #need to dereference to an numeric
+    browser()
+    fri <- sim$  #will return LTHFC FIX THIS LINE
     fri <- ifelse(fri < 20, 20, fri)
     targetAAB <- landAttr$burnyArea / fri
     
@@ -94,7 +92,7 @@ Init <- function(sim) {
     
     scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
     ratio <- targetAAB/scfmAAB
-    browser()
+    
     if (ratio < 0.05){
         warning(sprintf("AAB ratio %5.3f in %s: no action taken",ratio, polygonType))
     }
@@ -185,11 +183,6 @@ Init <- function(sim) {
   
   names(sim$scfmPars) <- names(sim$landscapeAttr)
   
-  return(invisible(sim))
-}
-
-initFRI <- function(sim) {
-  #This is temporary
   return(invisible(sim))
 }
 

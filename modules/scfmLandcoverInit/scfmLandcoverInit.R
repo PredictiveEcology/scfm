@@ -21,7 +21,8 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
+      defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
@@ -70,7 +71,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-genFireMapAttr <- function(flammableMap, AndisonFRI, neighbours) {
+genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #calculate the cell size, total area, and number of flammable cells, etc.
   #
   #All areas in ha
@@ -88,15 +89,16 @@ genFireMapAttr <- function(flammableMap, AndisonFRI, neighbours) {
   #but I have not been able to make it work.
   
   makeLandscapeAttr <- function(flammableMap, weight, FRI) {
+    
     neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
     #neighMapVals <- getValues(neighMap)
     
     # extract table for each polygon
-    valsByPoly <- Cache(extract, neighMap, FRI, cellnumbers = TRUE)
+    valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
     #browser()
     
-    names(valsByPoly) <- row.names(FRI)
-    uniqueZoneNames <- unique(row.names(FRI))
+    names(valsByPoly) <- row.names(studyArea)
+    uniqueZoneNames <- unique(row.names(studyArea)) #get unique zones. This could be changed to LTHFC
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
@@ -113,7 +115,7 @@ genFireMapAttr <- function(flammableMap, AndisonFRI, neighbours) {
     })
     
     nFlammable <- lapply(valsByZone, function(x) {
-      sum(1 - getValues(flammableMap)[x[, 1]], na.rm = TRUE)
+      sum(1 - getValues(flammableMap)[x[, 1]], na.rm = TRUE) #sums flammable pixels in FRI polygons
     })
     
     landscapeAttr <- purrr::transpose(list(cellSize = rep(list(cellSize), length(nFlammable)),
@@ -129,10 +131,11 @@ genFireMapAttr <- function(flammableMap, AndisonFRI, neighbours) {
     return(landscapeAttr)
   }
   
-  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, AndisonFRI)
+  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
   
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-    cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_)
+    browser()
+    cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_, stringsAsFactors = FALSE)
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
       }
@@ -159,7 +162,7 @@ Init = function(sim) {
     # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
-                sim$AndisonFRI,
+                sim$studyArea,
                 P(sim)$neighbours)
                 list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
   
@@ -229,7 +232,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
   }
   if (!suppliedElsewhere("AndisonFRI", sim)) {
-    browser()
+   
     AndisonFRI <- Cache(prepInputs,
                         url = extractURL(objectName = "AndisonFRI", sim),
                         destinationPath = dataPath(sim),
@@ -241,7 +244,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     
     if (any(b)) {
       AndisonFRI <- Cache(raster::aggregate, 
-                          AndisonFRI[AndisonFRI$LTHFC > 40,], 
+                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI,], 
                           by = "LTHFC", 
                           dissolve = TRUE)
     }
