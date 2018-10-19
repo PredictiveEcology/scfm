@@ -30,14 +30,12 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName= "scfmPars", objectClass = "list", desc = ""),
-    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
-                  desc = "Dave Andison's FRI data cropped by the studyArea")
+    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area")
   )                      
 ))
 
 ## event types
-#   - type `init` is required for initiliazation
+#   - type `init` is required for initilization
 
 doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -79,15 +77,15 @@ calcp <-function(q,or){ # given q and or(p,q), solve for p
 }
 
 Init <- function(sim) {
-  
+ 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
   sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
-    
+    browser()
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-    browser()
-    fri <- sim$  #will return LTHFC FIX THIS LINE
+    
+    fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]   #will return LTHFC FIX THIS LINE
     fri <- ifelse(fri < 20, 20, fri)
     targetAAB <- landAttr$burnyArea / fri
     
@@ -104,7 +102,7 @@ Init <- function(sim) {
     else{
     if (ratio > 1.05) { #we have work to do
        or <- oddsRatio(0.179,0.111)
-       pEscape <- calcP(pEscape,or)
+       pEscape <- calcp(pEscape,or)
        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
        ratio <- targetAAB/scfmAAB
        #caution this step could over-correct
@@ -195,31 +193,13 @@ Init <- function(sim) {
 .inputObjects <- function(sim) {
   
   dPath <- dataPath(sim)
-  if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- Cache(prepInputs,
-                     targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
-                     url = extractURL(objectName = "cTable2", sim), 
-                     fun = "read.csv",
-                     destinationPath = dPath,
-                     overwrite = TRUE,
-                     filename2 = TRUE)
-    
-    
-    sim$cTable2 <- cTable2
-  }
-  return(invisible(sim))
-}
-
-
-.inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
   
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
     
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
-
+    
     SA <- Cache(prepInputs,
                 url = extractURL(objectName = "studyArea"),
                 archive = "ecodistrict_shp.zip",
@@ -232,7 +212,7 @@ Init <- function(sim) {
     sim$studyArea$polyID <- row.names(sim$studyArea)
   }
   
-
+  
   if (!suppliedElsewhere("AndisonFRI", sim)) {
     
     AndisonFRI <- Cache(prepInputs,
@@ -256,6 +236,18 @@ Init <- function(sim) {
   
   sim$studyArea <- sim$AndisonFRI
   sim$studyArea$PolyID <- row.names(sim$studyArea)
- 
-  return(invisible(sim)) 
+  
+  if (!suppliedElsewhere("cTable2", sim)) {
+    cTable2 <- Cache(prepInputs,
+                     targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
+                     url = extractURL(objectName = "cTable2", sim), 
+                     fun = "read.csv",
+                     destinationPath = dPath,
+                     overwrite = TRUE,
+                     filename2 = TRUE)
+    
+    
+    sim$cTable2 <- cTable2
+  }
+  return(invisible(sim))
 }

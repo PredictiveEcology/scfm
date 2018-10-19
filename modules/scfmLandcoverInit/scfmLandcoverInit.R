@@ -97,12 +97,12 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     #browser()
     
     names(valsByPoly) <- row.names(studyArea)
-    uniqueZoneNames <- unique(row.names(studyArea)) #get unique zones. This could be changed to LTHFC
+    uniqueZoneNames <- studyArea$PolyID #get unique zones. This could be changed to LTHFC
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
         aa <- do.call(rbind, aa)
-      aa
+      return(aa)
     })
     names(valsByZone) <- uniqueZoneNames
     
@@ -110,7 +110,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     nNbrs <- lapply(valsByZone, function(x) {
       nNbrs <- tabulate(x[, 2] + 1, 9)#depends on sfcmLandCoverInit
       names(nNbrs) <- 0:8
-      nNbrs
+      return(nNbrs)
     })
     
     nFlammable <- lapply(valsByZone, function(x) {
@@ -133,7 +133,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
   
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-    browser()
+    
     cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_, stringsAsFactors = FALSE)
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
@@ -150,20 +150,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 Init = function(sim) {
   # these classes are LCC05 specific
   
-  nonFlammClasses <- c(36, 37, 38, 39)
-  oldClass <- 0:39
-  newClass <- ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
-  #see mask argument for SpaDES::spread()
-  flammableTable <- cbind(oldClass, newClass)
-  
-  sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
-  
-    # This makes sim$landscapeAttr & sim$cellsByZone
-  outs <- Cache(genFireMapAttr,
-                sim$flammableMap,
-                sim$studyArea,
-                P(sim)$neighbours)
-                list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
+
   
   return(invisible(sim))
 }
@@ -174,7 +161,7 @@ testFun <- function(x) {
 
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
-  browser()
+  
   if ("Mask" %in% lsSimObjs) {
     flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
   }
@@ -190,7 +177,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
-  
+ 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
     
@@ -233,5 +220,22 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
   }
   
+  if (!suppliedElsewhere("landscapeAttr", sim)) {
+    
+    nonFlammClasses <- c(36, 37, 38, 39)
+    oldClass <- 0:39
+    newClass <- ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
+    #see mask argument for SpaDES::spread()
+    flammableTable <- cbind(oldClass, newClass)
+    
+    sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
+    
+    # This makes sim$landscapeAttr & sim$cellsByZone
+    outs <- Cache(genFireMapAttr,
+                  sim$flammableMap,
+                  sim$studyArea,
+                  P(sim)$neighbours)
+    list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
+  }
   return(invisible(sim))
 }

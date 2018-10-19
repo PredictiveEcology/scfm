@@ -67,7 +67,7 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
 set.seed(2343)
-outSim <- spades(mySim, progress = FALSE)
+outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 
 
 #### Test with multiple study Areas ####
