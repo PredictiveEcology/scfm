@@ -219,7 +219,7 @@ Init <- function(sim) {
                         userTags = "AndisonFRI",
                         filename2 = TRUE)
 
-    #check for duplicated long-term historic fire cycles
+    # check for duplicated long-term historic fire cycles
     b <- duplicated(AndisonFRI$LTHFC)
 
     if (any(b)) {
@@ -228,14 +228,11 @@ Init <- function(sim) {
                           by = "LTHFC",
                           dissolve = TRUE)
     }
-    AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
-
-    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea) #we do this so it does not have to dissolve every time
+    sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
   }
 
   ## do studyArea*AndisonFRI map intersection and add the polyID field
-  sim$studyArea <- postProcess(sim$AndisonFRI, studyArea = sim$studyArea,
-                               useSAcrs = TRUE, filename2 = NULL)
+  sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea)
   sim$studyArea$PolyID <- row.names(sim$studyArea)
 
   if (!suppliedElsewhere("cTable2", sim)) {
