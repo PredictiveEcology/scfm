@@ -64,7 +64,7 @@ Init <- function(sim) {
   
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
-  if("scfmPars" %in% ls(sim)) {
+  if("scfmRegimePars" %in% ls(sim)) {
     if(length(sim$scfmRegimePars) > 1) {
       pIg <- raster(sim$flammableMap)
       for(x in names(sim$scfmRegimePars)) {
@@ -72,7 +72,7 @@ Init <- function(sim) {
       }
       pIg[] <- pIg[] * (1-sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
-      pIg <- sim$scfmPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
+      pIg <- sim$scfmRegimePars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
     
   } else {
