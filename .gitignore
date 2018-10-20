@@ -1,4 +1,5 @@
-\.DS_Store
+.DS_Store
+.httr-oauth
 .Rapp.history
 .RData
 .Rhistory
@@ -7,4 +8,3 @@
 .Rproj.user
 cache/
 outputs/
-.httr-oauth
