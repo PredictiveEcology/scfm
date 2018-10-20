@@ -49,7 +49,10 @@ parameters <- list(
 modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime",
                 "scfmEscape", "scfmSpread", "andisonDriver")
 
-objects <- list(mapDim = mapDim) #note that these definitions are critical
+objects <- list(
+  mapDim = mapDim, # note that these definitions are critical
+  studyArea = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
+)
 
 paths <- list(
   cachePath = file.path("cache"),
