@@ -232,7 +232,6 @@ Init <- function(sim) {
 
     sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea) #we do this so it does not have to dissolve every time
   }
-  browser()
 
   ## do studyArea*AndisonFRI map intersection and add the polyID field
   sim$studyArea <- postProcess(sim$AndisonFRI, studyArea = sim$studyArea,
