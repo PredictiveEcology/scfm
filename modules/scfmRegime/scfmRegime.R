@@ -117,6 +117,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
     }
+  } else {
+    return(NULL)
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.

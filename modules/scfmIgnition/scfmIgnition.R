@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
@@ -60,15 +60,15 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 
 
 Init <- function(sim) {
-  browser()
+  #browser()
 
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
-  if ("scfmPars" %in% ls(sim)) {
-    if (length(sim$landscapeAttr) > 1) {
+  if ("scfmRegimePars" %in% ls(sim)) {
+    if (length(sim$scfmRegimePars) > 1) {
       pIg <- raster(sim$flammableMap)
       for (x in names(sim$landscapeAttr)) {
-        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pIgnition
+        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmRegimePars[[x]]$pIgnition
       }
       pIg[] <- pIg[] * (1 - sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
@@ -89,7 +89,7 @@ Init <- function(sim) {
 ### template for your event1
 Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$scfmPars), function(polygonType) {
+  ignitions <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
     if (length(sim$pIg) > 1) {
       cells[which(runif(length(cells)) < sim$pIg[cells])]
