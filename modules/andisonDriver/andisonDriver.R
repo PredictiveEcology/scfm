@@ -1,17 +1,17 @@
 defineModule(sim, list(
-  name="andisonDriver",
-  description="make scfm fire modules simulate Andisons FRIs by fudging scfmRegime parameters.",
-  keywords=c("fire"),
-  authors=c(person(c("Steven", "G"), "Cumming", email="stevec@sbf.ulaval.ca", role=c("aut", "cre"))),
-  childModules=character(),
-  version=numeric_version("0.1.0"),
-  spatialExtent=raster::extent(rep(NA_real_, 4)),
-  timeframe=as.POSIXlt(c(NA, NA)),
-  timeunit="year", 
-  citation=list(),
+  name = "andisonDriver",
+  description = "make scfm fire modules simulate Andisons FRIs by fudging scfmRegime parameters.",
+  keywords = c("fire"),
+  authors = c(person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))),
+  childModules = character(),
+  version = numeric_version("0.1.0"),
+  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  timeframe = as.POSIXlt(c(NA, NA)),
+  timeunit = "year", 
+  citation = list(),
   documentation = list("README.txt", "andisonDriver.Rmd"),
-  reqdPkgs=list("stats"), 
-  parameters=rbind(
+  reqdPkgs = list("stats"), 
+  parameters = rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
@@ -44,8 +44,8 @@ doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
         sim <- Init(sim)
       },
     
-    warning(paste("Undefined event type: '", events(sim)[1, "eventType", with=FALSE],
-                    "' in module '", events(sim)[1, "moduleName", with=FALSE], "'", sep=""))
+    warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
+                  "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
   return(invisible(sim))
 }
@@ -56,32 +56,30 @@ doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
 # (1 - pEscape)**1/N = 1 - p0
 # p0 = 1 - (1 - pEscape)**1/N
 
-hatP0 <- function(pEscape,n=8){
-  1 - (1-pEscape)**(1/n)
+hatP0 <- function(pEscape, n = 8){
+  1 - (1 - pEscape) ** (1 / n)
 }
 
 #a real clever boots would minimise the abs log odds ratio. 
 #be my guest.
 
 escapeProbDelta <- function(p0,w,hatPE){
-  abs(sum(w*(1-(1-p0)**(0:8)))-hatPE)  
+  abs(sum(w * (1 - (1 - p0) ** (0:8))) - hatPE)  
 }
 
-odds <- function(p)p/(1-p)
+odds <- function(p) p / (1 - p)
 
 oddsRatio <- function(p,q) odds(p)/odds(q)
 
-calcp <-function(q,or){ # given q and or(p,q), solve for p
+calcp <- function(q,or){ # given q and or(p,q), solve for p
   x <- or * odds(q)
-  return ( 1 / ((1 / x) +1))
+  return(1 / ((1 / x) + 1))
 }
 
 Init <- function(sim) {
- 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
-  sim$scfmPars<- lapply(names(sim$scfmRegimePars), function(polygonType) {
-    browser()
+  sim$scfmPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
     
@@ -96,45 +94,46 @@ Init <- function(sim) {
     scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
     ratio <- targetAAB/scfmAAB
     
-    if (ratio < 0.95){
-        warning(sprintf("AAB ratio %5.3f in %s: no action taken",ratio, polygonType))
-    }
-    else{
-    if (ratio > 1.05) { #we have work to do
-       or <- oddsRatio(0.179,0.111)
-       pEscape <- calcp(pEscape,or)
-       scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
-       ratio <- targetAAB/scfmAAB
-       #caution this step could over-correct
-    }
-    if (ratio > 1.05){ #we have more work to do}
-         or <- oddsRatio(0.319,0.179)
-         pEscape <- calcp(pEscape,or)
-         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
-         ratio <- targetAAB/scfmAAB
-         #caution this step could over-correct, too
-    }
+    if (ratio < 0.95) {
+        warning(sprintf("AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
+    } else {
+      if (ratio > 1.05) {
+        #we have work to do
+        or <- oddsRatio(0.179, 0.111)
+        pEscape <- calcp(pEscape,or)
+        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+        ratio <- targetAAB/scfmAAB
+        #caution this step could over-correct
+      }
+      if (ratio > 1.05) {
+        #we have more work to do
+        or <- oddsRatio(0.319, 0.179)
+        pEscape <- calcp(pEscape, or)
+        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+        ratio <- targetAAB / scfmAAB
+        #caution this step could over-correct, too
+      }
 
-    if (ratio < 0.95){
-    #we got this way by dialing up pEscape, so dial it back down again, and we're apples.
-      pEscape <- pEscape * ratio
-      scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
-      ratio <- targetAAB/scfmAAB
+      if (ratio < 0.95) {
+        #we got this way by dialing up pEscape, so dial it back down again, and we're apples.
+        pEscape <- pEscape * ratio
+        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+        ratio <- targetAAB / scfmAAB
+      }
+      if (ratio > 1.05) {
+        mfs <- mfs * min(ratio, 2)
+        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+        ratio <- targetAAB / scfmAAB
+      }
+      if (ratio > 1.05) {
+        rate <- rate * min(ratio, 2)
+        scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
+        ratio <- targetAAB / scfmAAB
+      }
+      if (ratio > 1.05) {
+        warning(sprintf("Target FRI of %03d in zone %s not achievable from data", fri, polygonType))
+      }
     }
-    if (ratio > 1.05){
-      mfs <- mfs * min(ratio, 2)
-      scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
-      ratio <- targetAAB/scfmAAB
-    }
-    if (ratio > 1.05){
-      rate <- rate * min(ratio, 2)
-      scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
-      ratio <- targetAAB/scfmAAB
-    }
-  if (ratio > 1.05) {
-      warning(sprintf("Target FRI of %03d in zone %s not achievable from data",fri, polygonType))
-    }
-   }
     
     
     #this table contains calibration data for several landscape sizes
@@ -143,29 +142,31 @@ Init <- function(sim) {
     #I chose the one that seems most appropriate to me
     #we know this table was produced with MinFireSize=2cells.
     
-     y <- sim$cTable2$y 
-     x <- sim$cTable2$p 
-     m.lw <- lowess(y~x,iter=2)
-     if (sum(diff(m.lw$y)<0)>0)
-        warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
-      targetSize <- mfs/cellSize - 1 
-      pJmp <- approx(m.lw$y,m.lw$x,targetSize,rule=2)$y
-  
+    y <- sim$cTable2$y 
+    x <- sim$cTable2$p 
+    m.lw <- lowess(y~x, iter = 2)
+    if (sum(diff(m.lw$y) < 0) > 0)
+      warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
+    targetSize <- mfs / cellSize - 1 
+    pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
+    
     w <- landAttr$nNbrs
-    w <- w/sum(w)
+    w <- w / sum(w)
     hatPE <- pEscape
-    if(hatPE == 0) { # no fires in polygon zone escapted
+    if (hatPE == 0) {
+      # no fires in polygon zone escapted
       foo <- 0 
-    } else if (hatPE == 1) { # all fires in polygon zone escaped
+    } else if (hatPE == 1) {
+      # all fires in polygon zone escaped
       foo <- 1
     } else {
       res <- optimise(escapeProbDelta,
-                    interval=c(hatP0(hatPE,P(sim)$neighbours),
-                               hatP0(hatPE,floor(sum(w*0:8)))),
-                    tol=1e-4,
-                    w=w,
-                    hatPE=hatPE)
-      foo <-res[["minimum"]]
+                      interval = c(hatP0(hatPE, P(sim)$neighbours),
+                                   hatP0(hatPE, floor(sum(w*0:8)))),
+                      tol = 1e-4,
+                      w = w,
+                      hatPE = hatPE)
+      foo <- res[["minimum"]]
       #It is almost obvious that the true minimum must occurr within the interval specified in the 
       #call to optimise, but I have not proved it, nor am I certain that the function being minimised is 
       #monotone.
