@@ -177,7 +177,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
- 
+  
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
     

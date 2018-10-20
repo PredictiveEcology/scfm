@@ -73,10 +73,32 @@ outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 #### Test with multiple study Areas ####
 
 require(raster)
+#Don't try this it won't work yet
+# ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
+# subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
+# objects <- list(studyArea = subEcoDistricts, mapDim = mapDim)
+
+
+#testing steve's data. #There is a problem right now with input objects. This only works if studyArea is Dave's shapefile
+
+AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
+AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,], 
+                                by = 'LTHFC', dissolve = TRUE)
 ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
-subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
-objects <- list(studyArea = subEcoDistricts, mapDim = mapDim)
-#test
+subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(198),] #Three semi-adjacent ecoDistricts
+plot(subEcoDistricts)
+
+
+
+subEcoDistricts <- spTransform(subEcoDistricts, CRSobj = crs(AndisonFRI))
+#This is producing NULL files, sometimes single lines. wtf
+AndisonFRIm <- crop(AndisonFRI, subEcoDistricts)
+
+plot(AndisonFRIm)
+AndisonFRIm$PolyID <- row.names(AndisonFRIm)
+objects <- list(studyArea = AndisonFRIm)
+plot(AndisonFRIm)
+
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 

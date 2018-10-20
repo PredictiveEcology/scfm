@@ -122,12 +122,12 @@ Init <- function(sim) {
       ratio <- targetAAB/scfmAAB
     }
     if (ratio > 1.05){
-      mfs <- mfs * max(ratio, 2)
+      mfs <- mfs * min(ratio, 2)
       scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
       ratio <- targetAAB/scfmAAB
     }
     if (ratio > 1.05){
-      rate <- rate * max(ratio, 2)
+      rate <- rate * min(ratio, 2)
       scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
       ratio <- targetAAB/scfmAAB
     }
@@ -185,8 +185,8 @@ Init <- function(sim) {
                 maxBurnCells = as.integer(round(regime$emfs/cellSize)))
     )
   })
-  
-  names(sim$scfmPars) <- names(sim$landscapeAttr)
+
+  names(sim$scfmPars) <- names(sim$scfmRegimePars)
   
   return(invisible(sim))
 }
@@ -233,7 +233,7 @@ Init <- function(sim) {
                           dissolve = TRUE)
     }
     AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
-    browser()
+    
     sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea) #we do this so it does not have to dissolve every time
     
     
