@@ -1,6 +1,6 @@
 library(SpaDES)
 library(magrittr)
-inputDir <- file.path("inputs") 
+inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
 timeunit <- "year"
@@ -12,13 +12,13 @@ defaultInitialSaveTime <- NA #don't be saving nuffink
 parameters <- list(
   .progress = list(type = "text", interval = 1),
   ageModule = list(
-    initialAge = 100, 
-    maxAge = 200, 
-    returnInterval = defaultInterval, 
+    initialAge = 100,
+    maxAge = 200,
+    returnInterval = defaultInterval,
     startTime = times$start,
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime, 
+    .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmIgnition = list(
     pIgnition = 0.0001,
@@ -69,7 +69,6 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
 set.seed(2343)
 outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 
-
 #### Test with multiple study Areas ####
 
 require(raster)
@@ -82,13 +81,11 @@ require(raster)
 #testing steve's data. #There is a problem right now with input objects. This only works if studyArea is Dave's shapefile
 
 AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
-AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,], 
+AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
                                 by = 'LTHFC', dissolve = TRUE)
 ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
 subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(198),] #Three semi-adjacent ecoDistricts
 plot(subEcoDistricts)
-
-
 
 subEcoDistricts <- spTransform(subEcoDistricts, CRSobj = crs(AndisonFRI))
 #This is producing NULL files, sometimes single lines. wtf
