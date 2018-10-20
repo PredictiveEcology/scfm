@@ -67,7 +67,7 @@ Init <- function(sim) {
   if("scfmPars" %in% ls(sim)) {
     if(length(sim$landscapeAttr) > 1) {
       pIg <- raster(sim$flammableMap)
-      for(x in names(sim$landscapeAttr)) {
+      for(x in names(sim$scfmRegimePars)) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pIgnition
       }
       pIg[] <- pIg[] * (1-sim$flammableMap[]) #apply non-flammmable 1s and NAs
