@@ -191,7 +191,7 @@ Init <- function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!c("LTHFC", "PolyID") %in% names(sim$studyArea))
+  if (!all(c("LTHFC", "PolyID") %in% names(sim$studyArea)))
     stop("studyArea improperly specified; did you use andisonDriver_dataPrep?")
 
   if (!suppliedElsewhere("cTable2", sim)) {
