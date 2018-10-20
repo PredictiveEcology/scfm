@@ -24,8 +24,8 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmPars", objectClass = "list", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc =""),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "", 
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL")
   ),
   outputObjects = bind_rows(
@@ -37,8 +37,8 @@ defineModule(sim, list(
 #   - type `init` is required for initialiazation
 
 doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
-  switch (
-    eventType, 
+  switch(
+    eventType,
     init = {
       sim <- Init(sim)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite")
@@ -60,28 +60,28 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 
 
 Init <- function(sim) {
-  #browser()
-  
+  browser()
+
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
-  if("scfmRegimePars" %in% ls(sim)) {
-    if(length(sim$scfmRegimePars) > 1) {
+  if ("scfmPars" %in% ls(sim)) {
+    if (length(sim$landscapeAttr) > 1) {
       pIg <- raster(sim$flammableMap)
-      for(x in names(sim$scfmRegimePars)) {
+      for (x in names(sim$landscapeAttr)) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pIgnition
       }
-      pIg[] <- pIg[] * (1-sim$flammableMap[]) #apply non-flammmable 1s and NAs
+      pIg[] <- pIg[] * (1 - sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
       pIg <- sim$scfmRegimePars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
-    
+
   } else {
     pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
   }
   sim$pIg <- pIg
-  
+
   sim$ignitionLoci <- NULL
-  
+
   return(invisible(sim))
 }
 
@@ -91,7 +91,7 @@ Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
   ignitions <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
-    if(length(sim$pIg)>1) {
+    if (length(sim$pIg) > 1) {
       cells[which(runif(length(cells)) < sim$pIg[cells])]
     } else {
       cells[which(runif(length(cells)) < sim$pIg)]
@@ -99,17 +99,17 @@ Ignite <- function(sim) {
   })
   #resample generates a random permutation of the elements of ignitions
   #so that we don't always sequence in map index order. EJM pointed this out.
-  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions)) 
-  
+  sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
+
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
-  
+
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
-    
+
     browser()
     ageMapFilename <- file.path(dPath, "age.tif")
     options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
@@ -119,10 +119,9 @@ Ignite <- function(sim) {
                     rasterToMatch = sim$vegMap,
                     destinationPath = file.path(dPath, "age"))
     options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
-    
+
     sim$ageMap <- ageMap
   }
-  
+
   return(invisible(sim))
 }
-
