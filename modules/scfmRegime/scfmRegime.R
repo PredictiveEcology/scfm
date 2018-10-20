@@ -1,18 +1,17 @@
-
 defineModule(sim, list(
-  name="scfmRegime",
-  description="estimates fire regime parameters for BEACONs a la Steve's method",
-  keywords=c("fire regime", "BEACONs"),
-  authors=c(person(c("Steven", "G."), "Cumming", email="stevec@sbf.ulaval.ca", role=c("aut", "cre"))),
-  childModules=character(),
-  version=numeric_version("0.1.0"),
-  spatialExtent=raster::extent(rep(NA_real_, 4)),
-  timeframe=as.POSIXlt(c(NA, NA)),
-  timeunit="year",
-  citation=list(),
+  name = "scfmRegime",
+  description = "estimates fire regime parameters for BEACONs a la Steve's method",
+  keywords = c("fire regime", "BEACONs"),
+  authors = c(person(c("Steven", "G."), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))),
+  childModules = character(),
+  version = numeric_version("0.1.0"),
+  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  timeframe = as.POSIXlt(c(NA, NA)),
+  timeunit = "year",
+  citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs=list("rgdal"),
-  parameters=rbind(
+  reqdPkgs = list("rgdal"),
+  parameters = rbind(
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails ")
@@ -138,10 +137,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
           )
 }
 
-
-
 .inputObjects <- function(sim) {
-
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 

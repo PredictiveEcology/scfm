@@ -24,7 +24,7 @@ defineModule(sim, list(
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "scfmPars", objectClass = "list", desc = "")
+    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
   )
 ))
 
@@ -67,7 +67,7 @@ Init <- function(sim) {
   #I chose the one that seems most appropriate to me
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  sim$scfmPars <- lapply(names(sim$landscapeAttr), function(polygonType) {
+  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
 
@@ -117,7 +117,7 @@ Init <- function(sim) {
                 maxBurnCells = as.integer(round(regime$emfs / cellSize)))
     )
   })
-  names(sim$scfmPars) <- names(sim$landscapeAttr)
+  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars)
 
   return(invisible(sim))
 }
@@ -132,8 +132,6 @@ Init <- function(sim) {
                      destinationPath = dPath,
                      overwrite = TRUE,
                      filename2 = "FiresN1000MinFiresSize2NoLakes.csv")
-
-
     sim$cTable2 <- cTable2
   }
 

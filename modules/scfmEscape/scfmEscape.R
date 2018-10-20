@@ -5,7 +5,7 @@ defineModule(sim, list(
   description = "This Escapes fire(s) from an initial set of loci returned by an ignition module,\
                  and readies the results for use by scfmSpread",
   keywords = c("fire Escape BEACONs"),
-  authors = c(person(c("Steve", "X"), "Cumming",
+  authors = c(person(c("Steven", "G"), "Cumming",
                      email = "stevec@sbf.ulaval.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
@@ -26,7 +26,7 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
   ),
@@ -49,7 +49,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     },
     plot = {
       values(sim$tmpRaster)[sim$spreadState[, indices]] <- 2 #this reference method is believed to be faster
-      values(sim$tmpRaster)[sim$ignitionLoci] <- 1          #mark the initials specialy
+      values(sim$tmpRaster)[sim$ignitionLoci] <- 1          #mark the initials specially
       Plot(sim$tmpRaster)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
     },
@@ -72,17 +72,16 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
 Init <- function(sim) {
   sim$spreadState <- NULL
 
-  if ("scfmRegimePars" %in% ls(sim)) {
-    if (length(sim$landscapeAttr) > 1) {
+  if ("scfmDriverPars" %in% ls(sim)) {
+    if (length(sim$scfmDriverPars) > 1) {
       p0 <- raster(sim$flammableMap)
-      for (x in names(sim$landscapeAttr)) {
-        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmRegimePars[[x]]$p0
+      for (x in names(sim$scfmDriverPars)) {
+        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
       }
       p0[] <- p0[] * (1 - sim$flammableMap[])
     } else {
-      p0 <- sim$scfmRegimePars[[1]]$p0
+      p0 <- sim$scfmDriverPars[[1]]$p0
     }
-
   } else {
     p0 <- P(sim)$p0
   }
@@ -94,18 +93,18 @@ Init <- function(sim) {
 Escape <- function(sim) {
   if (length(sim$ignitionLoci) > 0) {
     # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
-    maxSizes <- unlist(lapply(sim$scfmRegimePars, function(x) x$maxBurnCells))
-    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci,"zone"]] #steve does not believe this
+    maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
+    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
 
     sim$spreadState <- SpaDES.tools::spread(landscape = sim$flammableMap,
-                                      loci = sim$ignitionLoci,
-                                      iterations = 1,
-                                      spreadProb = sim$p0,
-                                      #mask=sim$flammableMap,
-                                      directions = P(sim)$neighbours,
-                                      maxSize = maxSizes,
-                                      returnIndices = TRUE,
-                                      id = TRUE)
+                                            loci = sim$ignitionLoci,
+                                            iterations = 1,
+                                            spreadProb = sim$p0,
+                                            #mask=sim$flammableMap,
+                                            directions = P(sim)$neighbours,
+                                            maxSize = maxSizes,
+                                            returnIndices = TRUE,
+                                            id = TRUE)
   }
   return(invisible(sim))
 }

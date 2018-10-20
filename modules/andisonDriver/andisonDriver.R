@@ -19,17 +19,18 @@ defineModule(sim, list(
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
-    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
                  desc = "A csv containing results of fire experiment",
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
-    expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI data",
+    expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI map",
                  sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
+    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area")
   )
 ))
@@ -71,7 +72,7 @@ odds <- function(p) p / (1 - p)
 
 oddsRatio <- function(p,q) odds(p)/odds(q)
 
-calcp <- function(q,or){ # given q and or(p,q), solve for p
+calcp <- function(q, or){ # given q and or(p,q), solve for p
   x <- or * odds(q)
   return(1 / ((1 / x) + 1))
 }
@@ -79,7 +80,7 @@ calcp <- function(q,or){ # given q and or(p,q), solve for p
 Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  sim$scfmPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
+  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
 
@@ -113,7 +114,6 @@ Init <- function(sim) {
         ratio <- targetAAB / scfmAAB
         #caution this step could over-correct, too
       }
-
       if (ratio < 0.95) {
         #we got this way by dialing up pEscape, so dial it back down again, and we're apples.
         pEscape <- pEscape * ratio
@@ -187,14 +187,12 @@ Init <- function(sim) {
     )
   })
 
-  names(sim$scfmPars) <- names(sim$scfmRegimePars)
+  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars)
 
   return(invisible(sim))
 }
 
-
 .inputObjects <- function(sim) {
-
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
@@ -215,9 +213,7 @@ Init <- function(sim) {
     sim$studyArea$polyID <- row.names(sim$studyArea)
   }
 
-
   if (!suppliedElsewhere("AndisonFRI", sim)) {
-
     AndisonFRI <- Cache(prepInputs,
                         url = extractURL(objectName = "AndisonFRI", sim),
                         destinationPath = dataPath(sim),
@@ -250,7 +246,6 @@ Init <- function(sim) {
                      destinationPath = dPath,
                      overwrite = TRUE,
                      filename2 = TRUE)
-
 
     sim$cTable2 <- cTable2
   }

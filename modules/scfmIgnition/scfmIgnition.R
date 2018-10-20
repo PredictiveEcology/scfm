@@ -4,7 +4,7 @@ defineModule(sim, list(
   name = "scfmIgnition",
   description = "start a random number of fires",
   keywords = c("insert key words here"),
-  authors = c(person(c("First", "Middle"), "Last", email="email@example.com", role=c("aut", "cre"))),
+  authors = c(person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("1.1.0.9002"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
@@ -57,22 +57,20 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-
-
 Init <- function(sim) {
   #browser()
 
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
-  if ("scfmRegimePars" %in% ls(sim)) {
-    if (length(sim$scfmRegimePars) > 1) {
+  if ("scfmDriverPars" %in% ls(sim)) {
+    if (length(sim$scfmDriverPars) > 1) {
       pIg <- raster(sim$flammableMap)
       for (x in names(sim$landscapeAttr)) {
-        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmRegimePars[[x]]$pIgnition
+        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
       pIg[] <- pIg[] * (1 - sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
-      pIg <- sim$scfmRegimePars[[1]]$pIgnition #and pIg is a constant from scfmDriver
+      pIg <- sim$scfmDriverPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
   } else {
     pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
@@ -84,13 +82,12 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-
 ### template for your event1
 Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$scfmRegimePars), function(polygonType) {
+  ignitions <- lapply(names(sim$scfmDriverPars), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
-    if (length(sim$pIg) > 1) {
+    if (is(sim$pIg, "Raster")) {
       cells[which(runif(length(cells)) < sim$pIg[cells])]
     } else {
       cells[which(runif(length(cells)) < sim$pIg)]
