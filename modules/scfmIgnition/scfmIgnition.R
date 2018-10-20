@@ -72,7 +72,7 @@ Init <- function(sim) {
       }
       pIg[] <- pIg[] * (1 - sim$flammableMap[]) #apply non-flammmable 1s and NAs
     } else {
-      pIg <- sim$scfmPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
+      pIg <- sim$scfmRegimePars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
 
   } else {
