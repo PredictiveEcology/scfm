@@ -1,5 +1,7 @@
-library(SpaDES)
 library(magrittr)
+library(raster)
+library(SpaDES)
+
 inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
