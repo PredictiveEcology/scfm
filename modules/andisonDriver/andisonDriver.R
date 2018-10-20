@@ -210,7 +210,6 @@ Init <- function(sim) {
 
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
-    sim$studyArea$polyID <- row.names(sim$studyArea)
   }
 
   if (!suppliedElsewhere("AndisonFRI", sim)) {
@@ -232,11 +231,13 @@ Init <- function(sim) {
     AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
 
     sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea) #we do this so it does not have to dissolve every time
-
-
-    sim$studyArea <- sim$AndisonFRI
-    sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
+  browser()
+
+  ## do studyArea*AndisonFRI map intersection and add the polyID field
+  sim$studyArea <- postProcess(sim$AndisonFRI, studyArea = sim$studyArea,
+                               useSAcrs = TRUE, filename2 = NULL)
+  sim$studyArea$PolyID <- row.names(sim$studyArea)
 
   if (!suppliedElsewhere("cTable2", sim)) {
     cTable2 <- Cache(prepInputs,
