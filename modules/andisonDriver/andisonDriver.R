@@ -80,7 +80,7 @@ Init <- function(sim) {
  
   cellSize <- sim$landscapeAttr[[1]]$cellSize
   
-  sim$scfmPars<- lapply(names(sim$landscapeAttr), function(polygonType) {
+  sim$scfmPars<- lapply(names(sim$scfmRegimePars), function(polygonType) {
     browser()
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
@@ -96,7 +96,7 @@ Init <- function(sim) {
     scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
     ratio <- targetAAB/scfmAAB
     
-    if (ratio < 0.05){
+    if (ratio < 0.95){
         warning(sprintf("AAB ratio %5.3f in %s: no action taken",ratio, polygonType))
     }
     else{
@@ -109,11 +109,12 @@ Init <- function(sim) {
     }
     if (ratio > 1.05){ #we have more work to do}
          or <- oddsRatio(0.319,0.179)
-         pEscape <- calcP(pEscape,or)
+         pEscape <- calcp(pEscape,or)
          scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
          ratio <- targetAAB/scfmAAB
          #caution this step could over-correct, too
     }
+
     if (ratio < 0.95){
     #we got this way by dialing up pEscape, so dial it back down again, and we're apples.
       pEscape <- pEscape * ratio
@@ -130,9 +131,10 @@ Init <- function(sim) {
       scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
       ratio <- targetAAB/scfmAAB
     }
-    if (ratio > 1.05)
+  if (ratio > 1.05) {
       warning(sprintf("Target FRI of %03d in zone %s not achievable from data",fri, polygonType))
     }
+   }
     
     
     #this table contains calibration data for several landscape sizes
@@ -223,7 +225,7 @@ Init <- function(sim) {
     
     #check for duplicated long-term historic fire cycles
     b <- duplicated(AndisonFRI$LTHFC)
-    
+   
     if (any(b)) {
       AndisonFRI <- Cache(raster::aggregate, 
                           AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI,], 
@@ -231,11 +233,13 @@ Init <- function(sim) {
                           dissolve = TRUE)
     }
     AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
-    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea)
+    browser()
+    sim$AndisonFRI <- Cache(crop, AndisonFRI, y = sim$studyArea) #we do this so it does not have to dissolve every time
+    
+    
+    sim$studyArea <- sim$AndisonFRI
+    sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
-  
-  sim$studyArea <- sim$AndisonFRI
-  sim$studyArea$PolyID <- row.names(sim$studyArea)
   
   if (!suppliedElsewhere("cTable2", sim)) {
     cTable2 <- Cache(prepInputs,

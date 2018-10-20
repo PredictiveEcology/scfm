@@ -71,7 +71,7 @@ Init <- function(sim) {
   if ("scfmPars" %in% ls(sim)) {
     if (length(sim$landscapeAttr) > 1) {
       pSpread <- raster(sim$flammableMap)
-      for (x in names(sim$landscapeAttr)) {
+      for (x in names(sim$scfmPars)) {
         pSpread[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmPars[[x]]$pSpread
       }     
       pSpread[] <- pSpread[] * (1 - sim$flammableMap[])

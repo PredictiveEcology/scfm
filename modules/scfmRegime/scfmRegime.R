@@ -57,12 +57,15 @@ Init <- function(sim) {
 
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr, 
                                 firePoints = sim$firePoints, epochLength = epochLength) {
-  browser()
+
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ] #STOP HERE
   landAttr <- landscapeAttr[[polygonID]]
   cellSize = landAttr$cellSize
   nFires <- dim(tmpA)[1]
+  if (nFires == 0) {
+    return(NULL)
+  }
   rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
   
   pEscape <- 0
@@ -240,6 +243,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     
     names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
   
+    sim$scfmRegimePars <- scfmRegimePars[-which(sapply(scfmRegimePars, is.null))]
+    
   }
     
   return(invisible(sim))

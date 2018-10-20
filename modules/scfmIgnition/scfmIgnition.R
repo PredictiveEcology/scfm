@@ -89,7 +89,7 @@ Init <- function(sim) {
 ### template for your event1
 Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$landscapeAttr), function(polygonType) {
+  ignitions <- lapply(names(sim$scfmPars), function(polygonType) {
     cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
     if(length(sim$pIg)>1) {
       cells[which(runif(length(cells)) < sim$pIg[cells])]
