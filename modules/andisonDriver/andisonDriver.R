@@ -84,7 +84,7 @@ Init <- function(sim) {
     landAttr <- sim$landscapeAttr[[polygonType]]
     
     fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]   #will return LTHFC FIX THIS LINE
-    fri <- ifelse(fri < 20, 20, fri)
+    fri <- ifelse(fri < P(sim)$minFRI, P(sim)$minFRI, fri)
     targetAAB <- landAttr$burnyArea / fri
     
     rate <- regime$ignitionRate
@@ -229,7 +229,7 @@ Init <- function(sim) {
    
     if (any(b)) {
       AndisonFRI <- Cache(raster::aggregate, 
-                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI,], 
+                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI, ], 
                           by = "LTHFC", 
                           dissolve = TRUE)
     }
