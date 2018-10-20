@@ -48,12 +48,12 @@ parameters <- list(
     .saveInterval = defaultInterval)
 )
 
-modules <- list("scfmLandcoverInit", "scfmIgnition","ageModule","scfmRegime",
-                "scfmEscape", "scfmSpread", "andisonDriver")
+modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
+                "scfmIgnition", "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
 
 objects <- list(
   mapDim = mapDim, # note that these definitions are critical
-  studyArea = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
+  studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
 )
 
 paths <- list(

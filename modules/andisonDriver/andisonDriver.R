@@ -24,14 +24,11 @@ defineModule(sim, list(
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
                  desc = "A csv containing results of fire experiment",
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
-    expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI map",
-                 sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area")
+    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters")
   )
 ))
 
@@ -41,16 +38,14 @@ defineModule(sim, list(
 doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
     eventType,
-      init = {
-        sim <- Init(sim)
-      },
-
+    init = {
+      sim <- Init(sim)
+    },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
   return(invisible(sim))
 }
-
 
 # 1 - (1-p0)**N = pEscape
 # 1 - pEscape = (1-p0)**N
@@ -181,9 +176,9 @@ Init <- function(sim) {
 
     return(list(pSpread = pJmp,
                 p0 = foo,
-                naiveP0 = hatP0(pEscape,8),
+                naiveP0 = hatP0(pEscape, 8),
                 pIgnition = pIgnition,
-                maxBurnCells = as.integer(round(regime$emfs/cellSize)))
+                maxBurnCells = as.integer(round(regime$emfs / cellSize)))
     )
   })
 
@@ -196,44 +191,8 @@ Init <- function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using Ecodistrict 348")
-
-    #source shapefile from ecodistict in input folder. Use ecodistrict 348
-
-    SA <- Cache(prepInputs,
-                url = extractURL(objectName = "studyArea"),
-                archive = "ecodistrict_shp.zip",
-                filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
-                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-
-    SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea <- SA
-  }
-
-  if (!suppliedElsewhere("AndisonFRI", sim)) {
-    AndisonFRI <- Cache(prepInputs,
-                        url = extractURL(objectName = "AndisonFRI", sim),
-                        destinationPath = dataPath(sim),
-                        userTags = "AndisonFRI",
-                        filename2 = TRUE)
-
-    # check for duplicated long-term historic fire cycles
-    b <- duplicated(AndisonFRI$LTHFC)
-
-    if (any(b)) {
-      AndisonFRI <- Cache(raster::aggregate,
-                          AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI, ],
-                          by = "LTHFC",
-                          dissolve = TRUE)
-    }
-    sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea))
-  }
-
-  ## do studyArea*AndisonFRI map intersection and add the polyID field
-  sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea)
-  sim$studyArea$PolyID <- row.names(sim$studyArea)
+  if (!c("LTHFC", "PolyID") %in% names(sim$studyArea))
+    stop("studyArea improperly specified; did you use andisonDriver_dataPrep?")
 
   if (!suppliedElsewhere("cTable2", sim)) {
     cTable2 <- Cache(prepInputs,

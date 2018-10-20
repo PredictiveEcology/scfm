@@ -220,7 +220,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
 
     frpl <- sim$studyArea$PolyID
-browser()
+
     tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
     tmp$PolyID <- tmp$PolyID$PolyID
     sim$firePoints <- tmp

@@ -28,8 +28,8 @@ defineModule(sim,list(
         sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
         sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-      expectsInput(objectName = "AndisonFRI", objectClass = "spatialPolygonsDataFrame", 
-                   desc = "Dave Andison's FRI data", 
+      expectsInput(objectName = "AndisonFRI", objectClass = "spatialPolygonsDataFrame",
+                   desc = "Dave Andison's FRI data",
                    sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing")
     ),
     outputObjects = bind_rows(
@@ -45,11 +45,8 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
          init = {
            #sim <- scfmLandcoverInitCacheFunctions(sim)
            sim <- Init(sim)
-           sim <- scheduleEvent(sim, P(sim)$.plotInitialTime,
-                                "scfmLandcoverInit", "plot")
-           sim <- scheduleEvent(sim, P(sim)$.saveInitialTime,
-                                "scfmLandcoverInit", "save")
-           
+           sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
+           sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
          },
          plot =  {
            Plot(sim$vegMap, new = TRUE)
@@ -57,16 +54,15 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
            # EJM is working on it 20160224
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
-  
+
          },
          save = {
-           
+
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
          },
-         
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                        "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
-  
+
   return(invisible(sim))
 }
 
@@ -75,9 +71,8 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #
   #All areas in ha
   #
-  cellSize <- prod(res(flammableMap)) / 1e4 #in ha
-  
-  
+  cellSize <- prod(res(flammableMap)) / 1e4 # in ha
+
   if (neighbours == 8)
     w <- matrix(c(1, 1, 1, 1, 0, 1, 1, 1, 1), nrow = 3, ncol = 3)
   else if (neighbours == 4)
@@ -86,16 +81,15 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     stop("illegal neighbours spec")
   #it would be nice to somehow get caching to work on the function argument of focal
   #but I have not been able to make it work.
-  
+
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    
     neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
     #neighMapVals <- getValues(neighMap)
-    
+
     # extract table for each polygon
     valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
     #browser()
-    
+
     names(valsByPoly) <- row.names(studyArea)
     uniqueZoneNames <- studyArea$PolyID #get unique zones. This could be changed to LTHFC
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
@@ -105,53 +99,48 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
       return(aa)
     })
     names(valsByZone) <- uniqueZoneNames
-    
+
     # Derive frequency tables of number of flammable cells, per polygon type, currently ECOREGION
     nNbrs <- lapply(valsByZone, function(x) {
       nNbrs <- tabulate(x[, 2] + 1, 9)#depends on sfcmLandCoverInit
       names(nNbrs) <- 0:8
       return(nNbrs)
     })
-    
+
     nFlammable <- lapply(valsByZone, function(x) {
       sum(1 - getValues(flammableMap)[x[, 1]], na.rm = TRUE) #sums flammable pixels in FRI polygons
     })
-    
+
     landscapeAttr <- purrr::transpose(list(cellSize = rep(list(cellSize), length(nFlammable)),
                                            nFlammable = nFlammable,
                                            nNbrs = nNbrs,
                                            cellsByZone = lapply(valsByZone, function(x) x[, 1])))
-    
+
     landscapeAttr <- lapply(landscapeAttr, function(x) {
       append(x, list(burnyArea = x$cellSize * x$nFlammable))
     })
     names(landscapeAttr) <- names(valsByZone)
-    
+
     return(landscapeAttr)
   }
-  
+
   landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
-  
+
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-    
     cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_, stringsAsFactors = FALSE)
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
       }
     return(cellsByZone)
   }
-  
+
   cellsByZone <- Cache(cellsByZoneFn, flammableMap, landscapeAttr)
-  
+
   return(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone))
 }
 
 ### template initilization
 Init = function(sim) {
-  # these classes are LCC05 specific
-  
-
-  
   return(invisible(sim))
 }
 
@@ -161,12 +150,12 @@ testFun <- function(x) {
 
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
-  
+
   if ("Mask" %in% lsSimObjs) {
     flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
   }
   #the count options should cause that "a column with frequencies is added.
-  
+
   #setColors(sim$flammableMap, n=2) <- c("blue","red")
   setColors(flammableMap, 2) <- colorRampPalette(c("blue", "red"))(2)
   #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif",
@@ -177,10 +166,10 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
-  
+
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
-    
+
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
     studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
     SA <- Cache(prepInputs,
@@ -191,21 +180,21 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                 filename2 = TRUE,
                 userTags = c(cacheTags, "studyArea"),
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-    
+
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
     sim$studyArea$polyID <- row.names(sim$studyArea)
   }
-  
+
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-    
+
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
     crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
                             "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
     sim$studyArea <- spTransform(sim$studyArea, crsDefault)
     options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
-    vegMap <- Cache(prepInputs, 
+    vegMap <- Cache(prepInputs,
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
@@ -215,21 +204,20 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     #userTags = c(cacheTags, "vegMap"),
                     #showSimilar = TRUE)
     options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
-    
+
     sim$vegMap <- vegMap
     sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
   }
-  
+
   if (!suppliedElsewhere("landscapeAttr", sim)) {
-    
     nonFlammClasses <- c(36, 37, 38, 39)
     oldClass <- 0:39
     newClass <- ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
     #see mask argument for SpaDES::spread()
     flammableTable <- cbind(oldClass, newClass)
-    
+
     sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
-    
+
     # This makes sim$landscapeAttr & sim$cellsByZone
     outs <- Cache(genFireMapAttr,
                   sim$flammableMap,
