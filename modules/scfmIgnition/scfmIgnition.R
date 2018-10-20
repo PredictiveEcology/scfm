@@ -74,7 +74,6 @@ Init <- function(sim) {
     } else {
       pIg <- sim$scfmRegimePars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }
-
   } else {
     pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
   }
