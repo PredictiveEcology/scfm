@@ -79,7 +79,7 @@ Init <- function(sim) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
 
-    fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]   #will return LTHFC FIX THIS LINE
+    fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]
     fri <- ifelse(fri < P(sim)$minFRI, P(sim)$minFRI, fri)
     targetAAB <- landAttr$burnyArea / fri
 
@@ -191,8 +191,8 @@ Init <- function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!all(c("LTHFC", "PolyID") %in% names(sim$studyArea)))
-    stop("studyArea improperly specified; did you use andisonDriver_dataPrep?")
+  # if (!all(c("LTHFC", "PolyID") %in% names(sim$studyArea)))
+  #   stop("studyArea improperly specified; did you use andisonDriver_dataPrep?")
 
   if (!suppliedElsewhere("cTable2", sim)) {
     cTable2 <- Cache(prepInputs,

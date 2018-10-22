@@ -24,8 +24,11 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "", 
-                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL")
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
+                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL"),
+    expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "study area template",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
@@ -50,7 +53,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
   } else if (eventType=="age") {
     # do stuff for this event
     sim <- ageModuleAge(sim)
-    
+
     # schedule the next event
     sim <- scheduleEvent(sim, time(sim) + params(sim)$ageModule$returnInterval,
                          "ageModule", "age")
@@ -58,7 +61,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     # ! ----- EDIT BELOW ----- ! #
     # do stuff for this event
     Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
-    sim <- scheduleEvent(sim, 
+    sim <- scheduleEvent(sim,
                          time(sim) + P(sim)$.plotInterval,
                          "ageModule", "plot")
     # ! ----- STOP EDITING ----- ! #
@@ -73,19 +76,22 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 ### template initilization
 ageModuleInit <- function(sim) {
 
-  # # ! ----- EDIT BELOW ----- ! #
-  
-  if (!("ageMap" %in% ls(sim))){
-    N <- sim$mapDim
-    x <- raster::extent(c(0,N-1,0,N-1))
-    sim$ageMap <- raster(x, nrows = N, ncols = N, vals = P(sim)$initialAge) %>%
-      setColors(n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-  }
-  else {
-    # we will use our colour choices, not whatever may have come with the loaded map.
-    setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-  }
-  
+ dPath <- dataPath(sim)
+
+ options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
+ ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
+                  url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
+                  studyArea = sim$studyArea0,
+                  rasterToMatch = sim$vegMap,
+                  destinationPath = file.path(dPath, "age"))
+ options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
+
+ sim$ageMap <- ageMap
+
+ # we will use our colour choices, not whatever may have come with the loaded map.
+ setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
+
+
    #temporary until we buid the rest of the modules
 
   return(invisible(sim))
@@ -102,28 +108,29 @@ ageModuleSave <- function(sim) {
 }
 
 ageModuleAge <- function(sim) {
+
   sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
-  
+
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
-  
-  if (!suppliedElsewhere("ageMap", sim)) {
-    message("age map not supplied. Using default")
-    
-    ageMapFilename <- file.path(dPath, "age.tif")
-    options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
-    ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
-                    url = extractURL(objectName = "ageMap"),
-                    studyArea = sim$studyArea,
-                    rasterToMatch = sim$vegMap,
-                    destinationPath = file.path(dPath, "age"))
-    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
-    
-    sim$ageMap <- ageMap
-    
+
+  if (!suppliedElsewhere("studyArea0", sim)) {
+    message("study area not supplied. Using Ecodistrict 348")
+
+    #source shapefile from ecodistict in input folder. Use ecodistrict 348
+    SA <- Cache(prepInputs,
+                url = extractURL(objectName = "studyArea0"),
+                archive = "ecodistrict_shp.zip",
+                filename2 = TRUE,
+                userTags = c(cacheTags, "studyArea0"),
+                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
+
+    SA <- SA[SA$ECODISTRIC == 348, ]
+    sim$studyArea0 <- SA
   }
+
   return(invisible(sim))
 }

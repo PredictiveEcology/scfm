@@ -102,17 +102,15 @@ Ignite <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
-
+  #This module has many dependencies that arent sourced in .inputObjects
   if (!suppliedElsewhere("ageMap", sim)) {
     message("age map not supplied. Using default")
 
-    browser()
     ageMapFilename <- file.path(dPath, "age.tif")
     options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
     ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
                     url = extractURL(objectName = "ageMap"),
-                    studyArea = sim$studyArea,
-                    rasterToMatch = sim$vegMap,
+                    studyArea = sim$studyArea0,
                     destinationPath = file.path(dPath, "age"))
     options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
 

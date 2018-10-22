@@ -51,10 +51,17 @@ parameters <- list(
 modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
                 "scfmIgnition", "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
 
-objects <- list(
-  mapDim = mapDim, # note that these definitions are critical
-  studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-)
+# objects <- list(
+#   mapDim = mapDim, # note that these definitions are critical
+#   studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
+# ) #I don't have this shapefile so I'm running object down below. Feel free to uncomment
+AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
+AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
+                                by = 'LTHFC', dissolve = TRUE)
+ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
+subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
+
+objects <- list(studyArea0 = subEcoDistricts)
 
 paths <- list(
   cachePath = file.path("cache"),
@@ -85,21 +92,10 @@ require(raster)
 
 #testing steve's data. #There is a problem right now with input objects. This only works if studyArea is Dave's shapefile
 
-AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
-AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
-                                by = 'LTHFC', dissolve = TRUE)
-ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
-subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(198),] #Three semi-adjacent ecoDistricts
-plot(subEcoDistricts)
 
-subEcoDistricts <- spTransform(subEcoDistricts, CRSobj = crs(AndisonFRI))
 #This is producing NULL files, sometimes single lines. wtf
-AndisonFRIm <- crop(AndisonFRI, subEcoDistricts)
 
-plot(AndisonFRIm)
-AndisonFRIm$PolyID <- row.names(AndisonFRIm)
-objects <- list(studyArea = AndisonFRIm)
-plot(AndisonFRIm)
+
 
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)

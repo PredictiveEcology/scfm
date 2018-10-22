@@ -47,6 +47,78 @@ Init <- function(sim) {
     sim$studyArea <- Cache(spTransform, sim$studyArea, CRSobj = crs(sim$vegMap))
   }
 
+  if (!identicalCRS(sim$firePoints, sim$vegMap)) {
+    sim$firePoints <- Cache(spTransform, sim$firePoints, CRSobj = crs(sim$vegMap))
+  }
+
+  tmp <- sim$firePoints
+
+  #extract and validate fireCause spec
+
+  fc <- P(sim)$fireCause
+  #should verify CAUSE is a column in the table...
+  causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
+
+  if (any(!(fc %in% causeSet)))
+    stop("illegal fireCause: ", fc)
+  tmp <- subset(tmp, CAUSE %in% fc)
+
+  #extract and validate fireEpoch
+  epoch <- P(sim)$fireEpoch
+  if (length(epoch) != 2 ||
+      !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
+    stop("illegal fireEpoch: ", epoch)
+  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
+
+  epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
+  # browser() #this was line 90 in the master branch
+  # Assign polygon label to SpatialPoints of fires object
+  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
+  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
+  tmp <- sim$firePoints
+
+  #extract and validate fireCause spec
+  fc <- P(sim)$fireCause
+  #should verify CAUSE is a column in the table...
+  causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
+
+  if (any(!(fc %in% causeSet)))
+    stop("illegal fireCause: ", fc)
+  tmp <- subset(tmp,CAUSE %in% fc)
+
+  #extract and validate fireEpoch
+  epoch <- P(sim)$fireEpoch
+  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
+    stop("illegal fireEpoch: ", epoch)
+  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
+
+  epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
+
+  # Assign polygon label to SpatialPoints of fires object
+  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
+  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
+
+  frpl <- sim$studyArea$PolyID
+  tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
+  tmp$PolyID <- tmp$PolyID$PolyID
+
+  tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
+  sim$firePoints <- tmp
+
+  # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
+  cellSize <- sim$landscapeAttr[[1]]$cellSize
+
+  firePolys <- unlist(sim$firePoints)
+
+
+  sim$scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
+                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
+                               firePoints = sim$firePoints, epochLength = epochLength)
+
+  names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
+
+  sim$scfmRegimePars <- scfmRegimePars[-which(sapply(scfmRegimePars, is.null))]
+
   return(invisible(sim))
 }
 
@@ -141,6 +213,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
+  #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
     if (!dir.exists(file.path(dPath, "NFDB_point"))) {
 
@@ -164,81 +237,12 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
     #browser()
     firePoints <- Cache(rgdal::readOGR, outFile)
-    firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea))
-    firePoints <- firePoints[sim$studyArea, ]
-
+    firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea0))
+    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
+                        filename2 = file.path(dPath, "firePoints.shp"))
     sim$firePoints <- firePoints
   }
 
-  if (!suppliedElsewhere("scfmRegimePars", sim)) {
-
-    tmp <- sim$firePoints
-
-    #extract and validate fireCause spec
-
-    fc <- P(sim)$fireCause
-    #should verify CAUSE is a column in the table...
-    causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
-
-    if (any(!(fc %in% causeSet)))
-      stop("illegal fireCause: ", fc)
-    tmp <- subset(tmp, CAUSE %in% fc)
-
-    #extract and validate fireEpoch
-    epoch <- P(sim)$fireEpoch
-    if (length(epoch) != 2 ||
-        !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
-      stop("illegal fireEpoch: ", epoch)
-    tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
-
-    epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-    # browser() #this was line 90 in the master branch
-    # Assign polygon label to SpatialPoints of fires object
-    #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
-    #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-    tmp <- sim$firePoints
-
-    #extract and validate fireCause spec
-    fc <- P(sim)$fireCause
-    #should verify CAUSE is a column in the table...
-    causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
-
-    if (any(!(fc %in% causeSet)))
-      stop("illegal fireCause: ", fc)
-    tmp <- subset(tmp,CAUSE %in% fc)
-
-    #extract and validate fireEpoch
-    epoch <- P(sim)$fireEpoch
-    if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
-      stop("illegal fireEpoch: ", epoch)
-    tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
-
-    epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-
-    # Assign polygon label to SpatialPoints of fires object
-    #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
-    #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-
-    frpl <- sim$studyArea$PolyID
-
-    tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
-    tmp$PolyID <- tmp$PolyID$PolyID
-    sim$firePoints <- tmp
-
-    # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
-    cellSize <- sim$landscapeAttr[[1]]$cellSize
-
-    firePolys <- unlist(sim$firePoints)
-
-
-    sim$scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                                 firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                                 firePoints = sim$firePoints, epochLength = epochLength)
-
-    names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
-
-    sim$scfmRegimePars <- scfmRegimePars[-which(sapply(scfmRegimePars, is.null))]
-  }
 
   return(invisible(sim))
 }
