@@ -12,15 +12,18 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmRegime.Rmd"),
   reqdPkgs = list("rgdal"),
   parameters = rbind(
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails ")
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = ""),
+    expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+                 sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
@@ -31,7 +34,7 @@ defineModule(sim, list(
 ## event types
 #   - type `init` is required for initiliazation
 
-doEvent.scfmRegime = function(sim, eventTime, eventType, debug=FALSE) {
+doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
     Init(sim)
   } else {
@@ -243,6 +246,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     sim$firePoints <- firePoints
   }
 
+  ## TODO: add if !suppliedElsewhere for vegMap
 
   return(invisible(sim))
 }
