@@ -51,17 +51,17 @@ parameters <- list(
 modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
                 "scfmIgnition", "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
 
-# objects <- list(
-#   mapDim = mapDim, # note that these definitions are critical
-#   studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-# ) #I don't have this shapefile so I'm running object down below. Feel free to uncomment
-AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
-AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
-                                by = 'LTHFC', dissolve = TRUE)
+#AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
+#AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
+#                                by = 'LTHFC', dissolve = TRUE)
+
 ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
 subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
 
-objects <- list(studyArea0 = subEcoDistricts)
+objects <- list(
+# studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
+  studyArea0 = subEcoDistricts
+)
 
 paths <- list(
   cachePath = file.path("cache"),
