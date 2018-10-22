@@ -14,7 +14,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandCoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "purrr"),
+    reqdPkgs = list("raster", "reproducible"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -24,15 +24,15 @@ defineModule(sim,list(
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
-      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
-        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
-        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
+                   sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
     ),
     outputObjects = bind_rows(
+      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataLayer", desc = "")
     )
   )
