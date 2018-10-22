@@ -14,7 +14,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandCoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "purrr"),
+    reqdPkgs = list("raster", "reproducible"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -24,15 +24,15 @@ defineModule(sim,list(
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
-      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
-        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
-        sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
+                   sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
     ),
     outputObjects = bind_rows(
+      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataLayer", desc = "")
     )
   )
@@ -76,20 +76,17 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   else if (neighbours == 4)
     w <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3, ncol = 3)
   else
-    stop("illegal neighbours spec")
-  #it would be nice to somehow get caching to work on the function argument of focal
-  #but I have not been able to make it work.
+    stop("illegal neighbours specification")
 
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
-    #neighMapVals <- getValues(neighMap)
+    neighMap <- Cache(focal, x = 1 - flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
     valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
     #browser()
 
     names(valsByPoly) <- row.names(studyArea)
-    uniqueZoneNames <- studyArea$PolyID #get unique zones. This could be changed to LTHFC
+    uniqueZoneNames <- studyArea$PolyID #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
@@ -138,13 +135,12 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 }
 
 ### template initilization
-Init = function(sim) {
-
+Init <- function(sim) {
   #This allows for functionality with Andison fire regime modules
   if (is.null(sim$studyArea)) {
     sim$studyArea <- sim$studyArea0
   }
-  sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
+  sim$studyArea <- spTransform(sim$studyArea0, CRSobj = crs(sim$vegMap))
 
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39

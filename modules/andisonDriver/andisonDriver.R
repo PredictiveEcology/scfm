@@ -22,7 +22,7 @@ defineModule(sim, list(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
-                 desc = "A csv containing results of fire experiment",
+                 desc = "A csv containing results of fire experiment",## TODO: need more info!
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
@@ -46,6 +46,8 @@ doEvent.andisonDriver = function(sim, eventTime, eventType, debug = FALSE) {
   )
   return(invisible(sim))
 }
+
+## TODO: put these repeated functions somewhere re-usable among different drvier modules (R package?)
 
 # 1 - (1-p0)**N = pEscape
 # 1 - pEscape = (1-p0)**N
@@ -129,7 +131,6 @@ Init <- function(sim) {
         warning(sprintf("Target FRI of %03d in zone %s not achievable from data", fri, polygonType))
       }
     }
-
 
     #this table contains calibration data for several landscape sizes
     #and several min fire sizes (1 or 2 cells), organised by collumn.
