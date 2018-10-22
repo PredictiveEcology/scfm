@@ -76,20 +76,17 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   else if (neighbours == 4)
     w <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3, ncol = 3)
   else
-    stop("illegal neighbours spec")
-  #it would be nice to somehow get caching to work on the function argument of focal
-  #but I have not been able to make it work.
+    stop("illegal neighbours specification")
 
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <- Cache(focal, 1 - flammableMap, w, na.rm = TRUE) #default function is sum(...,na.rm)
-    #neighMapVals <- getValues(neighMap)
+    neighMap <- Cache(focal, x = 1 - flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
     valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
     #browser()
 
     names(valsByPoly) <- row.names(studyArea)
-    uniqueZoneNames <- studyArea$PolyID #get unique zones. This could be changed to LTHFC
+    uniqueZoneNames <- studyArea$PolyID #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
@@ -138,13 +135,12 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 }
 
 ### template initilization
-Init = function(sim) {
-
+Init <- function(sim) {
   #This allows for functionality with Andison fire regime modules
   if (is.null(sim$studyArea)) {
     sim$studyArea <- sim$studyArea0
   }
-  sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
+  sim$studyArea <- spTransform(sim$studyArea0, CRSobj = crs(sim$vegMap))
 
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39
