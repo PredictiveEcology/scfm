@@ -24,9 +24,7 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
-                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
@@ -101,21 +99,6 @@ Ignite <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
-  #This module has many dependencies that arent sourced in .inputObjects
-  if (!suppliedElsewhere("ageMap", sim)) {
-    message("age map not supplied. Using default")
-
-    ageMapFilename <- file.path(dPath, "age.tif")
-    options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
-    ageMap <- Cache(prepInputs, targetFile = ageMapFilename,
-                    url = extractURL(objectName = "ageMap"),
-                    studyArea = sim$studyArea0,
-                    destinationPath = file.path(dPath, "age"))
-    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
-
-    sim$ageMap <- ageMap
-  }
-
+  #dPath <- dataPath(sim)
   return(invisible(sim))
 }
