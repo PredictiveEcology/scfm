@@ -74,7 +74,7 @@ setPaths(cachePath = paths$cachePath,
          modulePath = paths$modulePath,
          inputPath = paths$inputPath,
          outputPath = paths$outputPath)
-
+options(spades.moduleCodeChecks = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 

@@ -53,7 +53,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     burn = {
       if (!is.null(sim$spreadState)) {
         ## we really want to test if the data table has any rows
-        if (any(sim$spreadState$active))
+        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
           sim <- Burnemup(sim)
       }
       sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmSpread$returnInterval, "scfmSpread", "burn")
@@ -87,19 +87,21 @@ Init <- function(sim) {
 }
 
 Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
-  maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
-  activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
-  #we prevent multiple ignitions, which shouldn't happen anyway.
-  maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
 
-  sim$burnDT <- SpaDES.tools::spread(sim$flammableMap,
+  # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
+  # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
+  #we prevent multiple ignitions, which shouldn't happen anyway.
+  # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
+
+  sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
+                                      start = sim$spreadState,
                                      spreadProb = sim$pSpread,
-                                     spreadState = sim$spreadState,
+                                     # spreadState = sim$spreadState,
                                      directions = P(sim)$neighbours,
-                                     maxSize = maxSizes,  #not sure this works
-                                     returnIndices = TRUE,
-                                     id = TRUE)
-  sim$burnMap[sim$burnDT$indices] <- 1
-  sim$ageMap[sim$burnDT$indices] <- 0
+                                     # maxSize = maxSizes,  #not sure this works
+                                     asRaster = FALSE)
+
+  sim$burnMap[sim$burnDT$pixels] <- 1
+  sim$ageMap[sim$burnDT$pixels] <- 0
   return(invisible(sim))
 }
