@@ -93,11 +93,13 @@ Init <- function(sim) {
     ratio <- targetAAB/scfmAAB
 
     if (ratio < 0.95) {
-        warning(sprintf("AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
+        warning(sprintf("andisonDriver: AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
+        warning(sprintf("\t\tE[fires]=%05.1f, pEscape=%05.3f, mfs=%07.1, A=%7.1km^2",
+                        rate * landAttr$burnyArea, pEscape, mfs,landAttr$burnyArea/100))
     } else {
       if (ratio > 1.05) {
         #we have work to do
-        or <- oddsRatio(0.179, 0.111)
+        or <- oddsRatio(0.179, 0.111) #These odds ratios come from Cumming 2005
         pEscape <- calcp(pEscape,or)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB/scfmAAB
@@ -117,18 +119,18 @@ Init <- function(sim) {
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
-      if (ratio > 1.05) {
+      if (ratio > 1.05) { #now we will make escaped fires larger than the data say
         mfs <- mfs * min(ratio, 2)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
-      if (ratio > 1.05) {
+      if (ratio > 1.05) { #finally, we can increase the number of fires
         rate <- rate * min(ratio, 2)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
       if (ratio > 1.05) {
-        warning(sprintf("Target FRI of %03d in zone %s not achievable from data", fri, polygonType))
+        warning(sprintf("Target FRI of %03d in zone %s not achievable from data. Final ratio %5.3f\n", fri, polygonType, ratio))
       }
     }
 
