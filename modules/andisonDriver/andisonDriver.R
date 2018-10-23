@@ -22,7 +22,7 @@ defineModule(sim, list(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
-                 desc = "A csv containing results of fire experiment",## TODO: need more info!
+                 desc = "A csv 10,000 (pSpread, size) pairs simiulated on a 1000x1000 landscape,to calibrate pSpread agains mean fire size",  
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
@@ -69,7 +69,7 @@ odds <- function(p) p / (1 - p)
 
 oddsRatio <- function(p,q) odds(p)/odds(q)
 
-calcp <- function(q, or){ # given q and or(p,q), solve for p
+calcp <- function(q, or){ # given q and or=oddsRatio(p,q), solve for p
   x <- or * odds(q)
   return(1 / ((1 / x) + 1))
 }
