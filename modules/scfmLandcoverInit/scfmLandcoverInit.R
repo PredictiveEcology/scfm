@@ -24,7 +24,7 @@ defineModule(sim,list(
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
-      expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
+      expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
         sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
@@ -32,8 +32,7 @@ defineModule(sim,list(
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-      createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataLayer", desc = "")
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "")
     )
   )
 )
@@ -137,10 +136,12 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 ### template initilization
 Init <- function(sim) {
   #This allows for functionality with Andison fire regime modules
-  if (is.null(sim$studyArea)) {
-    sim$studyArea <- sim$studyArea0
+  if (is.null(sim$studyArea$PolyID)) {
+
+    sim$studyArea$PolyID <- row.names(sim$studyArea)
+
   }
-  sim$studyArea <- spTransform(sim$studyArea0, CRSobj = crs(sim$vegMap))
+  sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
 
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39
