@@ -75,26 +75,6 @@ setPaths(cachePath = paths$cachePath,
          inputPath = paths$inputPath,
          outputPath = paths$outputPath)
 options(spades.moduleCodeChecks = FALSE)
-mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = paths)
-
-set.seed(2343)
-outSim <- spades(mySim, progress = FALSE, debug = TRUE)
-
-#### Test with multiple study Areas ####
-
-require(raster)
-#Don't try this it won't work yet
-# ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
-# subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(348,350,347),] #Three semi-adjacent ecoDistricts
-# objects <- list(studyArea = subEcoDistricts, mapDim = mapDim)
-
-
-#testing steve's data. #There is a problem right now with input objects. This only works if studyArea is Dave's shapefile
-
-
-#This is producing NULL files, sometimes single lines. wtf
-
 
 
 mySim <- simInit(times = times, params = parameters, modules = modules,
@@ -102,3 +82,4 @@ mySim <- simInit(times = times, params = parameters, modules = modules,
 
 set.seed(2343)
 outSim <- spades(mySim, progress = FALSE, debug = TRUE)
+

@@ -56,7 +56,6 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  #browser()
 
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
@@ -95,10 +94,5 @@ Ignite <- function(sim) {
   #so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
 
-  return(invisible(sim))
-}
-
-.inputObjects <- function(sim) {
-  #dPath <- dataPath(sim)
   return(invisible(sim))
 }

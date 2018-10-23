@@ -97,15 +97,13 @@ Escape <- function(sim) {
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
 
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
-                                            start = sim$ignitionLoci, #loci = sim$ignitionLoci,
+                                            start = sim$ignitionLoci,
                                             iterations = 1,
                                             spreadProb = sim$p0,
-                                            #mask=sim$flammableMap,
                                             directions = P(sim)$neighbours,
                                             asRaster = FALSE,
                                             maxSize = maxSizes)
-                                            # returnIndices = TRUE,
-                                            # id = TRUE)
+
 
   }
 
