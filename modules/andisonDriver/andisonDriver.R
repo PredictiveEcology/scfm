@@ -22,7 +22,7 @@ defineModule(sim, list(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
-                 desc = "A csv containing results of fire experiment",## TODO: need more info!
+                 desc = "A csv 10,000 (pSpread, size) pairs simiulated on a 1000x1000 landscape,to calibrate pSpread agains mean fire size",  
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
@@ -69,7 +69,7 @@ odds <- function(p) p / (1 - p)
 
 oddsRatio <- function(p,q) odds(p)/odds(q)
 
-calcp <- function(q, or){ # given q and or(p,q), solve for p
+calcp <- function(q, or){ # given q and or=oddsRatio(p,q), solve for p
   x <- or * odds(q)
   return(1 / ((1 / x) + 1))
 }
@@ -93,11 +93,13 @@ Init <- function(sim) {
     ratio <- targetAAB/scfmAAB
 
     if (ratio < 0.95) {
-        warning(sprintf("AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
+        warning(sprintf("andisonDriver: AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
+        warning(sprintf("\t\tE[fires]=%05.1f, pEscape=%05.3f, mfs=%07.1, A=%7.1km^2",
+                        rate * landAttr$burnyArea, pEscape, mfs,landAttr$burnyArea/100))
     } else {
       if (ratio > 1.05) {
         #we have work to do
-        or <- oddsRatio(0.179, 0.111)
+        or <- oddsRatio(0.179, 0.111) #These odds ratios come from Cumming 2005
         pEscape <- calcp(pEscape,or)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB/scfmAAB
@@ -117,18 +119,18 @@ Init <- function(sim) {
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
-      if (ratio > 1.05) {
+      if (ratio > 1.05) { #now we will make escaped fires larger than the data say
         mfs <- mfs * min(ratio, 2)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
-      if (ratio > 1.05) {
+      if (ratio > 1.05) { #finally, we can increase the number of fires
         rate <- rate * min(ratio, 2)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
       if (ratio > 1.05) {
-        warning(sprintf("Target FRI of %03d in zone %s not achievable from data", fri, polygonType))
+        warning(sprintf("Target FRI of %03d in zone %s not achievable from data. Final ratio %5.3f\n", fri, polygonType, ratio))
       }
     }
 

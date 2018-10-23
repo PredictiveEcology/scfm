@@ -108,9 +108,6 @@ Init <- function(sim) {
   tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
   sim$firePoints <- tmp
 
-  # Hack to make a study area level cellSize ... TODO -- this should be removed from landscapeAttr
-  cellSize <- sim$landscapeAttr[[1]]$cellSize
-
   firePolys <- unlist(sim$firePoints)
 
 
@@ -129,7 +126,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                                 firePoints = sim$firePoints, epochLength = epochLength) {
 
   idx <- firePolys$PolyID == polygonID
-  tmpA <- firePoints[idx, ] #STOP HERE
+  tmpA <- firePoints[idx, ] 
   landAttr <- landscapeAttr[[polygonID]]
   cellSize = landAttr$cellSize
   nFires <- dim(tmpA)[1]
