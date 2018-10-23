@@ -26,7 +26,7 @@ defineModule(sim, list(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
     expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL"),
-    expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area template",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
@@ -78,13 +78,12 @@ ageModuleInit <- function(sim) {
 
  dPath <- dataPath(sim)
 
- # options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
+
  ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
                   url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
-                  studyArea = sim$studyArea0,
+                  studyArea = sim$studyArea,
                   rasterToMatch = sim$vegMap,
                   destinationPath = file.path(dPath, "age"))
- # options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
 
  sim$ageMap <- ageMap
 
@@ -117,19 +116,20 @@ ageModuleAge <- function(sim) {
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
 
-  if (!suppliedElsewhere("studyArea0", sim)) {
+  if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
     SA <- Cache(prepInputs,
-                url = extractURL(objectName = "studyArea0"),
+                url = extractURL(objectName = "studyArea"),
                 archive = "ecodistrict_shp.zip",
                 filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea0"),
+                userTags = c(cacheTags, "studyArea"),
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea0 <- SA
+    sim$studyArea <- SA
+
   }
 
   return(invisible(sim))

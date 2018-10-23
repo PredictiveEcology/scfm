@@ -21,7 +21,10 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
+      defineParameter(".crsUsed", "CRS", raster::crs(paste(
+          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
+          NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
@@ -68,6 +71,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #
   #All areas in ha
   #
+
   cellSize <- prod(res(flammableMap)) / 1e4 # in ha
 
   if (neighbours == 8)
@@ -82,9 +86,10 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 
     # extract table for each polygon
     valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
-    #browser()
+    valsByPoly <- lapply(valsByPoly, na.omit)
 
-    names(valsByPoly) <- row.names(studyArea)
+
+    names(valsByPoly) <- studyArea$PolyID
     uniqueZoneNames <- studyArea$PolyID #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
@@ -110,10 +115,10 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
                                            nNbrs = nNbrs,
                                            cellsByZone = lapply(valsByZone, function(x) x[, 1])))
 
-    landscapeAttr <- lapply(landscapeAttr, function(x) {
-      append(x, list(burnyArea = x$cellSize * x$nFlammable))
-    })
-    names(landscapeAttr) <- names(valsByZone)
+      landscapeAttr <- lapply(landscapeAttr, function(x) {
+        append(x, list(burnyArea = x$cellSize * x$nFlammable))
+      })
+      names(landscapeAttr) <- names(valsByZone)
 
     return(landscapeAttr)
   }
@@ -121,7 +126,9 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
 
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
+
     cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_, stringsAsFactors = FALSE)
+
     for (x in names(landscapeAttr)) {
       cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
       }
@@ -130,18 +137,19 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 
   cellsByZone <- Cache(cellsByZoneFn, flammableMap, landscapeAttr)
 
-  return(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone))
+  return(invisible(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone)))
 }
 
 ### template initilization
 Init <- function(sim) {
-  #This allows for functionality with Andison fire regime modules
-  if (is.null(sim$studyArea$PolyID)) {
 
-    sim$studyArea$PolyID <- row.names(sim$studyArea)
-
+  if (!identical(crs(sim$studyArea), P(sim)$.crsUsed)) {
+   crs(sim$studyArea) <- P(sim)$.crsUsed
   }
-  sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
+
+  if (is.null(sim$studyArea$PolyID)) {
+    sim$studyArea$PolyID <- row.names(sim$studyArea)
+  }
 
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39
@@ -165,6 +173,7 @@ testFun <- function(x) {
 }
 
 makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
+
   flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
 
   if ("Mask" %in% lsSimObjs) {
@@ -198,15 +207,16 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
+    SA <- spTransform(SA, CRSobj = P(sim)$.crsUsed)
     sim$studyArea <- SA
+
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-    crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
-                            "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
+
 
     vegMap <- Cache(prepInputs,
                     targetFile = vegMapFilename,
@@ -216,6 +226,9 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     studyArea = sim$studyArea,
                     filename2 = "SmallLCC2005_V1_4a.tif")
 
+    if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
+    crs(vegMap) <- P(sim)$.crsUsed
+    }
     sim$vegMap <- vegMap
 
   }

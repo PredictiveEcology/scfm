@@ -18,7 +18,10 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
+    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
+    defineParameter(".crsUsed", "CRS", raster::crs(paste(
+      "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
+      NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI map",
@@ -50,9 +53,8 @@ doEvent.andisonDriver_dataPrep <- function(sim, eventTime, eventType, debug = FA
 
 Init <- function(sim) {
 
-  ## do studyArea*AndisonFRI map intersection and add the PolyID field
-  sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
   sim$studyArea$PolyID <- row.names(sim$studyArea)
+
 
   return(invisible(sim))
 }
@@ -92,9 +94,13 @@ Init <- function(sim) {
                           AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI, ],
                           by = "LTHFC",
                           dissolve = TRUE)
+      sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = P(sim)$.crsUsed)
     }
-    sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = crs(sim$studyArea0))
+
+    sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
   }
+  ##workaround.
+  sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
 
 
   return(invisible(sim))

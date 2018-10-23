@@ -14,7 +14,10 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
+    defineParameter(".crsUsed", "CRS", raster::crs(paste(
+      "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
+      NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -46,13 +49,18 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   # verify studyArea is in same projection
-  if (!identicalCRS(sim$studyArea, sim$vegMap)) {
-    sim$studyArea <- Cache(spTransform, sim$studyArea, CRSobj = crs(sim$vegMap))
+  if (!identical(crs(sim$studyArea), P(sim)$.crsUsed)) {
+    sim$studyArea <- Cache(spTransform, sim$studyArea, CRSobj = P(sim)$.crsUsed)
   }
 
-  if (!identicalCRS(sim$firePoints, sim$vegMap)) {
-    sim$firePoints <- Cache(spTransform, sim$firePoints, CRSobj = crs(sim$vegMap))
+  if (!identical(crs(sim$firePoints), P(sim)$.crsUsed)) {
+    sim$firePoints <- Cache(spTransform, sim$firePoints, CRSobj = P(sim)$.crsUsed)
   }
+
+  if (!identical(crs(sim$vegMap), P(sim)$.crsUsed)) {
+    crs(sim$vegMap) <- P(sim)$.crsUsed
+  }
+
 
   tmp <- sim$firePoints
 
@@ -237,8 +245,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
     #browser()
     firePoints <- Cache(rgdal::readOGR, outFile)
-    firePoints <- spTransform(firePoints, CRSobj = crs(sim$studyArea0))
-    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
+    firePoints <- spTransform(firePoints, CRSobj = P(sim)$.crsUsed)
+    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea,
                         filename2 = file.path(dPath, "firePoints.shp"))
     sim$firePoints <- firePoints
   }
@@ -247,17 +255,18 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-    crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
-                            "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
 
     vegMap <- Cache(prepInputs,
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
-                    studyArea = sim$studyArea0,
+                    studyArea = sim$studyArea,
                     filename2 = "SmallLCC2005_V1_4a.tif")
 
+    if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
+      crs(vegMap) <- P(sim)$.crsUsed
+    }
 
     sim$vegMap <- vegMap
   }
