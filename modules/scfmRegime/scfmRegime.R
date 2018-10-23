@@ -126,7 +126,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                                 firePoints = sim$firePoints, epochLength = epochLength) {
 
   idx <- firePolys$PolyID == polygonID
-  tmpA <- firePoints[idx, ] 
+  tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
   cellSize = landAttr$cellSize
   nFires <- dim(tmpA)[1]
@@ -243,7 +243,24 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     sim$firePoints <- firePoints
   }
 
-  ## TODO: add if !suppliedElsewhere for vegMap
+  if (!suppliedElsewhere("vegMap", sim)) {
+    message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
+
+    vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
+    crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+                            "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
+
+    vegMap <- Cache(prepInputs,
+                    targetFile = vegMapFilename,
+                    url = extractURL(objectName = "vegMap"),
+                    archive = "LandCoverOfCanada2005_V1_4.zip",
+                    destinationPath = dPath,
+                    studyArea = sim$studyArea0,
+                    filename2 = "SmallLCC2005_V1_4a.tif")
+
+
+    sim$vegMap <- vegMap
+  }
 
   return(invisible(sim))
 }

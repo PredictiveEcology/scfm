@@ -50,7 +50,7 @@ doEvent.andisonDriver_dataPrep <- function(sim, eventTime, eventType, debug = FA
 
 Init <- function(sim) {
 
-  ## do studyArea*AndisonFRI map intersection and add the polyID field
+  ## do studyArea*AndisonFRI map intersection and add the PolyID field
   sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
   sim$studyArea$PolyID <- row.names(sim$studyArea)
 

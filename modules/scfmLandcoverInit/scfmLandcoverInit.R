@@ -24,7 +24,7 @@ defineModule(sim,list(
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
-      expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
+      expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
         sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
@@ -32,8 +32,7 @@ defineModule(sim,list(
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-      createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataLayer", desc = "")
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "")
     )
   )
 )
@@ -137,10 +136,12 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 ### template initilization
 Init <- function(sim) {
   #This allows for functionality with Andison fire regime modules
-  if (is.null(sim$studyArea)) {
-    sim$studyArea <- sim$studyArea0
+  if (is.null(sim$studyArea$PolyID)) {
+
+    sim$studyArea$PolyID <- row.names(sim$studyArea)
+
   }
-  sim$studyArea <- spTransform(sim$studyArea0, CRSobj = crs(sim$vegMap))
+  sim$studyArea <- spTransform(sim$studyArea, CRSobj = crs(sim$vegMap))
 
   nonFlammClasses <- c(36, 37, 38, 39)
   oldClass <- 0:39
@@ -182,7 +183,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea0", sim)) {
+  if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
@@ -190,14 +191,14 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     SA <- Cache(prepInputs,
                 targetFile  = studyAreaFilename,
                 fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea0"),
+                url = extractURL(objectName = "studyArea"),
                 archive = "ecodistrict_shp.zip",
                 filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea0"),
+                userTags = c(cacheTags, "studyArea"),
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea0 <- SA
+    sim$studyArea <- SA
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
@@ -207,17 +208,13 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     crsDefault <- CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
                             "+x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
 
-    options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
     vegMap <- Cache(prepInputs,
                     targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
-                    studyArea = sim$studyArea0,
-                    filename2 = "SmallLCC2005_V1_4a.tif")#,
-                    #userTags = c(cacheTags, "vegMap"),
-                    #showSimilar = TRUE)
-    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
+                    studyArea = sim$studyArea,
+                    filename2 = "SmallLCC2005_V1_4a.tif")
 
     sim$vegMap <- vegMap
 

@@ -78,13 +78,13 @@ ageModuleInit <- function(sim) {
 
  dPath <- dataPath(sim)
 
- options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
+ # options(reproducible.overwrite = TRUE) ## TODO: remove this workaround
  ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
                   url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
                   studyArea = sim$studyArea0,
                   rasterToMatch = sim$vegMap,
                   destinationPath = file.path(dPath, "age"))
- options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
+ # options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
 
  sim$ageMap <- ageMap
 

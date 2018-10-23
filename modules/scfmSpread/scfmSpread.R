@@ -47,7 +47,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     plot = {
 
-      plot(sim$burnMap, title="Fire map")
+      Plot(sim$burnMap, title = "Fire map", legend = FALSE)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
     },
     burn = {

@@ -76,6 +76,11 @@ calcp <- function(q, or){ # given q and or=oddsRatio(p,q), solve for p
 }
 
 Init <- function(sim) {
+
+  if (is.null(sim$studyArea$LTHFC)) {
+    stop("no LTHFC field in study area. Did you run andisonDriver_dataprep?")
+  }
+
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
