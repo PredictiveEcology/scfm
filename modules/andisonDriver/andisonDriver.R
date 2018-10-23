@@ -15,7 +15,8 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
-    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
+    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
+    defineParamater("pSpreadOddsRatio", 1, 0, 100, desc = "allow to override pSpread calibration")
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
@@ -147,7 +148,7 @@ Init <- function(sim) {
       warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
     targetSize <- mfs / cellSize - 1
     pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
-
+    pJmp <- calcp(pJmp, P(sim)$pSpreadOddsRatio)
     w <- landAttr$nNbrs
     w <- w / sum(w)
     hatPE <- pEscape
