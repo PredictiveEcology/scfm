@@ -60,6 +60,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
+  #browser()
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 

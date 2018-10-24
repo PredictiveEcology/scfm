@@ -55,12 +55,14 @@ modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
 #AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
 #                                by = 'LTHFC', dissolve = TRUE)
 
-ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
-subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
+#ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
+#subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
+
+tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
 
 objects <- list(
 # studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-  studyArea0 = subEcoDistricts
+  studyArea0 = tolkoABN # subEcoDistricts
 )
 
 paths <- list(

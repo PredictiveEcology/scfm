@@ -16,7 +16,7 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
-    defineParamater("pSpreadOddsRatio", 1, 0, 100, desc = "allow to override pSpread calibration")
+    defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration")
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
@@ -82,7 +82,7 @@ Init <- function(sim) {
   }
 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-
+  
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
@@ -90,7 +90,7 @@ Init <- function(sim) {
     fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]
     fri <- ifelse(fri < P(sim)$minFRI, P(sim)$minFRI, fri)
     targetAAB <- landAttr$burnyArea / fri
-
+    browser()
     rate <- regime$ignitionRate
     pEscape <- regime$pEscape
     mfs <- regime$xBar

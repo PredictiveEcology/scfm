@@ -27,7 +27,7 @@ defineModule(sim,list(
           NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
     ),
     inputObjects = bind_rows(
-      expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+      expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
         sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
@@ -35,7 +35,8 @@ defineModule(sim,list(
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+      createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataLayer", desc = "")
     )
   )
 )
@@ -189,10 +190,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 }
 
 .inputObjects <- function(sim) {
+  #browser()
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea", sim)) {
+  if (!suppliedElsewhere("studyArea0", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
@@ -200,10 +202,10 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
     SA <- Cache(prepInputs,
                 targetFile  = studyAreaFilename,
                 fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea"),
+                url = extractURL(objectName = "studyArea0"),
                 archive = "ecodistrict_shp.zip",
                 filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
+                userTags = c(cacheTags, "studyArea0"),
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
@@ -223,8 +225,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
-                    studyArea = sim$studyArea,
-                    filename2 = "SmallLCC2005_V1_4a.tif")
+                    studyArea = sim$studyArea0,
+                    filename2 = "SmallLCC2005_V1_4a.tif")#,
+                    #userTags = c(cacheTags, "vegMap"),
+                    #showSimilar = TRUE)
+    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
 
     if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
     crs(vegMap) <- P(sim)$.crsUsed
