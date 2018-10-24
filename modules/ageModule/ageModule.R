@@ -44,7 +44,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     ### (use `checkObject` or similar)
 
     # do stuff for this event
-    sim <- sim$ageModuleInit(sim)
+    sim <- Init(sim)
 
     # schedule future event(s)
     sim <- scheduleEvent(sim, params(sim)$ageModule$startTime, "ageModule", "age")
@@ -52,19 +52,18 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- scheduleEvent(sim, params(sim)$ageModule$.saveInitialTime, "ageModule", "save")
   } else if (eventType=="age") {
     # do stuff for this event
-    sim <- ageModuleAge(sim)
+    sim <- Age(sim)
 
     # schedule the next event
     sim <- scheduleEvent(sim, time(sim) + params(sim)$ageModule$returnInterval,
                          "ageModule", "age")
   } else if (eventType == "plot") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
+
     Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
     sim <- scheduleEvent(sim,
                          time(sim) + P(sim)$.plotInterval,
                          "ageModule", "plot")
-    # ! ----- STOP EDITING ----- ! #
+
   }  else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -74,7 +73,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 
 
 ### template initilization
-ageModuleInit <- function(sim) {
+Init <- function(sim) {
 
  dPath <- dataPath(sim)
 
@@ -97,7 +96,7 @@ ageModuleInit <- function(sim) {
 }
 
 ### template for save events
-ageModuleSave <- function(sim) {
+Save <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   # do stuff for this event
   sim <- saveFiles(sim)
@@ -106,7 +105,7 @@ ageModuleSave <- function(sim) {
   return(invisible(sim))
 }
 
-ageModuleAge <- function(sim) {
+Age <- function(sim) {
 
   sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
 

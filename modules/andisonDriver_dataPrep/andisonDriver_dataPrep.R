@@ -95,12 +95,11 @@ Init <- function(sim) {
                           AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI, ],
                           by = "LTHFC",
                           dissolve = TRUE)
-      sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = P(sim)$.crsUsed)
     }
-
-    sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = CRS("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs"))
+    sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = P(sim)$.crsUsed)
   }
-  ##workaround.
+  ##workaround. This forces studyArea to be Andison shapefile
+  sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = P(sim)$.crsUsed)
   sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
 
 

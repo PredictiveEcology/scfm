@@ -210,6 +210,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 
     SA <- SA[SA$ECODISTRIC == 348, ]
     SA <- spTransform(SA, CRSobj = P(sim)$.crsUsed)
+    sim$studyArea0 <- SA
     sim$studyArea <- SA
 
   }
