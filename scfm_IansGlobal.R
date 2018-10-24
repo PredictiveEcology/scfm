@@ -6,7 +6,7 @@ inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
 timeunit <- "year"
-times <- list(start = 0, end = 10)
+times <- list(start = 0, end = 30)
 mapDim <- 200
 defaultInterval <- 1.0
 defaultPlotInterval <- 1.0
@@ -45,7 +45,9 @@ parameters <- list(
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval)
+    .saveInterval = defaultInterval),
+  andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
+                         mfsMultiplier=1.55)
 )
 
 modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
@@ -82,6 +84,6 @@ options(spades.moduleCodeChecks = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
-set.seed(2343)
-outSim <- spades(mySim, progress = FALSE, debug = TRUE)
+set.seed(23435)
+#outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 

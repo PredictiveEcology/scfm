@@ -16,7 +16,8 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
-    defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration")
+    defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration"),
+    defineParameter("mfsMultiplier", "numeric", 1, 0.1, 4, desc = "hack to increase pSpread")
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
@@ -90,7 +91,7 @@ Init <- function(sim) {
     fri <- sim$studyArea$LTHFC[sim$studyArea$PolyID == polygonType]
     fri <- ifelse(fri < P(sim)$minFRI, P(sim)$minFRI, fri)
     targetAAB <- landAttr$burnyArea / fri
-    browser()
+    #browser()
     rate <- regime$ignitionRate
     pEscape <- regime$pEscape
     mfs <- regime$xBar
@@ -152,7 +153,7 @@ Init <- function(sim) {
     if (sum(diff(m.lw$y) < 0) > 0)
       warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
     targetSize <- mfs / cellSize - 1
-    pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
+    pJmp <- approx(m.lw$y, m.lw$x, targetSize * P(sim)$mfsMultiplier, rule = 2)$y
     pJmp <- calcp(pJmp, P(sim)$pSpreadOddsRatio)
     w <- landAttr$nNbrs
     w <- w / sum(w)
@@ -183,7 +184,8 @@ Init <- function(sim) {
                       #for multiple arrivals within years. Formerly, I used a poorer approximation
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
 
-    return(list(pSpread = pJmp,
+    return(list(fri = fri, burnyArea=landAttr$burnyArea,
+                pSpread = pJmp,
                 p0 = foo,
                 naiveP0 = hatP0(pEscape, 8),
                 pIgnition = pIgnition,
