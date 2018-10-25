@@ -48,7 +48,7 @@ parameters <- list(
     .saveInterval = defaultInterval),
   scfmRegime = list(fireCause=c("L")),
   andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-                         mfsMultiplier = 1.5)#,
+                         mfsMultiplier = 1.0)#,
   #andisonDriver_dataPrep = list(minFRI=0)
 )
 

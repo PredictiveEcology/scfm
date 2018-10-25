@@ -118,7 +118,7 @@ Init <- function(sim) {
 
   firePolys <- unlist(sim$firePoints)
 
-  browser()
+  #browser()
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                                firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                firePoints = sim$firePoints, epochLength = epochLength,
@@ -137,7 +137,7 @@ Init <- function(sim) {
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                 firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
 
-  browser()
+  #browser()
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
