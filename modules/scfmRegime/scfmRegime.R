@@ -12,7 +12,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmRegime.Rmd"),
   reqdPkgs = list("rgdal"),
   parameters = rbind(
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2,1, 10, "scale xMax by this is HD estimator fails "),
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
     defineParameter(".crsUsed", "CRS", raster::crs(paste(
@@ -118,21 +118,26 @@ Init <- function(sim) {
 
   firePolys <- unlist(sim$firePoints)
 
-
-  sim$scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
+  browser()
+  scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                                firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                               firePoints = sim$firePoints, epochLength = epochLength)
+                               firePoints = sim$firePoints, epochLength = epochLength,
+                               maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
 
-  names(sim$scfmRegimePars) <- names(sim$landscapeAttr)
-
-  sim$scfmRegimePars <- scfmRegimePars[-which(sapply(scfmRegimePars, is.null))]
-
+  names(scfmRegimePars) <- names(sim$landscapeAttr)
+  nullIdx <- sapply(scfmRegimePars, is.null)
+  if (any(nullIdx)){
+    scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
+  }
+  sim$scfmRegimePars <- scfmRegimePars
+  
   return(invisible(sim))
 }
 
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints, epochLength = epochLength) {
+                                firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
 
+  browser()
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -165,8 +170,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       if (length(zVec) < 50)
         warning(
           sprintf(
-            "Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\
-            \n\tConsider using a larger area and/or longer epoch.",
+            "Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\n\tConsider using a larger area and/or longer epoch.",
             polygonID
           )
         )
@@ -175,23 +179,20 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       if (That == -1) {
         warning(
           sprintf(
-            "Hannon-Dahiya convergence failure in zone %s.\n
-            \tUsing sample maximum fire size",
+            "Hannon-Dahiya convergence failure in zone %s.\n\tUsing sample maximum fire size",
             polygonID
           )
         )
-        maxFireSize <- xMax * P(sim)$empiricalMaxSizeFactor  #just to be safe, respecify here
+        #browser()
+        maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
       }
       else {
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
           warning(
-            sprintf(
-              "Dodgy maxSize estimate in zone %s.\n\tUsing sample maximum fire size.",
-              polygonID
-            )
+            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",polygonID)
           )
-          maxFireSize <- xMax * P(sim)$empiricalMaxSizeFactor
+          maxFireSize <- xMax * maxSizeFactor
         }
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
@@ -204,6 +205,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   #
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
+  #browser()
+  
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,

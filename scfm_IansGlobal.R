@@ -46,8 +46,10 @@ parameters <- list(
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
+  scfmRegime = list(fireCause=c("L")),
   andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-                         mfsMultiplier=1.55)
+                         mfsMultiplier = 1.5)#,
+  #andisonDriver_dataPrep = list(minFRI=0)
 )
 
 modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
@@ -60,11 +62,11 @@ modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
 #ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
 #subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
 
-tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-
+#tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_S_SR.shp")
+tolkoSK <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_SK_SR.shp")
 objects <- list(
 # studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-  studyArea0 = tolkoABN # subEcoDistricts
+  studyArea0 = tolkoSK #ABN # subEcoDistricts
 )
 
 paths <- list(
@@ -84,6 +86,6 @@ options(spades.moduleCodeChecks = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
-set.seed(23435)
+set.seed(2345657)
 #outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 
