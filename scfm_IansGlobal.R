@@ -46,9 +46,10 @@ parameters <- list(
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L")),
+  scfmRegime = list(fireCause=c("L", "H")),
   andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-                         mfsMultiplier = 1.0)#,
+                         mfsMaxRatio = 3, 
+                         mfsMultiplier = 3.25)#,
   #andisonDriver_dataPrep = list(minFRI=0)
 )
 
@@ -86,6 +87,16 @@ options(spades.moduleCodeChecks = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
-set.seed(2345657)
-#outSim <- spades(mySim, progress = FALSE, debug = TRUE)
+set.seed(23657)
+outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 
+
+report<-function(outSim){
+ fri <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$fri))
+ area <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$burnyArea))
+ meanFri <<- sum(fri * (area/sum(area)))
+ burnable <<- unlist(lapply(outSim$landscapeAttr,function(x)length(x$cellsByZone)))
+ burned <<- unlist(lapply(outSim$landscapeAttr,function(x,y=outSim$burnMap)sum(y[x$cellsByZone])))
+ zonalFri <<- 1/((burned/burnable)/end(outSim))
+ return(NULL)
+}
