@@ -102,7 +102,7 @@ Init <- function(sim) {
 
     if (ratio < 0.95) {
         warning(sprintf("andisonDriver: AAB ratio %5.3f in %s: no action taken", ratio, polygonType))
-        warning(sprintf("\t\tE[fires]=%05.1f, pEscape=%05.3f, mfs=%07.1, A=%7.1km^2",
+        warning(sprintf("\t\tE[fires]=%05.1f, pEscape=%05.3f, mfs=%07.1f, A=%7.1fkm^2",
                         rate * landAttr$burnyArea, pEscape, mfs,landAttr$burnyArea/100))
     } else {
       if (ratio > 1.05) {
