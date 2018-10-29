@@ -17,6 +17,7 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
     defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration"),
+    defineParameter("mfsMaxRatio", "numeric", 2, 0.125, 8, desc = "maximum ratio to increase msf"),
     defineParameter("mfsMultiplier", "numeric", 1, 0.1, 4, desc = "hack to increase pSpread")
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
@@ -127,7 +128,7 @@ Init <- function(sim) {
         ratio <- targetAAB / scfmAAB
       }
       if (ratio > 1.05) { #now we will make escaped fires larger than the data say
-        mfs <- mfs * min(ratio, 2)
+        mfs <- mfs * min(ratio, P(sim)$mfsMaxRatio) 
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }

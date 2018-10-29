@@ -46,8 +46,11 @@ parameters <- list(
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
+  scfmRegime = list(fireCause=c("L", "H")),
   andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-                         mfsMultiplier=1.55)
+                         mfsMaxRatio = 3, 
+                         mfsMultiplier = 3.25)#,
+  #andisonDriver_dataPrep = list(minFRI=0)
 )
 
 modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
@@ -60,11 +63,11 @@ modules <- list("andisonDriver_dataPrep", "andisonDriver", "scfmLandcoverInit",
 #ecoDistricts <- shapefile("modules/scfmLandcoverInit/data/ecodistricts_shp/Ecodistricts/ecodistricts.shp")
 #subEcoDistricts <- ecoDistricts[ecoDistricts$ECOREGION %in% c(87, 142),] #Two small relatively contiguous ecoregions
 
-tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-
+#tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_S_SR.shp")
+tolkoSK <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_SK_SR.shp")
 objects <- list(
 # studyArea0 = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-  studyArea0 = tolkoABN # subEcoDistricts
+  studyArea0 = tolkoSK #ABN # subEcoDistricts
 )
 
 paths <- list(
@@ -84,6 +87,16 @@ options(spades.moduleCodeChecks = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
-set.seed(23435)
-#outSim <- spades(mySim, progress = FALSE, debug = TRUE)
+set.seed(23657)
+outSim <- spades(mySim, progress = FALSE, debug = TRUE)
 
+
+report<-function(outSim){
+ fri <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$fri))
+ area <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$burnyArea))
+ meanFri <<- sum(fri * (area/sum(area)))
+ burnable <<- unlist(lapply(outSim$landscapeAttr,function(x)length(x$cellsByZone)))
+ burned <<- unlist(lapply(outSim$landscapeAttr,function(x,y=outSim$burnMap)sum(y[x$cellsByZone])))
+ zonalFri <<- 1/((burned/burnable)/end(outSim))
+ return(NULL)
+}
