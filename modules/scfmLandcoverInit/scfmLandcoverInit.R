@@ -144,8 +144,13 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 ### template initilization
 Init <- function(sim) {
 
+  if (is.null(sim$studyArea)) {
+    sim$studyArea <- sim$studyArea0
+  }
+
   if (!identical(crs(sim$studyArea), P(sim)$.crsUsed)) {
-   crs(sim$studyArea) <- P(sim)$.crsUsed
+
+   sim$studyArea <- spTransform(sim$studyArea, CRSobj = P(sim)$.crsUsed)
   }
 
   if (is.null(sim$studyArea$PolyID)) {

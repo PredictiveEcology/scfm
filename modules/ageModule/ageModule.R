@@ -55,7 +55,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- Age(sim)
 
     # schedule the next event
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$ageModule$returnInterval,
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval,
                          "ageModule", "age")
   } else if (eventType == "plot") {
 

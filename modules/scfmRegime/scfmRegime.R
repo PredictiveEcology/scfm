@@ -24,7 +24,8 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = ""),
+    expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
   ),
@@ -224,6 +225,24 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
+  if (!suppliedElsewhere("studyArea0", sim)) {
+    message("study area not supplied. Using Ecodistrict 348")
+
+    #source shapefile from ecodistict in input folder. Use ecodistrict 348
+    studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
+    SA <- Cache(prepInputs,
+                targetFile  = studyAreaFilename,
+                fun = "raster::shapefile",
+                url = extractURL(objectName = "studyArea0"),
+                archive = "ecodistrict_shp.zip",
+                filename2 = TRUE,
+                userTags = c(cacheTags, "studyArea0"),
+                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
+
+    SA <- SA[SA$ECODISTRIC == 348, ]
+    SA <- spTransform(SA, CRSobj = P(sim)$.crsUsed)
+    sim$studyArea0 <- SA
+  }
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
     if (!dir.exists(file.path(dPath, "NFDB_point"))) {
@@ -246,10 +265,11 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     x = zipContents,
                     value = TRUE)
 
-    #browser()
+    sim$studyArea0 <- spTransform(sim$studyArea0, P(sim)$.crsUsed)
+
     firePoints <- Cache(rgdal::readOGR, outFile)
     firePoints <- spTransform(firePoints, CRSobj = P(sim)$.crsUsed)
-    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea,
+    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
                         filename2 = file.path(dPath, "firePoints.shp"))
     sim$firePoints <- firePoints
   }
