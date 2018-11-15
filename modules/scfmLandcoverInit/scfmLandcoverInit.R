@@ -195,7 +195,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 }
 
 .inputObjects <- function(sim) {
-  #browser()
+
   dPath <- dataPath(sim) #where files will be downloaded
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
@@ -214,28 +214,27 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    SA <- spTransform(SA, CRSobj = P(sim)$.crsUsed)
     sim$studyArea0 <- SA
     sim$studyArea <- SA
 
   }
+
+  sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = P(sim)$.crsUsed) #must happen regardless if supplied
+  sim$studyArea <- sim$studyArea0
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
     vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
 
-
-    vegMap <- Cache(prepInputs,
-                    targetFile = vegMapFilename,
+    vegMap <- Cache(prepInputs, targetFile = vegMapFilename,
                     url = extractURL(objectName = "vegMap"),
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
                     studyArea = sim$studyArea0,
-                    filename2 = "SmallLCC2005_V1_4a.tif")#,
-                    #userTags = c(cacheTags, "vegMap"),
-                    #showSimilar = TRUE)
-    options(reproducible.overwrite = FALSE) ## TODO: remove this workaround
+                    overwrite = TRUE,
+                    filename2 = TRUE,
+                    userTags = c(cacheTags, "vegMap"))
 
     if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
     crs(vegMap) <- P(sim)$.crsUsed
