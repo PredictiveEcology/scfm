@@ -77,12 +77,13 @@ Init <- function(sim) {
 
  dPath <- dataPath(sim)
 
-
  ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
-                  url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
-                  studyArea = sim$studyArea,
-                  rasterToMatch = sim$vegMap,
-                  destinationPath = file.path(dPath, "age"))
+                 url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
+                 studyArea = sim$studyArea,
+                 rasterToMatch = sim$vegMap,
+                 destinationPath = file.path(dPath, "age"),
+                 overwrite = TRUE,
+                 filename2 = TRUE)
 
  sim$ageMap <- ageMap
 

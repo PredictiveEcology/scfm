@@ -131,7 +131,7 @@ Init <- function(sim) {
     scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
   }
   sim$scfmRegimePars <- scfmRegimePars
-  
+
   return(invisible(sim))
 }
 
@@ -207,7 +207,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
-  
+
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,
@@ -270,7 +270,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     firePoints <- Cache(rgdal::readOGR, outFile)
     firePoints <- spTransform(firePoints, CRSobj = P(sim)$.crsUsed)
     firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
-                        filename2 = file.path(dPath, "firePoints.shp"))
+                        filename2 = file.path(dPath, "firePoints.shp"), overwrite = TRUE)
     sim$firePoints <- firePoints
   }
 
