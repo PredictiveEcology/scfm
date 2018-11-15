@@ -29,7 +29,9 @@ defineModule(sim, list(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "")
+    createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
+    createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
+    createsOutput(objectName = "postFirePixel", object = "RasterLayer", desc = "annual burn map")
   )
 ))
 
@@ -46,8 +48,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot")
     },
     plot = {
-
-      Plot(sim$burnMap, title = "Fire map", legend = FALSE)
+      Plot(sim$burnMap, legend = FALSE)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
     },
     burn = {
@@ -101,6 +102,9 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
                                      # maxSize = maxSizes,  #not sure this works
                                      asRaster = FALSE)
 
+  sim$postFirePixel <- sim$vegMap #This preserves NAs
+  sim$postFirePixel[!is.na(sim$postFirePixel)] <- 0
+  sim$postFirePixel[sim$burnDT$pixels] <- 1
   sim$burnMap[sim$burnDT$pixels] <- 1
   sim$ageMap[sim$burnDT$pixels] <- 0
   return(invisible(sim))
