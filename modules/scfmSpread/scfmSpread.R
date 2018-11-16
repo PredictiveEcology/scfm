@@ -31,7 +31,7 @@ defineModule(sim, list(
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
-    createsOutput(objectName = "postFirePixel", object = "RasterLayer", desc = "annual burn map")
+    createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map")
   )
 ))
 
@@ -102,9 +102,9 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
                                      # maxSize = maxSizes,  #not sure this works
                                      asRaster = FALSE)
 
-  sim$postFirePixel <- sim$vegMap #This preserves NAs
-  sim$postFirePixel[!is.na(sim$postFirePixel)] <- 0
-  sim$postFirePixel[sim$burnDT$pixels] <- 1
+  sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
+  sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0
+  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1
   sim$burnMap[sim$burnDT$pixels] <- 1
   sim$ageMap[sim$burnDT$pixels] <- 0
   return(invisible(sim))
