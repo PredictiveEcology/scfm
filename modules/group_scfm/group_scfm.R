@@ -8,9 +8,9 @@ defineModule(sim, list(
   description = NA, #"parent module for scfm family of modules",
   keywords = NA, # c("fire burn hot"),
   authors = c(person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))),
-  childModules = character("ageModule", "scfmDriver", "scfmEscape", "scfmIgnition", "scfmLandcoverInit",
+  childModules = c("ageModule", "scfmDriver", "scfmEscape", "scfmIgnition", "scfmLandcoverInit",
                            "scfmRegime", "scfmSpread"),
-  version = list(SpaDES.core = "0.2.3", group_scfm = "0.0.1", NA = "0.0.1"),
+  version = list(SpaDES.core = "0.2.3", group_scfm = "0.0.1"),
 
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
