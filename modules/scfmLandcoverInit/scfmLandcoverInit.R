@@ -86,7 +86,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     neighMap <- Cache(focal, x = 1 - flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
-    valsByPoly <- Cache(extract, neighMap, studyArea, cellnumbers = TRUE)
+    valsByPoly <- Cache(raster::extract, neighMap, studyArea, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
 
 
@@ -204,6 +204,7 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
     studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
+
     SA <- Cache(prepInputs,
                 targetFile  = studyAreaFilename,
                 fun = "raster::shapefile",
@@ -234,10 +235,11 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     studyArea = sim$studyArea0,
                     overwrite = TRUE,
                     filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"))
+                    userTags = c(cacheTags, "vegMap"),
+                    targetCRS = P(sim)$.crsUsed)
 
-    if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
-    crs(vegMap) <- P(sim)$.crsUsed
+    if (!identicalCRS(crs(vegMap), P(sim)$.crsUsed)) {
+      vegMap <- raster::projectRaster(vegMap, crs = P(sim)$.crsUsed) #This can screw up resolution. Need to revisit when rtm is available
     }
     sim$vegMap <- vegMap
 
