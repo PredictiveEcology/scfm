@@ -14,10 +14,7 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
-    defineParameter(".crsUsed", "CRS", raster::crs(paste(
-      "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
-      NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
@@ -49,19 +46,6 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  # verify studyArea is in same projection
-  if (!identical(crs(sim$studyArea), P(sim)$.crsUsed)) {
-    sim$studyArea <- Cache(spTransform, sim$studyArea, CRSobj = P(sim)$.crsUsed)
-  }
-
-  if (!identical(crs(sim$firePoints), P(sim)$.crsUsed)) {
-    sim$firePoints <- Cache(spTransform, sim$firePoints, CRSobj = P(sim)$.crsUsed)
-  }
-
-  if (!identical(crs(sim$vegMap), P(sim)$.crsUsed)) {
-    crs(sim$vegMap) <- P(sim)$.crsUsed
-  }
-
 
   tmp <- sim$firePoints
 
@@ -240,7 +224,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    SA <- spTransform(SA, CRSobj = P(sim)$.crsUsed)
     sim$studyArea0 <- SA
   }
   #this module has many dependencies that aren't sourced in .inputObjects
@@ -265,8 +248,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     x = zipContents,
                     value = TRUE)
 
-    sim$studyArea0 <- spTransform(sim$studyArea0, P(sim)$.crsUsed)
-
     firePoints <- Cache(rgdal::readOGR, outFile)
     firePoints <- spTransform(firePoints, CRSobj = P(sim)$.crsUsed)
     firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
@@ -286,10 +267,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     destinationPath = dPath,
                     studyArea = sim$studyArea,
                     filename2 = "SmallLCC2005_V1_4a.tif")
-
-    if (!identical(crs(vegMap), P(sim)$.crsUsed)) {
-      crs(vegMap) <- P(sim)$.crsUsed
-    }
 
     sim$vegMap <- vegMap
   }

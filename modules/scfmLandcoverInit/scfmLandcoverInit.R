@@ -21,10 +21,7 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
-      defineParameter(".crsUsed", "CRS", raster::crs(paste(
-          "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
-          NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
@@ -148,10 +145,6 @@ Init <- function(sim) {
     sim$studyArea <- sim$studyArea0
   }
 
-  if (!identical(crs(sim$studyArea), P(sim)$.crsUsed)) {
-
-   sim$studyArea <- spTransform(sim$studyArea, CRSobj = P(sim)$.crsUsed)
-  }
 
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
@@ -220,9 +213,6 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
 
   }
 
-  sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = P(sim)$.crsUsed) #must happen regardless if supplied
-  sim$studyArea <- sim$studyArea0
-
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
@@ -237,11 +227,8 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     filename2 = TRUE,
                     userTags = c(cacheTags, "vegMap"))
 
-    if (!identicalCRS(crs(vegMap), P(sim)$.crsUsed)) {
-      vegMap <- raster::projectRaster(vegMap, crs = crs(P(sim)$.crsUsed)) #This can screw up resolution. Need to revisit when rtm is available
-    }
     sim$vegMap <- vegMap
+    }
 
-  }
   return(invisible(sim))
 }
