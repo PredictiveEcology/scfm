@@ -235,11 +235,10 @@ makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
                     studyArea = sim$studyArea0,
                     overwrite = TRUE,
                     filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"),
-                    targetCRS = P(sim)$.crsUsed)
+                    userTags = c(cacheTags, "vegMap"))
 
     if (!identicalCRS(crs(vegMap), P(sim)$.crsUsed)) {
-      vegMap <- raster::projectRaster(vegMap, crs = P(sim)$.crsUsed) #This can screw up resolution. Need to revisit when rtm is available
+      vegMap <- raster::projectRaster(vegMap, crs = crs(P(sim)$.crsUsed)) #This can screw up resolution. Need to revisit when rtm is available
     }
     sim$vegMap <- vegMap
 
