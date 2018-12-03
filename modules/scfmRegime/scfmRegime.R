@@ -240,6 +240,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       )
     }
 
+    #fire points file name changes daily so must be grepped
     zipContents <- list.files(file.path(dPath, "NFDB_point"),
                               all.files = TRUE,
                               full.names = TRUE)
@@ -248,11 +249,19 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     x = zipContents,
                     value = TRUE)
 
-    firePoints <- Cache(rgdal::readOGR, outFile)
-    firePoints <- spTransform(firePoints, CRSobj = P(sim)$.crsUsed)
-    firePoints <- Cache(postProcess, firePoints, studyArea = sim$studyArea0,
-                        filename2 = file.path(dPath, "firePoints.shp"), overwrite = TRUE)
-    sim$firePoints <- firePoints
+    #Reading this shapefile takes forever even when cached so combining these calls.
+    #PrepInputs doesn't work here because we don't know the targetFile (name changes daily) unless we already have archive
+    #And we don't want the file written to the archive because that screws up the grep
+    fireDownload <- function(SA, file = outFile) {
+      firePoints <- raster::shapefile(file) %>%
+      sp::spTransform(CRSobj = crs(SA))
+      firePoints <- postProcess(firePoints, studyArea = SA, useSAcrs = TRUE,
+                                filename2 = file.path(dPath, "firePoints_SA.shp"),
+                                overwrite = TRUE)
+      return(firePoints)
+    }
+
+    sim$firePoints <- Cache(fireDownload, SA = sim$studyArea0, file = outFile)
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
