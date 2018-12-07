@@ -25,7 +25,9 @@ defineModule(sim, list(
                  sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing"),
     expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area template",
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+    expectsInput(objectName = "rasterToMatch", objectClass = "rasterLayer",
+                  desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
@@ -93,11 +95,22 @@ Init <- function(sim) {
                           by = "LTHFC",
                           dissolve = TRUE)
     }
-
   }
   ##workaround. This forces studyArea to be Andison shapefile
+  sim$AndisonFRI <- spTransform(sim$AndisonFRI, CRSobj = crs(sim$studyArea0))
+  sim$studyArea <- crop(sim$AndisonFRI, y = sim$studyArea0)
 
-  sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
+                                           destinationPath = dPath,
+                                           studyArea = sim$studyArea,
+                                           filename2 = TRUE,
+                                           overwrite = TRUE,
+                                           useSAcrs = TRUE)
+    ###TODO: this shoudl realy be revisited. Basically this whole concept of AndisonFRI replacing studyArea in .inputObjects doesn't work
+    # if we need to supply special files as studyArea, they need to be supplied by user, not defaults. Anything else introduces
+    #the potential for crs mismatches that break down the line due to vector-raster functions requiring same crs
+  }
 
 
   return(invisible(sim))
