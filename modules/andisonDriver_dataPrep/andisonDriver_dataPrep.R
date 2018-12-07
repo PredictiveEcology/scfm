@@ -18,10 +18,7 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
-    defineParameter(".crsUsed", "CRS", raster::crs(paste(
-      "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs")),
-      NA, NA, desc = "CRS to be used. Defaults to the default vegMap projection")
+    defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI map",
@@ -91,15 +88,15 @@ Init <- function(sim) {
     b <- duplicated(AndisonFRI$LTHFC)
 
     if (any(b)) {
-      AndisonFRI <- Cache(raster::aggregate,
+      sim$AndisonFRI <- Cache(raster::aggregate,
                           AndisonFRI[AndisonFRI$LTHFC > P(sim)$minFRI, ],
                           by = "LTHFC",
                           dissolve = TRUE)
     }
-    sim$AndisonFRI <- spTransform(AndisonFRI, CRSobj = P(sim)$.crsUsed)
+
   }
   ##workaround. This forces studyArea to be Andison shapefile
-  sim$studyArea0 <- spTransform(sim$studyArea0, CRSobj = P(sim)$.crsUsed)
+
   sim$studyArea <- Cache(crop, sim$AndisonFRI, y = sim$studyArea0)
 
 
