@@ -42,7 +42,7 @@ defineModule(sim,list(
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
          init = {
-           #sim <- scfmLandcoverInitCacheFunctions(sim)
+
            sim <- Init(sim)
            sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
            sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
@@ -62,6 +62,27 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                        "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
 
+  return(invisible(sim))
+}
+Init <- function(sim) {
+
+  if (is.null(sim$studyArea)) {
+    sim$studyArea <- sim$studyArea0
+  }
+
+  if (is.null(sim$studyArea$PolyID)) {
+    sim$studyArea$PolyID <- row.names(sim$studyArea)
+  }
+
+  sim$flammableMap <- pemisc::defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL)
+
+  setColors(flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
+  # This makes sim$landscapeAttr & sim$cellsByZone
+  outs <- Cache(genFireMapAttr,
+                sim$flammableMap,
+                sim$studyArea,
+                P(sim)$neighbours)
+  list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
   return(invisible(sim))
 }
 
@@ -140,53 +161,6 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 }
 
 ### template initilization
-Init <- function(sim) {
-
-  if (is.null(sim$studyArea)) {
-    sim$studyArea <- sim$studyArea0
-  }
-
-
-  if (is.null(sim$studyArea$PolyID)) {
-    sim$studyArea$PolyID <- row.names(sim$studyArea)
-  }
-
-  nonFlammClasses <- c(36, 37, 38, 39)
-  oldClass <- 0:39
-  newClass <- ifelse(oldClass %in% nonFlammClasses, 1, 0)   #1 codes for non flammable
-  #see mask argument for SpaDES::spread()
-  flammableTable <- cbind(oldClass, newClass)
-
-  sim$flammableMap <- makeFlammableMap(sim$vegMap, flammableTable, ls(sim))
-
-  # This makes sim$landscapeAttr & sim$cellsByZone
-  outs <- Cache(genFireMapAttr,
-                sim$flammableMap,
-                sim$studyArea,
-                P(sim)$neighbours)
-  list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
-  return(invisible(sim))
-}
-
-testFun <- function(x) {
-  sum(na.omit(x) == 1)
-}
-
-makeFlammableMap <- function(vegMap, flammableTable, lsSimObjs) {
-
-  flammableMap <- ratify(reclassify(vegMap, flammableTable, count = TRUE))
-
-  if ("Mask" %in% lsSimObjs) {
-    flammableMap <- flammableMap * sim$Mask # don't pass in sim$Mask explicitly to fn so not assessed in Cache
-  }
-  #the count options should cause that "a column with frequencies is added.
-
-  #setColors(sim$flammableMap, n=2) <- c("blue","red")
-  setColors(flammableMap, 2) <- colorRampPalette(c("blue", "red"))(2)
-  #flammableMap <- writeRaster(flammableMap, filename = "flammableMap.tif",
-  #                            datatype = "INT2U", overwrite=TRUE)
-  return(flammableMap)
-}
 
 .inputObjects <- function(sim) {
 
