@@ -28,7 +28,8 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "spreadState", objectClass = "data.table", desc = "")
@@ -115,7 +116,7 @@ Escape <- function(sim) {
   dPath <- dataPath(sim)
   #This module has many dependencies that aren't sourced in .inputObjects.
   if (!suppliedElsewhere("flammableMap", sim)) {
-    sim$flammableMap <- sim$ageMap
+    sim$flammableMap <- sim$rasterToMatch
     sim$flammableMap[] <- sim$ageMap[] * 0
   }
   return(invisible(sim))

@@ -28,7 +28,8 @@ defineModule(sim, list(
                  sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area template",
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
@@ -80,7 +81,7 @@ Init <- function(sim) {
  ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
                  url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
                  studyArea = sim$studyArea,
-                 rasterToMatch = sim$vegMap,
+                 rasterToMatch = sim$rasterToMatch,
                  destinationPath = file.path(dPath, "age"),
                  overwrite = TRUE,
                  filename2 = TRUE)

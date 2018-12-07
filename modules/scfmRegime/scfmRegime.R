@@ -24,7 +24,8 @@ defineModule(sim, list(
     expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
-                 sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip")
+                 sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea0")
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
@@ -255,7 +256,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     fireDownload <- function(SA, file = outFile) {
       firePoints <- raster::shapefile(file) %>%
       sp::spTransform(CRSobj = crs(SA))
-      firePoints <- postProcess(firePoints, studyArea = SA, useSAcrs = TRUE,
+      firePoints <- postProcess(firePoints, studyArea = SA, rasterToMatch = sim$rasterToMatch,
                                 filename2 = file.path(dPath, "firePoints_SA.shp"),
                                 overwrite = TRUE)
       return(firePoints)
@@ -275,7 +276,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     archive = "LandCoverOfCanada2005_V1_4.zip",
                     destinationPath = dPath,
                     studyArea = sim$studyArea,
-                    filename2 = "SmallLCC2005_V1_4a.tif")
+                    rasterToMatch = sim$rasterToMatch,
+                    filename2 = "SmallLCC2005_V1_4a.tif",
+                    useSAcrs = TRUE)
 
     sim$vegMap <- vegMap
   }
