@@ -3,7 +3,7 @@
 defineModule(sim, list(
   name = "scfmIgnition",
   description = "start a random number of fires",
-  keywords = c("insert key words here"),
+  keywords = c("fire scfm ignition"),
   authors = c(person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))),
   childModules = character(),
   version = numeric_version("1.1.0.9002"),
@@ -65,7 +65,7 @@ Init <- function(sim) {
       for (x in names(sim$scfmDriverPars)) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
-      pIg[] <- pIg[] * (1 - sim$flammableMap[]) #apply non-flammmable 1s and NAs
+      pIg[] <- pIg[] * (sim$flammableMap[])
     } else {
       pIg <- sim$scfmDriverPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
     }

@@ -11,10 +11,10 @@ defineModule(sim,list(
     version = numeric_version("0.1.0"),
     spatialExtent = raster::extent(rep(NA_real_, 4)),
     timeframe = as.POSIXlt(c("2005-01-01", NA)),
-    documentation = list("README.txt", "scfmLandCoverInit.Rmd"),
+    documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "reproducible"),
+    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/pemisc@development"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -126,8 +126,10 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
       return(nNbrs)
     })
 
+
     nFlammable <- lapply(valsByZone, function(x) {
-      sum(1 - getValues(flammableMap)[x[, 1]], na.rm = TRUE) #sums flammable pixels in FRI polygons
+
+      sum(getValues(flammableMap)[x[, 1]], na.rm = TRUE) #sums flammable pixels in FRI polygons
     })
 
     landscapeAttr <- purrr::transpose(list(cellSize = rep(list(cellSize), length(nFlammable)),
@@ -184,25 +186,18 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea0 <- SA
-    sim$studyArea <- SA
-
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
-    vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-
-    vegMap <- Cache(prepInputs, targetFile = vegMapFilename,
-                    url = extractURL(objectName = "vegMap"),
-                    archive = "LandCoverOfCanada2005_V1_4.zip",
-                    destinationPath = dPath,
-                    studyArea = sim$studyArea0,
-                    overwrite = TRUE,
-                    filename2 = TRUE,
-                    userTags = c(cacheTags, "vegMap"))
-
-    sim$vegMap <- vegMap
+    sim$vegMap <- pemisc::prepInputsLCC(year = 2005,
+                                        destinationPath = dPath,
+                                        studyArea = sim$studyArea0,
+                                        rasterToMatch = sim$rasterToMatch,
+                                        filename2 = TRUE,
+                                        overwrite = TRUE,
+                                        userTags = c("cacheTags", "vegMap"))
     }
 
   return(invisible(sim))
