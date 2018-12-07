@@ -78,7 +78,7 @@ Init <- function(sim) {
       for (x in names(sim$scfmDriverPars)) {
         p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
       }
-      p0[] <- p0[] * (1 - sim$flammableMap[])
+      p0[] <- p0[] * (sim$flammableMap[])
     } else {
       p0 <- sim$scfmDriverPars[[1]]$p0
     }
