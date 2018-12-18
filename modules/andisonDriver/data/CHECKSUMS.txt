@@ -1,3 +1,2 @@
 "file" "checksum" "filesize" "algorithm"
 "FiresN1000MinFiresSize2NoLakes.csv" "f00e3cf0d9cc8741" "281189" "xxhash64"
-"spread_firesize_curves.csv" "a5770d2502316f57" "44083" "xxhash64"

@@ -15,27 +15,24 @@ defineModule(sim, list(
   documentation = list("README.txt", "ageModule.Rmd"),
   reqdPkgs = list("raster","RColorBrewer"),
   parameters = rbind(
-    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, "initial age"),
-    defineParameter("maxAge","numeric", 200, 0, 2**16-1, "maximum age for plotting"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc="Time interval between aging aevents"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc="Simulation time at which to initiate aging"),
+    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
+    defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging aevents"),
+    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur")
+    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
-  inputObjects = data.frame(
-    objectName = c("flammableMap"),
-    objectClass =c("RasterLayer"),
-    sourceURL = "",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  inputObjects = bind_rows(
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
+                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL"),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "study area template",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
-  outputObjects = data.frame(
-    objectName = "ageMap",
-    objectClass = "RasterLayer",
-    other = NA_character_,
-    stringsAsFactors = FALSE
+  outputObjects = bind_rows(
+    createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
   )
 ))
 
@@ -48,7 +45,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     ### (use `checkObject` or similar)
 
     # do stuff for this event
-    sim <- sim$ageModuleInit(sim)
+    sim <- Init(sim)
 
     # schedule future event(s)
     sim <- scheduleEvent(sim, params(sim)$ageModule$startTime, "ageModule", "age")
@@ -56,70 +53,49 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- scheduleEvent(sim, params(sim)$ageModule$.saveInitialTime, "ageModule", "save")
   } else if (eventType=="age") {
     # do stuff for this event
-    sim <- ageModuleAge(sim)
-    
+    sim <- Age(sim)
+
     # schedule the next event
-    sim <- scheduleEvent(sim, time(sim) + params(sim)$ageModule$returnInterval,
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval,
                          "ageModule", "age")
   } else if (eventType == "plot") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
-    Plot(sim$ageMap, legendRange=c(0,params(sim)$ageModule$maxAge))
-    sim <- scheduleEvent(sim, 
-                         time(sim) + params(sim)$ageModule$.plotInterval,
+
+    Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
+    sim <- scheduleEvent(sim,
+                         time(sim) + P(sim)$.plotInterval,
                          "ageModule", "plot")
-    # ! ----- STOP EDITING ----- ! #
-  } else if (eventType == "save") {
-    # ! ----- EDIT BELOW ----- ! #
-    # do stuff for this event
 
-    # e.g., call your custom functions/methods here
-    # you can define your own methods below this `doEvent` function
-
-    # schedule future event(s)
-
-    # e.g.,
-    # sim <- scheduleEvent(sim, time(sim) + increment, "ageModule", "save")
-
-    # ! ----- STOP EDITING ----- ! #
-  } else {
+  }  else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   }
   return(invisible(sim))
 }
 
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initilization
-ageModuleInit <- function(sim) {
+Init <- function(sim) {
 
-  # # ! ----- EDIT BELOW ----- ! #
-  
-  if (!("ageMap" %in% ls(sim))){
-    N<-sim$mapDim
-    x<-raster::extent(c(0,N-1,0,N-1))
-    sim$ageMap<-raster(x,nrows=N, ncols=N,vals=params(sim)$ageModule$initialAge) %>%
-      setColors(n=10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-  }
-  else {
-    # we will use our colour choices, not whatever may have come with the loaded map.
-    setColors(sim$ageMap,n=10,colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-  }
-  
-   #temporary until we buid the rest of the modules
-  
-   
-  # ! ----- STOP EDITING ----- ! #
+ dPath <- dataPath(sim)
 
+ ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
+                 url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
+                 studyArea = sim$studyArea,
+                 rasterToMatch = sim$rasterToMatch,
+                 destinationPath = file.path(dPath, "age"),
+                 overwrite = TRUE,
+                 filename2 = TRUE)
+
+ sim$ageMap <- ageMap
+
+ # we will use our colour choices, not whatever may have come with the loaded map.
+ setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
+ #temporary until we buid the rest of the modules
   return(invisible(sim))
 }
 
 ### template for save events
-ageModuleSave <- function(sim) {
+Save <- function(sim) {
   # ! ----- EDIT BELOW ----- ! #
   # do stuff for this event
   sim <- saveFiles(sim)
@@ -128,11 +104,31 @@ ageModuleSave <- function(sim) {
   return(invisible(sim))
 }
 
-ageModuleAge <- function(sim) {
-  
-  sim$ageMap <- setValues(sim$ageMap, 
-                          pmin(params(sim)$ageModule$maxAge, getValues(sim$ageMap)+
-                                             params(sim)$ageModule$returnInterval))
-  
+Age <- function(sim) {
+
+  sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
+
+  return(invisible(sim))
+}
+
+.inputObjects <- function(sim) {
+  dPath <- dataPath(sim)
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("study area not supplied. Using Ecodistrict 348")
+
+    #source shapefile from ecodistict in input folder. Use ecodistrict 348
+    SA <- Cache(prepInputs,
+                url = extractURL(objectName = "studyArea"),
+                archive = "ecodistrict_shp.zip",
+                filename2 = TRUE,
+                userTags = c(cacheTags, "studyArea"),
+                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
+
+    SA <- SA[SA$ECODISTRIC == 348, ]
+    sim$studyArea <- SA
+
+  }
+
   return(invisible(sim))
 }
