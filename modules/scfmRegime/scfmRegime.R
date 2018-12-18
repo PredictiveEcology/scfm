@@ -21,11 +21,11 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame", desc = "",
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
                  sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea0")
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
@@ -210,7 +210,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea0", sim)) {
+  if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
@@ -218,14 +218,14 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     SA <- Cache(prepInputs,
                 targetFile  = studyAreaFilename,
                 fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea0"),
+                url = extractURL(objectName = "studyArea"),
                 archive = "ecodistrict_shp.zip",
                 filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea0"),
+                userTags = c(cacheTags, "studyArea"),
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea0 <- SA
+    sim$studyArea <- SA
   }
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
@@ -251,7 +251,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                     value = TRUE)
 
     #Reading this shapefile takes forever even when cached so combining these calls.
-    #PrepInputs doesn't work here because we don't know the targetFile (name changes daily) unless we already have archive
+    #PrepInputs doesn't work here because we don't know the targetFile (name changes daily)
     #And we don't want the file written to the archive because that screws up the grep
     fireDownload <- function(SA, file = outFile) {
       firePoints <- raster::shapefile(file) %>%
@@ -262,7 +262,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       return(firePoints)
     }
 
-    sim$firePoints <- Cache(fireDownload, SA = sim$studyArea0, file = outFile)
+    sim$firePoints <- Cache(fireDownload, SA = sim$studyArea, file = outFile)
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
