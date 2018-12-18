@@ -120,7 +120,7 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
 .inputObjects <- function(sim) {
 
   if (!suppliedElsewhere("pSpread", sim)) {
-    pSpread <- 0.235
+    sim$pSpread <- 0.235
   }
   return(invisible(sim))
 }

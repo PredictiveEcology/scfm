@@ -26,7 +26,9 @@ defineModule(sim, list(
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
   outputObjects = bind_rows(
-   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "")
+   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  ""),
+   createsOutput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
+                 desc = "Fire locations. Points outside studyArea are removed")
   )
 ))
 
@@ -186,7 +188,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
