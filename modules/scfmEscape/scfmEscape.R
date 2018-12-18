@@ -48,9 +48,10 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
     },
     plot = {
-      values(sim$tmpRaster)[sim$spreadState[, indices]] <- 2 #this reference method is believed to be faster
-      values(sim$tmpRaster)[sim$ignitionLoci] <- 1          #mark the initials specially
-      Plot(sim$tmpRaster)
+      tmpRaster <- sim$vegMap
+      values(tmpRaster)[sim$spreadState[, indices]] <- 2 #this reference method is believed to be faster
+      values(tmpRaster)[sim$ignitionLoci] <- 1          #mark the initials specially
+      Plot(tmpRaster)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
     },
     escape = {
@@ -62,11 +63,6 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
   )
   return(invisible(sim))
 }
-
-## event functions
-#   - follow the naming convention `modulenameEventtype()`;
-#   - `modulenameInit()` function is required for initiliazation;
-#   - keep event functions short and clean, modularize by calling subroutines from section below.
 
 ### template initilization
 Init <- function(sim) {
@@ -112,11 +108,11 @@ Escape <- function(sim) {
 
 #same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+
   #This module has many dependencies that aren't sourced in .inputObjects.
   if (!suppliedElsewhere("flammableMap", sim)) {
     sim$flammableMap <- sim$rasterToMatch
-    sim$flammableMap[] <- sim$ageMap[] * 0
+    sim$flammableMap[] <- sim$flammableMap[]* 0
   }
   return(invisible(sim))
 }

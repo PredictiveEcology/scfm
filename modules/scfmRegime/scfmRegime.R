@@ -23,8 +23,6 @@ defineModule(sim, list(
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
-                 sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
   outputObjects = bind_rows(
@@ -263,24 +261,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     }
 
     sim$firePoints <- Cache(fireDownload, SA = sim$studyArea, file = outFile)
-  }
-
-  if (!suppliedElsewhere("vegMap", sim)) {
-    message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-
-    vegMapFilename <- file.path(dPath, "LCC2005_V1_4a.tif")
-
-    vegMap <- Cache(prepInputs,
-                    targetFile = vegMapFilename,
-                    url = extractURL(objectName = "vegMap"),
-                    archive = "LandCoverOfCanada2005_V1_4.zip",
-                    destinationPath = dPath,
-                    studyArea = sim$studyArea,
-                    rasterToMatch = sim$rasterToMatch,
-                    filename2 = "SmallLCC2005_V1_4a.tif",
-                    useSAcrs = TRUE)
-
-    sim$vegMap <- vegMap
   }
 
   return(invisible(sim))

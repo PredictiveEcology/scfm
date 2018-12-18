@@ -90,10 +90,7 @@ Init <- function(sim) {
 
  # we will use our colour choices, not whatever may have come with the loaded map.
  setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-
-
-   #temporary until we buid the rest of the modules
-
+ #temporary until we buid the rest of the modules
   return(invisible(sim))
 }
 
