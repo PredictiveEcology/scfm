@@ -63,7 +63,7 @@ Init <- function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea0", sim)) {
+  if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using Ecodistrict 348")
 
     #source shapefile from ecodistict in input folder. Use ecodistrict 348
@@ -76,7 +76,7 @@ Init <- function(sim) {
                 destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
 
     SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea0 <- SA
+    sim$studyArea <- SA
   }
 
   if (!suppliedElsewhere("AndisonFRI", sim)) {
@@ -96,9 +96,6 @@ Init <- function(sim) {
                           dissolve = TRUE)
     }
   }
-  ##workaround. This forces studyArea to be Andison shapefile
-  sim$AndisonFRI <- spTransform(sim$AndisonFRI, CRSobj = crs(sim$studyArea0))
-  sim$studyArea <- crop(sim$AndisonFRI, y = sim$studyArea0)
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
