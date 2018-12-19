@@ -183,6 +183,19 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     sim$studyArea <- SA
   }
 
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
+
+    rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
+                                               destinationPath = dPath,
+                                               studyArea = sim$studyArea,
+                                               useSAcrs = TRUE,
+                                               filename2 = TRUE,
+                                               overwrite = TRUE,
+                                               userTags = c("cacheTags", "rasterToMatch"))
+    sim$rasterToMatch <- raster::projectRaster(rasterToMatch, crs = crs(sim$studyArea))
+  }
+
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
