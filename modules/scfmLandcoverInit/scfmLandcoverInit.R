@@ -165,22 +165,10 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using Ecodistrict 348")
+    message("study area not supplied. Using random polygon in Alberta")
 
-    #source shapefile from ecodistict in input folder. Use ecodistrict 348
-    studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
-
-    SA <- Cache(prepInputs,
-                targetFile  = studyAreaFilename,
-                fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea"),
-                archive = "ecodistrict_shp.zip",
-                filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
-                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-
-    SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea <- SA
+    studyArea <- pemisc::randomStudyArea(size = 2000000000, seed = 23657)
+    sim$studyArea <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
@@ -189,11 +177,11 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
                                                destinationPath = dPath,
                                                studyArea = sim$studyArea,
-                                               useSAcrs = TRUE,
+                                               # useSAcrs = TRUE,
                                                filename2 = TRUE,
                                                overwrite = TRUE,
                                                userTags = c("cacheTags", "rasterToMatch"))
-    sim$rasterToMatch <- raster::projectRaster(rasterToMatch, crs = crs(sim$studyArea))
+
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {

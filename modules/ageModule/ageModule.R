@@ -84,7 +84,8 @@ Init <- function(sim) {
                  rasterToMatch = sim$rasterToMatch,
                  destinationPath = file.path(dPath, "age"),
                  overwrite = TRUE,
-                 filename2 = TRUE)
+                 filename2 = TRUE,
+                 cacheTags = "ageMap")
 
  sim$ageMap <- ageMap
 
@@ -115,19 +116,10 @@ Age <- function(sim) {
   dPath <- dataPath(sim)
 
   if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using Ecodistrict 348")
+    message("study area not supplied. Using random polygon in Alberta")
 
-    #source shapefile from ecodistict in input folder. Use ecodistrict 348
-    SA <- Cache(prepInputs,
-                url = extractURL(objectName = "studyArea"),
-                archive = "ecodistrict_shp.zip",
-                filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
-                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-
-    SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea <- SA
-
+    studyArea <- pemisc::randomStudyArea(size = 2000000000, seed = 23657)
+    sim$studyArea <- studyArea
   }
 
   return(invisible(sim))

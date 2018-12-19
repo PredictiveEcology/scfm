@@ -94,13 +94,14 @@ objects <- list(
 #Run module
 #Sim Init will take ~10 minutes the first time you run due to the NFDB points 
 options("reproducible.cachePath" = paths$cachePath) 
-
+options("reproducible.useMemoise" = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
 dev()
 clearPlot()
 set.seed(23657)
+
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 ```
 
