@@ -1,0 +1,107 @@
+---
+title: "scfm"
+author: "Ian"
+date: "December 18, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Overview
+
+A fire model created by Dr. Steve Cumming. Parameterizes fire regime from NFDB data, post-fire suppression. 
+Does not have vegetation or climate feedbacks. 
+
+```{r load-SpaDES, eval=TRUE}
+library(magrittr)
+library(raster)
+library(SpaDES)
+```
+
+## Usage example
+
+```{r module usage example, eval = FALSE}
+
+#Parameters
+timeunit <- "year"
+times <- list(start = 0, end = 20)
+mapDim <- 200
+defaultInterval <- 1.0
+defaultPlotInterval <- 1.0
+defaultInitialSaveTime <- NA #don't be saving nuffink
+
+parameters <- list(
+  .progress = list(type = "text", interval = 1),
+  ageModule = list(
+    initialAge = 100,
+    maxAge = 200,
+    returnInterval = defaultInterval,
+    startTime = times$start,
+    .plotInitialTime = times$start,
+    .plotInterval = defaultPlotInterval,
+    .saveInitialTime = defaultInitialSaveTime,
+    .saveInterval = defaultInterval),
+  scfmIgnition = list(
+    pIgnition = 0.0001,
+    returnInterval = defaultInterval,
+    startTime = times$start,
+    .plotInitialTime = NA,
+    .plotInterval = defaultPlotInterval,
+    .saveInitialTime = defaultInitialSaveTime,
+    .saveInterval = defaultInterval),
+  scfmEscape = list(
+    p0 = 0.05,
+    returnInterval = defaultInterval,
+    startTime = times$start,
+    .plotInitialTime = NA,
+    .plotInterval = defaultPlotInterval,
+    .saveInitialTime = defaultInitialSaveTime,
+    .saveInterval = defaultInterval),
+  scfmSpread = list(
+    pSpread = 0.235,
+    returnInterval = defaultInterval,
+    startTime = times$start,
+    .plotInitialTime = times$start,
+    .plotInterval = defaultPlotInterval,
+    .saveInitialTime = defaultInitialSaveTime,
+    .saveInterval = defaultInterval),
+  scfmRegime = list(fireCause=c("L", "H"))
+  # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
+  #                        mfsMaxRatio = 3,
+  #                        mfsMultiplier = 3.25),
+  # andisonDriver_dataPrep = list(minFRI=0)
+)
+
+modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
+                "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
+#Optional Andison modules: replace scfmDriver with "andisonDriver" and include "andisonDriver_dataPrep"
+
+
+#Paths
+paths <- list(
+  cachePath = file.path("cache"),
+  modulePath = file.path("modules"),
+  inputPath = file.path("inputs"),
+  outputPath = file.path("outputs")
+)
+
+objects <- list(
+  # studyArea = tempStudyArea,
+  # rasterToMatch = rtm
+  ####if you supply studyArea you should supply rtm to make sure the characteristics are right (must be same crs)
+)
+#Run module
+#Sim Init will take ~10 minutes the first time you run due to the NFDB points 
+options("reproducible.cachePath" = paths$cachePath) 
+
+mySim <- simInit(times = times, params = parameters, modules = modules,
+                 objects = objects, paths = paths)
+
+dev()
+clearPlot()
+set.seed(23657)
+outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
+```
+
+
