@@ -70,7 +70,7 @@ Init <- function(sim) {
 
   sim$burnMap <- sim$flammableMap
   sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
-  browser()
+
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)
@@ -95,7 +95,7 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
   # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
-  browser()
+
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
                                      spreadProb = sim$pSpread,
@@ -105,9 +105,9 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
                                      asRaster = FALSE)
 
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
-  sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0
-  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1
-  sim$burnMap[sim$burnDT$pixels] <- 1
-  sim$ageMap[sim$burnDT$pixels] <- 0
+  sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
+  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
+  sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
+  sim$ageMap[sim$burnDT$pixels] <- 0 #update age
   return(invisible(sim))
 }
