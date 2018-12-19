@@ -14,7 +14,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmSpread.Rmd"),
   reqdPkgs = list("raster","data.table","magrittr"),
   parameters = rbind(
-    # defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
+    defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate burning"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
@@ -24,16 +24,15 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "pSpread", objectClass = "numeric", desc = "spread module for BEACONs. Range 0-1"),
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "spreadState", objectClass = "data.table", desc = ""),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "pSpread", objectClass = "numeric", desc = "spread module for BEACONs"),
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
-    createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map")
+    createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
+    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map")
   )
 ))
 
@@ -69,13 +68,9 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-  if (sim$pSpread > 1 | sim$pSpread < 0) {
-    stop("Please supply a pSpread value between 0 and 1")
-  }
-
   sim$burnMap <- sim$flammableMap
   sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
-
+  browser()
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)
@@ -84,10 +79,10 @@ Init <- function(sim) {
       }
       pSpread[] <- pSpread[] * (sim$flammableMap[])
     } else {
-      pSpread <- sim$scfmDriverPars[[1]]$pSpread
+      pSpread <- sim$flammableMap * sim$scfmDriverPars[[1]]$pSpread
     }
   } else {
-    pSpread <- sim$pSpread
+    pSpread <- sim$pSpread * sim$flammableMap
   }
   sim$pSpread <- pSpread
   setColors(sim$burnMap, n = 2) <- colorRampPalette(c("transparent", "red"))(2)
@@ -100,11 +95,11 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
   # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
-
+  browser()
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
                                      spreadProb = sim$pSpread,
-                                     # spreadState = sim$spreadState,
+                                     #spreadState = sim$spreadState,
                                      directions = P(sim)$neighbours,
                                      # maxSize = maxSizes,  #not sure this works
                                      asRaster = FALSE)
@@ -114,13 +109,5 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1
   sim$burnMap[sim$burnDT$pixels] <- 1
   sim$ageMap[sim$burnDT$pixels] <- 0
-  return(invisible(sim))
-}
-
-.inputObjects <- function(sim) {
-
-  if (!suppliedElsewhere("pSpread", sim)) {
-    sim$pSpread <- 0.235
-  }
   return(invisible(sim))
 }
