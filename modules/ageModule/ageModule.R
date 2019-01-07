@@ -24,8 +24,9 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer", desc = "",
-                 sourceURL = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL"),
+    expectsInput(objectName = "ageMap", objectClass = "RasterLayer",
+                 desc = "stand age map in study area, default is Canada national stand age map",
+                 sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area template",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
@@ -78,14 +79,15 @@ Init <- function(sim) {
 
  dPath <- dataPath(sim)
 
- ageMap <- Cache(prepInputs, targetFile = file.path(dPath, "age.tif"),
-                 url = "https://drive.google.com/open?id=17hBQSxAbYIbJXr6BTq1pnoPjRLmGIirL",
+ ageMap <- prepInputs(targetFile = file.path(dPath, "age.tif"),
+                 url = extractURL("ageMap"),
                  studyArea = sim$studyArea,
                  rasterToMatch = sim$rasterToMatch,
                  destinationPath = file.path(dPath, "age"),
                  overwrite = TRUE,
                  filename2 = TRUE,
-                 cacheTags = "ageMap")
+                 userTags = c("ageMap"),
+                 method = "bilinear")
 
  sim$ageMap <- ageMap
 
