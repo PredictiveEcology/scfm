@@ -72,7 +72,7 @@ Init <- function(sim) {
   sim$flammableMap <- pemisc::defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL) %>%
     as.integer(.) %>%
     mask(x = ., mask = sim$vegMap)
-  setColors(flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
+  setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
