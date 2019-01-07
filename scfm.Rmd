@@ -85,15 +85,16 @@ paths <- list(
   inputPath = file.path("inputs"),
   outputPath = file.path("outputs")
 )
-
+####RasterToMatch:
+#if you supply studyArea you should supply rtm to make sure the crs are identical. A default rasterToMatch is provided, but not for every module, and with load order not guaranteed, it may not be generated before it is required, in some circumstances. Some modules do not require studyArea and rtm to have identical crs, but scfm does due to overlay fxns. 
+#To generate rtm, just use PredictiveEcology/LandR::prepInputsLCC
 objects <- list(
   # studyArea = tempStudyArea,
   # rasterToMatch = rtm
-  ####if you supply studyArea you should supply rtm to make sure the characteristics are right (must be same crs)
   )
 
 #Run module
-#Sim Init will take ~10 minutes the first time you run due to the NFDB points 
+#Sim Init will take ~10 minutes the first time you run due to the NFDB points being SLOW
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
