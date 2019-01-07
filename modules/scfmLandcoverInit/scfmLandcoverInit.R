@@ -167,20 +167,21 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
 
-    studyArea <- pemisc::randomStudyArea(size = 2000000000, seed = 23657)
+    studyArea <- pemisc::randomStudyArea(size = 4000000000, seed = 23654)
     sim$studyArea <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
+    rasterToMatch <- LandR::prepInputsLCC(year = 2005,
                                                destinationPath = dPath,
                                                studyArea = sim$studyArea,
-                                               # useSAcrs = TRUE,
+                                               useSAcrs = TRUE,
                                                filename2 = TRUE,
                                                overwrite = TRUE,
                                                userTags = c("cacheTags", "rasterToMatch"))
+    sim$rasterToMatch <- rasterToMatch
 
   }
 

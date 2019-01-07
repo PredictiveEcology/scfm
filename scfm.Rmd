@@ -90,7 +90,8 @@ objects <- list(
   # studyArea = tempStudyArea,
   # rasterToMatch = rtm
   ####if you supply studyArea you should supply rtm to make sure the characteristics are right (must be same crs)
-)
+  )
+
 #Run module
 #Sim Init will take ~10 minutes the first time you run due to the NFDB points 
 options("reproducible.cachePath" = paths$cachePath) 
