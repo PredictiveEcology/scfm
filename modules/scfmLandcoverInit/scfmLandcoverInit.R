@@ -33,7 +33,7 @@ defineModule(sim,list(
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "")
     )
   )
 )
@@ -68,7 +68,6 @@ Init <- function(sim) {
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
- browser()
   sim$flammableMap <- pemisc::defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL) %>%
     as.integer(.) %>%
     mask(x = ., mask = sim$vegMap)
@@ -98,7 +97,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     stop("illegal neighbours specification")
 
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <- Cache(focal, x = 1 - flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
+    neighMap <- Cache(focal, x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
     valsByPoly <- Cache(raster::extract, neighMap, studyArea, cellnumbers = TRUE)

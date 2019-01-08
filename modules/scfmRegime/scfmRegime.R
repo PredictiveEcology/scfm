@@ -68,7 +68,7 @@ Init <- function(sim) {
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-  # browser() #this was line 90 in the master branch
+
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
