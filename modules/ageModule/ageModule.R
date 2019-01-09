@@ -87,7 +87,7 @@ Init <- function(sim) {
                  overwrite = TRUE,
                  filename2 = TRUE,
                  userTags = c("ageMap"),
-                 method = "bilinear")
+                 method = "ngb")
 
  sim$ageMap <- ageMap
 

@@ -55,7 +55,6 @@ Init <- function(sim) {
   fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
   causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
-
   if (any(!(fc %in% causeSet)))
     stop("illegal fireCause: ", fc)
   tmp <- subset(tmp, CAUSE %in% fc)

@@ -67,8 +67,8 @@ Init <- function(sim) {
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
-  sim$flammableMap <- defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL)
-  setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
+  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+  # setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
@@ -163,8 +163,8 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
-
-    studyArea <- pemisc::randomStudyArea(size = 4000000000, seed = 23654)
+    #TODO: remove LandR once this is confirmed working
+    studyArea <- LandR::randomStudyArea(size = 15000000000, seed = 23654)
     sim$studyArea <- studyArea
   }
 
