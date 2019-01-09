@@ -48,8 +48,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
          },
          plot =  {
            Plot(sim$vegMap, new = TRUE)
-           Plot(sim$flammableMap, legend = FALSE) # this is failing probably due to a bug in Plot
-           # EJM is working on it 20160224
+           Plot(sim$flammableMap, legend = FALSE)
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
 
@@ -69,7 +68,6 @@ Init <- function(sim) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
   sim$flammableMap <- defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL)
-
   setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
