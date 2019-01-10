@@ -185,13 +185,13 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
-    sim$vegMap <- pemisc::prepInputsLCC(year = 2005,
-                                        destinationPath = dPath,
-                                        studyArea = sim$studyArea,
-                                        rasterToMatch = sim$rasterToMatch,
-                                        filename2 = TRUE,
-                                        overwrite = TRUE,
-                                        userTags = c("cacheTags", "vegMap"))
+    sim$vegMap <- prepInputsLCC(year = 2005,
+                                destinationPath = dPath,
+                                studyArea = sim$studyArea,
+                                rasterToMatch = sim$rasterToMatch,
+                                filename2 = TRUE,
+                                overwrite = TRUE,
+                                userTags = c("cacheTags", "vegMap"))
     }
 
   return(invisible(sim))
