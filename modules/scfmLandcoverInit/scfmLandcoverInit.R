@@ -173,14 +173,14 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- LandR::prepInputsLCC(year = 2005,
-                                               destinationPath = dPath,
-                                               studyArea = sim$studyArea,
-                                               useSAcrs = TRUE,
-                                               filename2 = TRUE,
-                                               overwrite = TRUE,
-                                               userTags = c("cacheTags", "rasterToMatch"))
-    sim$rasterToMatch <- rasterToMatch
+    rasterToMatch <- prepInputsLCC(year = 2005,
+                                   destinationPath = dPath,
+                                   studyArea = sim$studyArea,
+                                   useSAcrs = TRUE,
+                                   filename2 = TRUE,
+                                   overwrite = TRUE,
+                                   userTags = c("cacheTags", "rasterToMatch"))
+
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
