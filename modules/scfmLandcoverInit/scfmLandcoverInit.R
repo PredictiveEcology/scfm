@@ -14,7 +14,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/pemisc@development"),
+    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -167,20 +167,20 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
 
-    studyArea <- pemisc::randomStudyArea(size = 2000000000, seed = 23657)
+    studyArea <- randomStudyArea(size = 2000000000, seed = 23657)
     sim$studyArea <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- pemisc::prepInputsLCC(year = 2005,
-                                               destinationPath = dPath,
-                                               studyArea = sim$studyArea,
-                                               # useSAcrs = TRUE,
-                                               filename2 = TRUE,
-                                               overwrite = TRUE,
-                                               userTags = c("cacheTags", "rasterToMatch"))
+    rasterToMatch <- prepInputsLCC(year = 2005,
+                                   destinationPath = dPath,
+                                   studyArea = sim$studyArea,
+                                   useSAcrs = TRUE,
+                                   filename2 = TRUE,
+                                   overwrite = TRUE,
+                                   userTags = c("cacheTags", "rasterToMatch"))
 
   }
 
