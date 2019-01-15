@@ -3,7 +3,8 @@ library(raster)
 library(sf)
 library(rgeos)
 library(magrittr)
-
+library(SpaDES)
+library(fasterize)
 ####Generate a random Polygon somewhere in the Boreal####
 #this area varies in space, unlike randomStudyArea, which only changes shape
 genRandomBorealArea <- function(size) {
@@ -28,6 +29,8 @@ genRandomBorealArea <- function(size) {
 }
 
 ####Generate the needed rasters####
+tempDir <- tempdir()
+
 studyArea <- genRandomBorealArea(size = 62500 * 400)
 bStudyArea <- buffer(studyArea, 5000) %>%
  gDifference(., spgeom2 = studyArea, byid = FALSE)
@@ -35,18 +38,18 @@ bStudyArea <- buffer(studyArea, 5000) %>%
 polyLandscape <- sp::rbind.SpatialPolygons(studyArea, bStudyArea)
 
 polyLandscape$zone <- c("core", "buffer")
-
+polyLandscape$Value <- c(1, 0)
 landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
 
 landscapeFlam <- defineFlammable(landscapeLCC)
 
-
+polySF <- sf::st_as_sf(polyLandscape)
 #Generate buffer index raster
-landscapeIndex <- st_as_sf(polyLandscape) %>%
-  fasterize(sf = ., raster = landscapeFlam, field = "zone") %>%
-  projectRaster(., crs = crs(landscapeLCC))
 
-landscapeIndex[landscapeIndex == 1] <- 0
+landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+
+# setColors(landscapeIndex, n = 2) <- colorRampPalette(c("purple", "yellow"))(2)
+# getValues(landscapeIndex)
 
 Plot(polyLandscape)
 Plot(landscapeIndex)
