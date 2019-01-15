@@ -29,27 +29,31 @@ genRandomBorealArea <- function(size) {
 }
 
 ####Generate the needed rasters####
-tempDir <- tempdir()
+genSimLand <- function(size = 250000, buffDist = 5000){
 
-studyArea <- genRandomBorealArea(size = 62500 * 400)
-bStudyArea <- buffer(studyArea, 5000) %>%
- gDifference(., spgeom2 = studyArea, byid = FALSE)
+  tempDir <- tempdir()
 
-polyLandscape <- sp::rbind.SpatialPolygons(studyArea, bStudyArea)
+  #Generate study Area
+  studyArea <- genRandomBorealArea(size)
 
-polyLandscape$zone <- c("core", "buffer")
-polyLandscape$Value <- c(1, 0)
-landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  #Buffer study Area
+  bStudyArea <- buffer(studyArea, buffDist) %>%
+    gDifference(., spgeom2 = studyArea, byid = FALSE)
+  polyLandscape <- sp::rbind.SpatialPolygons(studyArea, bStudyArea)
+  polyLandscape$zone <- c("core", "buffer")
+  polyLandscape$Value <- c(1, 0)
 
-landscapeFlam <- defineFlammable(landscapeLCC)
+  #Generate flammability raster
+  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  landscapeFlam <- defineFlammable(landscapeLCC)
+  #Generate landscape Index raster
+  polySF <- sf::st_as_sf(polyLandscape)
+  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
 
-polySF <- sf::st_as_sf(polyLandscape)
-#Generate buffer index raster
+  simLand <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
+  return(simLand)
+  }
 
-landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
-
-# setColors(landscapeIndex, n = 2) <- colorRampPalette(c("purple", "yellow"))(2)
-# getValues(landscapeIndex)
 colfun <- colorRampPalette(colors = c("dark green", "green", "brown", "blue"))
 
 out <- colfun(39)
