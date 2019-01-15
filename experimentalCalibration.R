@@ -50,8 +50,11 @@ landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
 
 # setColors(landscapeIndex, n = 2) <- colorRampPalette(c("purple", "yellow"))(2)
 # getValues(landscapeIndex)
+colfun <- colorRampPalette(colors = c("dark green", "green", "brown", "blue"))
+
+out <- colfun(39)
 
 Plot(polyLandscape)
 Plot(landscapeIndex)
-Plot(landscapeLCC)
+Plot(landscapeLCC, col = out, legend = FALSE)
 Plot(landscapeFlam)
