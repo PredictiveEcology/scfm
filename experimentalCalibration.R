@@ -4,7 +4,7 @@ library(raster)
 library(sf)
 library(rgeos)
 library(magrittr)
-library(fa2sterize)
+library(fasterize)
 ####Generate a random Polygon somewhere in the Boreal####
 #this area varies in space, unlike randomStudyArea, which only changes shape
 genRandomBorealArea <- function(size) {
@@ -78,7 +78,7 @@ dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 executeDesign <- function(L, dT){
 
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
- browser()
+ #browser()
   f <- function(x, L, P){ #L, P are rasters, passed by reference
     browser()
     i <- x[1]
@@ -112,7 +112,7 @@ executeDesign <- function(L, dT){
                                           spreadProb = P,
                                           asRaster = FALSE)
     #calculate return data
-    res[3] <- nrows(spreadState1)
+    res[3] <- nrow(spreadState1)
     return(res)
   }
 
