@@ -73,7 +73,7 @@ index[sim1$flammableMap[] != 1 | is.na(sim1$flammableMap[])] <- NA
 index[sim1$landscapeIndex[] != 1 | is.na(sim1$landscapeIndex[])] <- NA
 index <- index[!is.na(index)]
 
-dT <- data.frame("igLoc" = index, p0 = 0.23, p = 0.23)
+dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 
 executeDesign <- function(L, dT){
 
@@ -89,11 +89,11 @@ executeDesign <- function(L, dT){
     #nbrs < nbrs[which(L[nbrs]==1)] #or this?
     nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
     #nbrs is a vector of flammable neighbours.
-    res = c(nbrs,0,1) #TODO: find the desired structure of res (probably not a variable length vector)
-    if (length(nbrs)==0)
+    nn <- length(nbrs)
+    res = c(nn,0,1) 
+    if (nn == 0)
       return(res) #really defaults
     #P is still flammableMap.
-    P[] <- 0
     P[nbrs] <- p0
     #Now it is 1, 0, p0, and NA
     spreadState0 <- SpaDES.tools::spread2(landscape = L,
