@@ -59,9 +59,9 @@ genSimLand <- function(size = 25000000, buffDist = 5000){
 sim1 <- genSimLand()
 
 clearPlot()
-Plot(sim1$studyArea)
-Plot(sim1$landscapeIndex)
-Plot(sim1$lcc)
+# Plot(sim1$studyArea)
+# Plot(sim1$landscapeIndex)
+# Plot(sim1$lcc)
 Plot(sim1$flammableMap)
 
 #Need a vector of igniteable cells
@@ -90,7 +90,7 @@ executeDesign <- function(L, dT){
     nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
     #nbrs is a vector of flammable neighbours.
     nn <- length(nbrs)
-    res = c(nn,0,1) 
+    res = c(nn,0,1)
     if (nn == 0)
       return(res) #really defaults
     #P is still flammableMap.
