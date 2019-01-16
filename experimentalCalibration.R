@@ -1,10 +1,10 @@
+library(SpaDES)
 library(LandR)
 library(raster)
 library(sf)
 library(rgeos)
 library(magrittr)
-library(SpaDES)
-library(fasterize)
+library(fa2sterize)
 ####Generate a random Polygon somewhere in the Boreal####
 #this area varies in space, unlike randomStudyArea, which only changes shape
 genRandomBorealArea <- function(size) {
@@ -105,7 +105,7 @@ executeDesign <- function(L, dT){
     tmp <- nrow(spreadState0)
     res[2:3] <- c(tmp-1,tmp)
     if (tmp==1) #the fire did not spread.
-      return
+      return(res)
     P[] <- L[]*p
     spreadState1 <- SpaDES.tools::spread2(landscape = L,
                                           start = spreadState0,
