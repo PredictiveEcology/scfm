@@ -29,7 +29,8 @@ genRandomBorealArea <- function(size) {
 }
 
 ####Generate the needed rasters####
-genSimLand <- function(size = 250000, buffDist = 5000){
+
+genSimLand <- function(size = 25000000, buffDist = 5000){
 
   tempDir <- tempdir()
 
@@ -51,14 +52,77 @@ genSimLand <- function(size = 250000, buffDist = 5000){
   landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
 
   simLand <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
+  names(simLand) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
   return(simLand)
   }
 
-colfun <- colorRampPalette(colors = c("dark green", "green", "brown", "blue"))
+sim1 <- genSimLand()
 
-out <- colfun(39)
+clearPlot()
+Plot(sim1$studyArea)
+Plot(sim1$landscapeIndex)
+Plot(sim1$lcc)
+Plot(sim1$flammableMap)
 
-Plot(polyLandscape)
-Plot(landscapeIndex)
-Plot(landscapeLCC, col = out, legend = FALSE)
-Plot(landscapeFlam)
+#Need a vector of igniteable cells
+#Item 1 = L, the flammable Map
+#Item 2 = B (aka the landscape Index) this denotes buffer
+#Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
+index <- 1:ncell(sim1$flammableMap)
+index[sim1$flammableMap[] != 1 | is.na(sim1$flammableMap[])] <- NA
+index[sim1$landscapeIndex[] != 1 | is.na(sim1$landscapeIndex[])] <- NA
+index <- index[!is.na(index)]
+
+dT <- data.frame("igLoc" = index, p0 = 0.23, p = 0.23)
+
+executeDesign <- function(L, dT){
+
+  # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
+ browser()
+  f <- function(x, L, P){ #L, P are rasters, passed by reference
+    browser()
+    i <- x[1]
+    p0 <- x[2]
+    p <-x[3]
+
+    nbrs <- raster::adjacent(L, i, pairs=FALSE, directions=8)
+    #nbrs < nbrs[which(L[nbrs]==1)] #or this?
+    nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
+    #nbrs is a vector of flammable neighbours.
+    res = c(nbrs,0,1) #TODO: find the desired structure of res (probably not a variable length vector)
+    if (length(nbrs)==0)
+      return(res) #really defaults
+    #P is still flammableMap.
+    P[] <- 0
+    P[nbrs] <- p0
+    #Now it is 1, 0, p0, and NA
+    spreadState0 <- SpaDES.tools::spread2(landscape = L,
+                                          start = i,
+                                          iterations = 1,
+                                          spreadProb = P,
+                                          asRaster = FALSE)
+
+    tmp <- nrow(spreadState0)
+    res[2:3] <- c(tmp-1,tmp)
+    if (tmp==1) #the fire did not spread.
+      return
+    P[] <- L[]*p
+    spreadState1 <- SpaDES.tools::spread2(landscape = L,
+                                          start = spreadState0,
+                                          spreadProb = P,
+                                          asRaster = FALSE)
+    #calculate return data
+    res[3] <- nrows(spreadState1)
+    return(res)
+  }
+
+  P <- raster(L) # I think this makes a new raster
+  P[] <- L[]
+
+  res <- apply(dT, 1, f, L, P) #f(T[i,], L, P)
+
+  return(res)
+
+}
+
+executeDesign(L = sim1$flammableMap, dT = dT)
