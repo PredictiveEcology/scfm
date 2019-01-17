@@ -60,8 +60,8 @@ sim1 <- genSimLand()
 
 clearPlot()
 # Plot(sim1$studyArea)
-# Plot(sim1$landscapeIndex)
-# Plot(sim1$lcc)
+Plot(sim1$landscapeIndex)
+# Plot(sim1$lcc) #these are turned off until I discover the Plot bug
 Plot(sim1$flammableMap)
 
 #Need a vector of igniteable cells
@@ -73,14 +73,14 @@ index[sim1$flammableMap[] != 1 | is.na(sim1$flammableMap[])] <- NA
 index[sim1$landscapeIndex[] != 1 | is.na(sim1$landscapeIndex[])] <- NA
 index <- index[!is.na(index)]
 
-dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
+dT <- data.frame("igLoc" = index, p0 = 0.22, p = 0.23)
 
 executeDesign <- function(L, dT){
 
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
- browser()
-  f <- function(x, L, P){ #L, P are rasters, passed by reference
-    browser()
+
+  f <- function(x, L, ProbRas){ #L, P are rasters, passed by reference
+
     i <- x[1]
     p0 <- x[2]
     p <-x[3]
@@ -94,35 +94,37 @@ executeDesign <- function(L, dT){
     if (nn == 0)
       return(res) #really defaults
     #P is still flammableMap.
-    P[nbrs] <- p0
+
+    ProbRas[nbrs] <- p0
     #Now it is 1, 0, p0, and NA
     spreadState0 <- SpaDES.tools::spread2(landscape = L,
                                           start = i,
                                           iterations = 1,
-                                          spreadProb = P,
+                                          spreadProb = ProbRas,
                                           asRaster = FALSE)
 
     tmp <- nrow(spreadState0)
     res[2:3] <- c(tmp-1,tmp)
     if (tmp==1) #the fire did not spread.
       return(res)
-    P[] <- L[]*p
+    ProbRas[] <- L[]*p
     spreadState1 <- SpaDES.tools::spread2(landscape = L,
                                           start = spreadState0,
-                                          spreadProb = P,
+                                          spreadProb = ProbRas,
                                           asRaster = FALSE)
     #calculate return data
     res[3] <- nrow(spreadState1)
     return(res)
   }
 
-  P <- raster(L) # I think this makes a new raster
-  P[] <- L[]
+  ProbRas <- raster(L)
+  ProbRas[] <- L[]
 
-  res <- apply(dT, 1, f, L, P) #f(T[i,], L, P)
-
+  browser()
+  res <- apply(dT, 1, f, L, P = ProbRas) #f(T[i,], L, P)
   return(res)
 
 }
 
-executeDesign(L = sim1$flammableMap, dT = dT)
+result <- executeDesign(L = sim1$flammableMap, dT = dT)
+result
