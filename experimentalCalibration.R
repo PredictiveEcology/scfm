@@ -62,7 +62,7 @@ clearPlot()
 # Plot(sim1$studyArea)
 # Plot(sim1$landscapeIndex)
 # Plot(sim1$lcc)
-Plot(sim1$flammableMap)
+plot(sim1$flammableMap)
 
 #Need a vector of igniteable cells
 #Item 1 = L, the flammable Map
@@ -77,17 +77,19 @@ index <- index[!is.na(index)]
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN=100, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
+makeDesign <- function(indices, targetN=1000, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
   
   sampleSize <- round(targetN/pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
-  pVec <- pVec * (pmx-pmn) + pmn
+  pVec <- pVec * (pmax-pmin) + pmin
   
   #derive p0 from escapeProb
   #steal code from scfmRegime and friends.
   
-  p0 <- 1 - (1 - escapeProb)^0.125  #assume 8 neighbours
+  p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
+  #the preceding approximation seems inadequate in practice.
+  #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L
   T <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
   return(T)
 }
@@ -97,7 +99,7 @@ executeDesign <- function(L, dT){
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
  #browser()
   f <- function(x, L, P){ #L, P are rasters, passed by reference
-    browser()
+    #browser()
     i <- x[1]
     p0 <- x[2]
     p <-x[3]
@@ -138,8 +140,10 @@ executeDesign <- function(L, dT){
   #@Ian: need to ensure that L and P are passed by reference
   res <- apply(dT, 1, f, L, P) #f(T[i,], L, P)
 
-  return(res)
+  return(t(res)) #t() to conform with dT
 
 }
 
-calibData <- executeDesign(L = sim1$flammableMap, dT = makeDesign(indices=index))
+dT = makeDesign(indices=index)
+calibData <- executeDesign(L = sim1$flammableMap, dT)
+
