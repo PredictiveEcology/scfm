@@ -75,6 +75,7 @@ index <- index[!is.na(index)]
 
 #dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 
+#this version of makeDesign is the simplest possible...
 
 makeDesign <- function(indices, targetN=100, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
   
