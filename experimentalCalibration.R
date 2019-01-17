@@ -73,7 +73,24 @@ index[sim1$flammableMap[] != 1 | is.na(sim1$flammableMap[])] <- NA
 index[sim1$landscapeIndex[] != 1 | is.na(sim1$landscapeIndex[])] <- NA
 index <- index[!is.na(index)]
 
-dT <- data.frame("igLoc" = index, p0 = 0.22, p = 0.23)
+#dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
+
+#this version of makeDesign is the simplest possible...
+
+makeDesign <- function(indices, targetN=100, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
+  
+  sampleSize <- round(targetN/pEscape)
+  cellSample <- sample(indices, sampleSize, replace = TRUE)
+  pVec <- runif(sampleSize)^q
+  pVec <- pVec * (pmx-pmn) + pmn
+  
+  #derive p0 from escapeProb
+  #steal code from scfmRegime and friends.
+  
+  p0 <- 1 - (1 - escapeProb)^0.125  #assume 8 neighbours
+  T <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
+  return(T)
+}
 
 executeDesign <- function(L, dT){
 
@@ -126,5 +143,4 @@ executeDesign <- function(L, dT){
 
 }
 
-result <- executeDesign(L = sim1$flammableMap, dT = dT)
-result
+executeDesign(L = sim1$flammableMap, dT = makeDesign(indices=index))
