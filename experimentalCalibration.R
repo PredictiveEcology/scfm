@@ -135,11 +135,11 @@ executeDesign <- function(L, dT){
 
   P <- raster(L) # I think this makes a new raster
   P[] <- L[]
-
+  #@Ian: need to ensure that L and P are passed by reference
   res <- apply(dT, 1, f, L, P) #f(T[i,], L, P)
 
   return(res)
 
 }
 
-executeDesign(L = sim1$flammableMap, dT = makeDesign(indices=index))
+calibData <- executeDesign(L = sim1$flammableMap, dT = makeDesign(indices=index))
