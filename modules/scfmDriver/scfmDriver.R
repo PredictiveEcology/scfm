@@ -14,7 +14,8 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours")),
+    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
+    defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
@@ -61,10 +62,7 @@ escapeProbDelta <- function(p0, w, hatPE) {
 }
 
 Init <- function(sim) {
-  #this table contains calibration data for several landscape sizes
-  #and several min fire sizes (1 or 2 cells), organised by collumn.
-  #The data were made by Steve Cumming in June 2013 for a whole other purpose.
-  #I chose the one that seems most appropriate to me
+  #
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
@@ -73,14 +71,34 @@ Init <- function(sim) {
 
     #we know this table was produced with MinFireSize=2cells.
 
-     y <- sim$cTable2$y #What are these supposed to be?
-     x <- sim$cTable2$p
-     m.lw <- lowess(y~x, iter = 2)
-     if (sum(diff(m.lw$y) < 0) > 0)
-       warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
-     targetSize <- regime$xBar/cellSize - 1
-     pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
-
+    # y <- sim$cTable2$y #What are these supposed to be?
+    # x <- sim$cTable2$p
+    # m.lw <- lowess(y~x, iter = 2)
+    # if (sum(diff(m.lw$y) < 0) > 0)
+    #   warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
+    # targetSize <- regime$xBar/cellSize - 1
+    # pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
+ 
+    browser()
+    
+    calibLand <- genSimLand(sim$studyArea[[polygonType]])
+    
+    #Need a vector of igniteable cells
+    #Item 1 = L, the flammable Map
+    #Item 2 = B (aka the landscape Index) this denotes buffer
+    #Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
+    index <- 1:ncell(calibLand$flammableMap)
+    index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
+    index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
+    index <- index[!is.na(index)]
+    #index is the set of locations where fires may Ignite.
+    
+    dT = makeDesign(indices=index)
+    calibData <- executeDesign(L = calibLand$flammableMap, dT)
+    cD <- select(calibData, finalSize > 1)  #could use [] notation, of course.
+    calibModel <- lowess(cD$finalSize ~ cd$p)
+    #now for the inverse step.
+    
     w <- landAttr$nNbrs
     w <- w/sum(w)
     hatPE <- regime$pEscape
@@ -117,23 +135,118 @@ Init <- function(sim) {
                 maxBurnCells = as.integer(round(regime$emfs / cellSize)))
     )
   })
-  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars)
+  
+  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
-  if (!suppliedElsewhere("cTable2", sim)) {
-    cTable2 <- Cache(prepInputs,
-                     targetFile = file.path(dPath, "FiresN1000MinFiresSize2NoLakes.csv"),
-                     url = extractURL(objectName = "cTable2", sim),
-                     fun = "read.csv",
-                     destinationPath = dPath,
-                     overwrite = TRUE,
-                     filename2 = "FiresN1000MinFiresSize2NoLakes.csv")
-    sim$cTable2 <- cTable2
-  }
-
+  if (!suppliedElsewhere("studyArea", sim)) {
+      message("study area not supplied. Using random polygon in Alberta")
+      #TODO: remove LandR once this is confirmed working
+      studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
+      sim$studyArea <- studyArea
+   }
   return(invisible(sim))
 }
+
+
+genSimLand <- function(coreLand, buffDist = P(sim)$buffDist){
+  tempDir <- tempdir()
+  #Buffer study Area
+  bStudyArea <- buffer(coreLand, buffDist) %>%
+    gDifference(., spgeom2 = coreLand, byid = FALSE)
+  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea)
+  polyLandscape$zone <- c("core", "buffer")
+  polyLandscape$Value <- c(1, 0)
+  
+  #Generate flammability raster
+  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  landscapeFlam <- defineFlammable(landscapeLCC)
+  #Generate landscape Index raster
+  polySF <- sf::st_as_sf(polyLandscape)
+  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+  
+  calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
+  names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
+  return(calibrationLandscape)
+}
+
+
+#dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
+
+#this version of makeDesign is the simplest possible...
+
+makeDesign <- function(indices, targetN=1000, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
+  
+  sampleSize <- round(targetN/pEscape)
+  cellSample <- sample(indices, sampleSize, replace = TRUE)
+  pVec <- runif(sampleSize)^q
+  pVec <- pVec * (pmax-pmin) + pmin
+  
+  #derive p0 from escapeProb
+  #steal code from scfmRegime and friends.
+  
+  p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
+  #the preceding approximation seems inadequate in practice.
+  #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L
+  T <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
+  return(T)
+}
+
+executeDesign <- function(L, dT){
+  
+  # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
+  
+  f <- function(x, L, ProbRas){ #L, P are rasters, passed by reference
+    
+    i <- x[1]
+    p0 <- x[2]
+    p <-x[3]
+    
+    nbrs <- raster::adjacent(L, i, pairs=FALSE, directions=8)
+    #nbrs < nbrs[which(L[nbrs]==1)] #or this?
+    nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
+    #nbrs is a vector of flammable neighbours.
+    nn <- length(nbrs)
+    res = c(nn,0,1)
+    if (nn == 0)
+      return(res) #really defaults
+    #P is still flammableMap.
+    
+    ProbRas[nbrs] <- p0
+    #Now it is 1, 0, p0, and NA
+    spreadState0 <- SpaDES.tools::spread2(landscape = L,
+                                          start = i,
+                                          iterations = 1,
+                                          spreadProb = ProbRas,
+                                          asRaster = FALSE)
+    
+    tmp <- nrow(spreadState0)
+    res[2:3] <- c(tmp-1,tmp)
+    if (tmp==1) #the fire did not spread.
+      return(res)
+    ProbRas[] <- L[]*p
+    spreadState1 <- SpaDES.tools::spread2(landscape = L,
+                                          start = spreadState0,
+                                          spreadProb = ProbRas,
+                                          asRaster = FALSE)
+    #calculate return data
+    res[3] <- nrow(spreadState1)
+    return(res)
+  }
+  
+  ProbRas <- raster(L)
+  ProbRas[] <- L[]
+  
+  browser()
+  res <- apply(dT, 1, f, L, P = ProbRas) #f(T[i,], L, P)
+  #cbind dT and res, then select the columns we need
+  names(res) <- c("nNeighbours", "initSpreadEvents", "finalSize")
+  x <- cbind(dT,res)
+  return(x)
+}
+
+
+
