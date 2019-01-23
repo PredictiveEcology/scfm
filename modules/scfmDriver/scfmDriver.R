@@ -66,7 +66,8 @@ Init <- function(sim) {
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType, targetN = P(sim)$sampleSize) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-
+    maxBurnCells <- as.integer(round(regime$emfs / cellSize))
+    
     #we know this table was produced with MinFireSize=2cells.
 
     # y <- sim$cTable2$y #What are these supposed to be?
@@ -90,21 +91,27 @@ Init <- function(sim) {
     #index is the set of locations where fires may Ignite.
 
     dT = makeDesign(indices=index, targetN = P(sim)$targetN)
-    calibData <- executeDesign(L = calibLand$flammableMap, dT)
+    calibData <- executeDesign(L = calibLand$flammableMap, dT, maxCells=maxBurnCells)
     browser()
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-    calibModel <- lowess(cD$finalSize ~ cD$p)
+    calibModel <- loess(cD$finalSize ~ cD$p)
     #now for the inverse step.
-
+    xBar <- regime$xBar / cellSize
+    pJmp <- uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+                    dT$p,
+                    extendInt = "no",
+                    tol = 0.5
+                    )
+    #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
     w <- w/sum(w)
     hatPE <- regime$pEscape
     if (hatPE == 0) {
       # no fires in polygon zone escapted
-      foo <- 0
+      p0 <- 0
     } else if (hatPE == 1) {
       # all fires in polygon zone escaped
-      foo <- 1
+      p0 <- 1
     } else {
       res <- optimise(escapeProbDelta,
                       interval = c(hatP0(hatPE, P(sim)$neighbours),
@@ -112,12 +119,12 @@ Init <- function(sim) {
                       tol = 1e-4,
                       w = w,
                       hatPE = hatPE)
-      foo <- res[["minimum"]]
+      p0 <- res[["minimum"]]
       #It is almost obvious that the true minimum must occurr within the interval specified in the
       #call to optimise, but I have not proved it, nor am I certain that the function being minimised is
       #monotone.
     }
-    #don't forget to scale by number of years, as well.
+    #don't forget to scale by number of years, as well, if your timestep is ever != 1yr
     rate <- regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on
                                                                   #an annual time step. How to test / enforce?
     pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
@@ -126,10 +133,11 @@ Init <- function(sim) {
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
     browser()
     return(list(pSpread = pJmp,
-                p0 = foo,
+                p0 = p0,
                 naiveP0 = hatP0(regime$pEscape, 8),
                 pIgnition = pIgnition,
-                maxBurnCells = as.integer(round(regime$emfs / cellSize)))
+                maxBurnCells = maxBurnCells
+                )
     )
   })
 
@@ -192,7 +200,7 @@ makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.18, pmax=0.26, q=1)
   return(T)
 }
 
-executeDesign <- function(L, dT){
+executeDesign <- function(L, dT, maxCells){
 
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
 
@@ -228,7 +236,8 @@ executeDesign <- function(L, dT){
     spreadState1 <- SpaDES.tools::spread2(landscape = L,
                                           start = spreadState0,
                                           spreadProb = ProbRas,
-                                          asRaster = FALSE)
+                                          asRaster = FALSE,
+                                          maxSize = maxCells)
     #calculate return data
     res[3] <- nrow(spreadState1)
     return(res)
