@@ -47,7 +47,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  browser()
+
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")

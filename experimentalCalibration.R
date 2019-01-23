@@ -76,17 +76,17 @@ index <- index[!is.na(index)]
 #dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 
 #this version of makeDesign is the simplest possible...
-
+#makeDesign0 probability that a fire will exceed the cell of origin
 makeDesign <- function(indices, targetN=1000, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
-  
+
   sampleSize <- round(targetN/pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
-  
+
   #derive p0 from escapeProb
   #steal code from scfmRegime and friends.
-  
+
   p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
   #the preceding approximation seems inadequate in practice.
   #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L

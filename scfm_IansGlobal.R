@@ -47,7 +47,8 @@ parameters <- list(
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L", "H"))
+  scfmRegime = list(fireCause=c("L", "H")),
+  scfmDriver = list(targetN = 150)
   # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
   #                        mfsMaxRatio = 3,
   #                        mfsMultiplier = 3.25),
@@ -74,30 +75,21 @@ subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(387, 390, 372),]
 rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/subEcoDistricts.tif")
 subEcoDistricts <- spTransform(x = subEcoDistricts,
                                CRSobj = crs(rasterToMatch))
-#tolkoABN <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_S_SR.shp")
-# tolkoSK <- shapefile("../LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_SK_SR.shp")
+
+
 objects <- list(
-# studyArea = shapefile("~/GitHub/LandWeb/inputs/FMA_Boundaries/Tolko/Tolko_AB_N_SR.shp")
-  studyArea =  subEcoDistricts, #ABN  tolkoSK
+  studyArea =  subEcoDistricts,
   rasterToMatch = rasterToMatch
 )
 
-paths <- list(
-  cachePath = file.path("cache"),
-  modulePath = file.path("modules"),
-  inputPath = inputDir,
-  outputPath = outputDir
-)
+setPaths(cachePath = file.path("cache"),
+         modulePath = file.path("modules"),
+         inputPath = inputDir,
+         outputPath = outputDir)
 
-setPaths(cachePath = paths$cachePath,
-         modulePath = paths$modulePath,
-         inputPath = paths$inputPath,
-         outputPath = paths$outputPath)
-
-.Options$reproducible.cachePath <- paths$cachePath
 options(spades.moduleCodeChecks = TRUE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = paths)
+                 objects = objects, paths = getPaths())
 dev()
 set.seed(23657)
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)

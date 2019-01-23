@@ -10,19 +10,17 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("stats"),
+  reqdPkgs = list("stats", "magrittr", "sf", "rgeos", "fasterize"),
   parameters = rbind(
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
-    defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration")),
+    defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
+    defineParameter("targetN", "numeric", 1000, 1, NA, "target sample size for determining true spread probability")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "cTable2", objectClass = "data.frame",
-                 desc = "A csv containing results of fire experiment",
-                 sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd")
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "a studyArea where separate polygons denote separate fire regimes")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
@@ -65,7 +63,7 @@ Init <- function(sim) {
   #
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
+  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType, targetN = P(sim)$sampleSize) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
 
@@ -78,11 +76,9 @@ Init <- function(sim) {
     #   warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
     # targetSize <- regime$xBar/cellSize - 1
     # pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
- 
-    browser()
-    
-    calibLand <- genSimLand(sim$studyArea[[polygonType]])
-    
+
+    calibLand <- genSimLand(sim$studyArea[polygonType,], buffDist = P(sim)$buffDist)
+
     #Need a vector of igniteable cells
     #Item 1 = L, the flammable Map
     #Item 2 = B (aka the landscape Index) this denotes buffer
@@ -92,13 +88,14 @@ Init <- function(sim) {
     index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
     index <- index[!is.na(index)]
     #index is the set of locations where fires may Ignite.
-    
-    dT = makeDesign(indices=index)
+
+    dT = makeDesign(indices=index, targetN = P(sim)$targetN)
     calibData <- executeDesign(L = calibLand$flammableMap, dT)
-    cD <- select(calibData, finalSize > 1)  #could use [] notation, of course.
-    calibModel <- lowess(cD$finalSize ~ cd$p)
+    browser()
+    cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
+    calibModel <- lowess(cD$finalSize ~ cD$p)
     #now for the inverse step.
-    
+
     w <- landAttr$nNbrs
     w <- w/sum(w)
     hatPE <- regime$pEscape
@@ -122,12 +119,12 @@ Init <- function(sim) {
     }
     #don't forget to scale by number of years, as well.
     rate <- regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on
-                                                                   #an annual time step. How to test / enforce?
+                                                                  #an annual time step. How to test / enforce?
     pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
                       #for Poisson rate << 1, the expected values are the same, partially accounting
                       #for multiple arrivals within years. Formerly, I used a poorer approximation
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
-
+    browser()
     return(list(pSpread = pJmp,
                 p0 = foo,
                 naiveP0 = hatP0(regime$pEscape, 8),
@@ -135,7 +132,7 @@ Init <- function(sim) {
                 maxBurnCells = as.integer(round(regime$emfs / cellSize)))
     )
   })
-  
+
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
   return(invisible(sim))
@@ -152,7 +149,8 @@ Init <- function(sim) {
 }
 
 
-genSimLand <- function(coreLand, buffDist = P(sim)$buffDist){
+genSimLand <- function(coreLand, buffDist){
+
   tempDir <- tempdir()
   #Buffer study Area
   bStudyArea <- buffer(coreLand, buffDist) %>%
@@ -160,14 +158,14 @@ genSimLand <- function(coreLand, buffDist = P(sim)$buffDist){
   polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea)
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
-  
+
   #Generate flammability raster
   landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- sf::st_as_sf(polyLandscape)
   landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
-  
+
   calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
   names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
   return(calibrationLandscape)
@@ -179,15 +177,14 @@ genSimLand <- function(coreLand, buffDist = P(sim)$buffDist){
 #this version of makeDesign is the simplest possible...
 
 makeDesign <- function(indices, targetN=1000, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
-  
   sampleSize <- round(targetN/pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
-  
+
   #derive p0 from escapeProb
   #steal code from scfmRegime and friends.
-  
+
   p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
   #the preceding approximation seems inadequate in practice.
   #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L
@@ -196,15 +193,15 @@ makeDesign <- function(indices, targetN=1000, pEscape=0.1, pmin=0.18, pmax=0.26,
 }
 
 executeDesign <- function(L, dT){
-  
+
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
-  
+
   f <- function(x, L, ProbRas){ #L, P are rasters, passed by reference
-    
+
     i <- x[1]
     p0 <- x[2]
     p <-x[3]
-    
+
     nbrs <- raster::adjacent(L, i, pairs=FALSE, directions=8)
     #nbrs < nbrs[which(L[nbrs]==1)] #or this?
     nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
@@ -214,7 +211,7 @@ executeDesign <- function(L, dT){
     if (nn == 0)
       return(res) #really defaults
     #P is still flammableMap.
-    
+
     ProbRas[nbrs] <- p0
     #Now it is 1, 0, p0, and NA
     spreadState0 <- SpaDES.tools::spread2(landscape = L,
@@ -222,7 +219,7 @@ executeDesign <- function(L, dT){
                                           iterations = 1,
                                           spreadProb = ProbRas,
                                           asRaster = FALSE)
-    
+
     tmp <- nrow(spreadState0)
     res[2:3] <- c(tmp-1,tmp)
     if (tmp==1) #the fire did not spread.
@@ -236,15 +233,18 @@ executeDesign <- function(L, dT){
     res[3] <- nrow(spreadState1)
     return(res)
   }
-  
-  ProbRas <- raster(L)
-  ProbRas[] <- L[]
-  
-  browser()
-  res <- apply(dT, 1, f, L, P = ProbRas) #f(T[i,], L, P)
+
+  probRas <- raster(L)
+  probRas[] <- L[]
+
+
+  res <- Cache(apply, dT, 1, f, L, ProbRas = probRas) #f(T[i,], L, P)
+
+  res <- data.frame("nNeighbours" = res[1,], "initSpreadEvents" = res[2,], "finalSize" = res[3,])
+
   #cbind dT and res, then select the columns we need
-  names(res) <- c("nNeighbours", "initSpreadEvents", "finalSize")
   x <- cbind(dT,res)
+
   return(x)
 }
 
