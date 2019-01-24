@@ -103,15 +103,17 @@ Init <- function(sim) {
     #now for the inverse step.
     xBar <- regime$xBar / cellSize
 
-    pJmp <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+    Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
                     calibModel, xBar, # "..."
                     interval=c(min(cD$p), max(cD$p)),
                     extendInt = "no",
                     tol = 0.00001
                     ), silent = TRUE)
-    if (class(pJmp) == "try-error") {
-      pJmp <- min(calibModel$x)
+    if (class(Res) == "try-error") {
+      pJmp <- min(cD$p)
       message("the loess model may underestimate the spread probability for polygon ", polygonType)
+    } else {
+      pJmp <- Res$root
     }
     #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
@@ -147,7 +149,8 @@ Init <- function(sim) {
                 p0 = p0,
                 naiveP0 = hatP0(regime$pEscape, 8),
                 pIgnition = pIgnition,
-                maxBurnCells = maxBurnCells
+                maxBurnCells = maxBurnCells,
+                calibModel = calibModel
                 )
     )
   })
