@@ -77,7 +77,7 @@ Init <- function(sim) {
     #   warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
     # targetSize <- regime$xBar/cellSize - 1
     # pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
-
+    message("generating buffered landscapes...")
     calibLand <- genSimLand(sim$studyArea[polygonType,], buffDist = P(sim)$buffDist)
 
     #Need a vector of igniteable cells
