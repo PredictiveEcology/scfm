@@ -90,7 +90,7 @@ Init <- function(sim) {
     index <- index[!is.na(index)]
     #index is the set of locations where fires may Ignite.
 
-    dT = makeDesign(indices=index, targetN = P(sim)$targetN)
+    dT = makeDesign(indices=index, targetN = P(sim)$targetN, pEscape=regime$pEscape)
     message(paste0("calibrating for polygon ", polygonType))
     calibData <- executeDesign(L = calibLand$flammableMap, dT, maxCells=maxBurnCells)
     browser()
@@ -100,7 +100,7 @@ Init <- function(sim) {
     xBar <- regime$xBar / cellSize
     pJmp <- stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
                     calibModel, xBar, # "..."
-                    interval=c(min(calibModel$x), max(calibModel$x)),
+                    interval=c(min(cD$p), max(cD$p)),
                     extendInt = "no",
                     tol = 0.00001
                     )
