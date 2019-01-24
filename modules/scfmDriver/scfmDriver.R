@@ -67,7 +67,7 @@ Init <- function(sim) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
     maxBurnCells <- as.integer(round(regime$emfs / cellSize))
-    
+
     #we know this table was produced with MinFireSize=2cells.
 
     # y <- sim$cTable2$y #What are these supposed to be?
@@ -91,6 +91,7 @@ Init <- function(sim) {
     #index is the set of locations where fires may Ignite.
 
     dT = makeDesign(indices=index, targetN = P(sim)$targetN)
+    message(paste0("calibrating for polygon ", polygonType))
     calibData <- executeDesign(L = calibLand$flammableMap, dT, maxCells=maxBurnCells)
     browser()
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
