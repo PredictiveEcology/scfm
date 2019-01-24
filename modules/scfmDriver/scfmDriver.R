@@ -90,8 +90,10 @@ Init <- function(sim) {
     index <- index[!is.na(index)]
     #index is the set of locations where fires may Ignite.
 
-    dT = makeDesign(indices=index, targetN = P(sim)$targetN, pEscape=regime$pEscape)
+    dT = Cache(makeDesign, indices=index, targetN = P(sim)$targetN, pEscape=regime$pEscape,
+               userTags = paste("makeDesign", polygonType))
     message(paste0("calibrating for polygon ", polygonType))
+
     calibData <- Cache(executeDesign, L = calibLand$flammableMap, dT,
                        maxCells=maxBurnCells,
                        userTags = paste("executeDesign", polygonType))
