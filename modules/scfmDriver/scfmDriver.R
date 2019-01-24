@@ -98,10 +98,11 @@ Init <- function(sim) {
     calibModel <- loess(cD$finalSize ~ cD$p)
     #now for the inverse step.
     xBar <- regime$xBar / cellSize
-    pJmp <- uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
-                    dT$p,
+    pJmp <- stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+                    calibModel, xBar, # "..."
+                    interval=c(min(calibModel$x), max(calibModel$x)),
                     extendInt = "no",
-                    tol = 0.5
+                    tol = 0.00001
                     )
     #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
