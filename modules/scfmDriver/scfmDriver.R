@@ -92,18 +92,25 @@ Init <- function(sim) {
 
     dT = makeDesign(indices=index, targetN = P(sim)$targetN)
     message(paste0("calibrating for polygon ", polygonType))
-    calibData <- executeDesign(L = calibLand$flammableMap, dT, maxCells=maxBurnCells)
-    browser()
+    calibData <- Cache(executeDesign, L = calibLand$flammableMap, dT,
+                       maxCells=maxBurnCells,
+                       userTags = paste("executeDesign", polygonType))
+
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
     calibModel <- loess(cD$finalSize ~ cD$p)
     #now for the inverse step.
     xBar <- regime$xBar / cellSize
-    pJmp <- stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+
+    pJmp <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
                     calibModel, xBar, # "..."
                     interval=c(min(calibModel$x), max(calibModel$x)),
                     extendInt = "no",
                     tol = 0.00001
-                    )
+                    ), silent = TRUE)
+    if (class(pJmp) == "try-error") {
+      pJmp <- min(calibModel$x)
+      message("the loess model may underestimate the spread probability for polygon ", polygonType)
+    }
     #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
     w <- w/sum(w)
@@ -133,7 +140,7 @@ Init <- function(sim) {
                       #for Poisson rate << 1, the expected values are the same, partially accounting
                       #for multiple arrivals within years. Formerly, I used a poorer approximation
                       #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
-    browser()
+
     return(list(pSpread = pJmp,
                 p0 = p0,
                 naiveP0 = hatP0(regime$pEscape, 8),
