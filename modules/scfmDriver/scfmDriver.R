@@ -78,7 +78,8 @@ Init <- function(sim) {
     # targetSize <- regime$xBar/cellSize - 1
     # pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
     message("generating buffered landscapes...")
-    calibLand <- genSimLand(sim$studyArea[polygonType,], buffDist = P(sim)$buffDist)
+    calibLand <- Cache(genSimLand, sim$studyArea[polygonType,], buffDist = P(sim)$buffDist,
+                       userTags = paste("genSimLand ", polygonType))
 
     #Need a vector of igniteable cells
     #Item 1 = L, the flammable Map
