@@ -199,7 +199,7 @@ genSimLand <- function(coreLand, buffDist){
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.18, pmax=0.26, q=1){
+makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.26, q=1){
   sampleSize <- round(targetN/pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
