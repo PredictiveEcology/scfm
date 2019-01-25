@@ -14,7 +14,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development"),
+    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development", "fasterize", "sf"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -32,8 +32,9 @@ defineModule(sim,list(
     ),
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
-      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
+      createsOutput(objectName = "studyAreaRas", objectClass = "RasterLayer", desc = "Rasterized version of study Area with values representing polygon ID")
     )
   )
 )
@@ -69,6 +70,10 @@ Init <- function(sim) {
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
+
+  temp <- sf::st_as_sf(sim$studyArea)
+  sim$studyAreaRas <- fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
+
   sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
   # setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
   # This makes sim$landscapeAttr & sim$cellsByZone
@@ -183,6 +188,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     sim$rasterToMatch <- rasterToMatch
 
   }
+
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
