@@ -63,7 +63,9 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 Init <- function(sim) {
-
+  if (class(sim$studyArea) == "SpatialPolygons") {
+    stop("studyArea must be a SpatialPolygonsDataFrame")
+  }
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
