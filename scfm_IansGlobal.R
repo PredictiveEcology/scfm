@@ -48,7 +48,7 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1500)
+  scfmDriver = list(targetN = 1000)
   # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
   #                        mfsMaxRatio = 3,
   #                        mfsMultiplier = 3.25),
@@ -77,7 +77,7 @@ subEcoDistricts <- spTransform(x = subEcoDistricts,
                                CRSobj = crs(rasterToMatch))
 
 
-objects <- list(
+.objects <- list(
   studyArea =  subEcoDistricts,
   rasterToMatch = rasterToMatch
 )
@@ -88,10 +88,12 @@ setPaths(cachePath = file.path("cache"),
          outputPath = outputDir)
 
 options(spades.moduleCodeChecks = TRUE)
+
 mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = getPaths())
+                 objects = .objects, paths = getPaths())
 dev()
 set.seed(23657)
+
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 
 ###############
@@ -108,7 +110,7 @@ report<-function(outSim){
 
 
 #####Test Study Areas
-genRandomBorealArea <- function(size) {
+genRandomBorealArea <- function(size, seed) {
   #Build extent (= to Boreal Plains)
   temp <- matrix(c(-606073.8, -606073.8,
                    1218651, 1218651,
@@ -120,6 +122,7 @@ genRandomBorealArea <- function(size) {
   tempSP <- SpatialPolygons(Srl = list(temp))
   crs(tempSP) <- crs("+proj=aea +lat_1=47.5 +lat_2=54.5 +lat_0=0 +lon_0=-113 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
                      +ellps=GRS80 +towgs84=0,0,0")
+  set.seed(seed)
   tempPoint <- sp::spsample(tempSP, n = 1, type = "random") %>%
     SpatialPoints(.)
   crs(tempPoint) <- crs("+proj=aea +lat_1=47.5 +lat_2=54.5 +lat_0=0 +lon_0=-113 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
@@ -128,24 +131,53 @@ genRandomBorealArea <- function(size) {
   out <- randomPolygon(x = tempPoint, area = size)
   out
 }
+
+#RUN 1
 #build SA
-set.seed(23657)
-randomArea1 <- genRandomBorealArea(size = 1e8*8)
-randomArea1$polyID <- 1
 
-randomRTM1 <- LandR::prepInputsLCC(studyArea = randomArea1, useSAcrs = TRUE, destinationPath = tempdir())
-#set SA
-objects <- list(
-  studyArea =  randomArea1,
-  rasterToMatch = randomRTM1
-)
+# randomArea1 <- genRandomBorealArea(size = 1e9*8)
+# randomArea1$polyID <- 1
+#
 #run SA
-mySimR1 <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = getPaths())
-dev()
-outSimR1 <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
+# writeOGR(randomArea1, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "randomArea1", driver = "ESRI Shapefile")
+randomArea1 <- shapefile("C:/Ian/PracticeDirectory/scfm/randomArea1.shp")
+# randomRTM1 <- LandR::prepInputsLCC(studyArea = randomArea1, useSAcrs = TRUE, destinationPath = tempdir())
+# #set SA
+# objects1 <- list(
+#   studyArea =  randomArea1,
+#   rasterToMatch = randomRTM1
+# )
 
-setseed(2300)
-randomArea2 <- genRandomBorealArea(size = 1e7*5)
-randomArea2$polyID <- 2
+mySimR1 <- simInit(times = times, params = parameters, modules = modules,
+                 objects = objects1, paths = getPaths())
+dev()
+outSimR1 <- SpaDES.core::spades(mySimR1, progress = FALSE, debug = TRUE)
+
+outSim$firePoints$IntensityCol <- "blue"
+outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 1] <- "yellow"
+outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 100] <- "orange"
+outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 1000] <- "red"
+outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 10000] <- "black"
+temp <- outSim$firePoints[outSim$firePoints$SIZE_HA > 1,]
+Plot(outSim$studyAreaRas)
+Plot(temp, addTo = "outSim$studyAreaRas", cols = temp$IntensityCol)
+
+#RUN2
+
+# randomArea2 <- genRandomBorealArea(size = 1e9*3, seed = 2343)
+# randomArea2$polyID <- 2
+# writeOGR(randomArea2, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "RandomArea2", driver = 'ESRI Shapefile')
+randomArea2 <- shapefile("C:/Ian/PracticeDirectory/scfm/randomArea2.shp")
 randomRTM2 <- LandR::prepInputsLCC(studyArea = randomArea2, useSAcrs = TRUE, destinationPath = tempdir())
+plot(randomRTM2)
+objects2 <- list(
+  studyArea =  randomArea2,
+  rasterToMatch = randomRTM2
+)
+
+#run SA
+mySimR2 <- simInit(times = times, params = parameters, modules = modules,
+                   objects = objects2, paths = getPaths())
+dev()
+outSimR2 <- SpaDES.core::spades(mySimR2, progress = FALSE, debug = TRUE)
+
