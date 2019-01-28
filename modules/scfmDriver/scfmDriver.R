@@ -151,7 +151,8 @@ Init <- function(sim) {
                 naiveP0 = hatP0(regime$pEscape, 8),
                 pIgnition = pIgnition,
                 maxBurnCells = maxBurnCells,
-                calibModel = calibModel
+                calibModel = calibModel,
+                uniroot.Res = Res
                 )
     )
   })
