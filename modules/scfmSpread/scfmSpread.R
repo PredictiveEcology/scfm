@@ -87,8 +87,8 @@ Init <- function(sim) {
   }
   sim$pSpread <- pSpread
   #Create empty data table to store each year's burn data
-  sim$burnDT <- data.table("igLoc" = "", "N" = "", "pixelID" = "", "year" = "", "areaBurned" = "", "polyID" = "")
-
+  sim$burnSummary <- data.table("igLoc" = "", "N" = "", "pixelID" = "", "year" = "", "areaBurned" = "", "polyID" = "")
+  
   return(invisible(sim))
 }
 
