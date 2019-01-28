@@ -72,10 +72,11 @@ Init <- function(sim) {
   }
 
   temp <- sf::st_as_sf(sim$studyArea)
+  temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$studyAreaRas <- fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
 
   sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-  # setColors(sim$flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
+
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
