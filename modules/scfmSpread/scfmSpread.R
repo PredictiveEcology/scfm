@@ -32,7 +32,8 @@ defineModule(sim, list(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
-    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map")
+    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
   )
 ))
 
@@ -85,7 +86,9 @@ Init <- function(sim) {
     pSpread <- sim$pSpread * sim$flammableMap
   }
   sim$pSpread <- pSpread
-  setColors(sim$burnMap, n = 2) <- colorRampPalette(c("transparent", "red"))(2)
+  #Create empty data table to store each year's burn data
+  sim$burnDT <- data.table("igLoc" = "", "N" = "", "pixelID" = "", "year" = "", "areaBurned" = "", "polyID" = "")
+
   return(invisible(sim))
 }
 
@@ -109,5 +112,19 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
+
+
+ #get fire year, pixels burned, area burned, poly ID of all burned pixels
+  tempDT <- sim$burnDT
+  tempDT$year <- time(sim)
+  ans <- tempDT[, .(.N), by = "initialPixels"]
+  tempDT <- ans[tempDT]
+
+  tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
+  tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
+  setnames(tempDT, c("initialPixels", "pixels"), c("igLoc", "pixelID"))
+  tempDT$state <- NULL
+  sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+
   return(invisible(sim))
 }
