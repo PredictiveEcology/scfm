@@ -91,9 +91,9 @@ Init <- function(sim) {
     index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
     index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
     index <- index[!is.na(index)]
-    if (len(index)==0)
+    if (length(index)==0)
       stop("polygon has no flammable cells!")
-    
+
     #index is the set of locations where fires may Ignite.
 
     dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=ifelse(regime$pEscape==0,0.1,regime$pEscape),
