@@ -185,6 +185,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       }
     }
   } else {
+    message(paste("Insufficient data for polygon ", polygonID, ". It will be excluded from output"))
     return(NULL)
   }
 
