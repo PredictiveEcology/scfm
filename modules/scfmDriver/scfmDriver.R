@@ -91,9 +91,12 @@ Init <- function(sim) {
     index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
     index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
     index <- index[!is.na(index)]
+    if (len(index)==0)
+      stop("polygon has no flammable cells!")
+    
     #index is the set of locations where fires may Ignite.
 
-    dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=regime$pEscape,
+    dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=ifelse(regime$pEscape==0,0.1,regime$pEscape),
                userTags = paste("makeDesign", polygonType))
     message(paste0("calibrating for polygon ", polygonType))
 
@@ -102,12 +105,14 @@ Init <- function(sim) {
                        userTags = paste("executeDesign", polygonType))
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-
-    if (nrow(cD) > 1) {
-      calibModel <- loess(cD$finalSize ~ cD$p)
-
+    calibModel <- loess(cD$finalSize ~ cD$p)
+    
+    xBar <- regime$xBar / cellSize
+    
+    if  (xBar > 0){
+  
       #now for the inverse step.
-      xBar <- regime$xBar / cellSize
+      
 
       Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
                       calibModel, xBar, # "..."
@@ -122,8 +127,7 @@ Init <- function(sim) {
         pJmp <- Res$root
       }
     } else {
-      pJmp <- min(cD$p)
-      xBar <- regime$xBar / cellSize
+      pJmp <- min(calibData$p)
       calibModel <- "No Model"
       Res <- "No Uniroot result"
     }
@@ -215,7 +219,6 @@ genSimLand <- function(coreLand, buffDist){
 makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.26, q=1){
   #TODO: Fix makeDesign to work if polygons have no fires
   sampleSize <- round(targetN/pEscape)
-  if (sampleSize < 1 | pEscape == 0) { sampleSize <- 1}
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
