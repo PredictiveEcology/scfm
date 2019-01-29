@@ -201,7 +201,9 @@ genSimLand <- function(coreLand, buffDist){
 #this version of makeDesign is the simplest possible...
 
 makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.26, q=1){
+  #TODO: Fix makeDesign to work if polygons have no fires
   sampleSize <- round(targetN/pEscape)
+  if (sampleSize < 1 | pEscape == 0) { sampleSize <- 1}
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
