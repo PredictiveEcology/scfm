@@ -63,11 +63,13 @@ Init <- function(sim) {
   #
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType, targetN = P(sim)$sampleSize) {
+  sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType, targetN = P(sim)$targetN) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-    maxBurnCells <- as.integer(round(regime$emfs / cellSize))
-
+    maxBurnCells <- as.integer(round(regime$emfs / cellSize)) #will return NA if emfs is NA
+    if (is.na(maxBurnCells)) {
+      maxBurnCells = 0
+    }
     #we know this table was produced with MinFireSize=2cells.
 
     # y <- sim$cTable2$y #What are these supposed to be?
@@ -91,7 +93,7 @@ Init <- function(sim) {
     index <- index[!is.na(index)]
     #index is the set of locations where fires may Ignite.
 
-    dT = Cache(makeDesign, indices=index, targetN = P(sim)$targetN, pEscape=regime$pEscape,
+    dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=regime$pEscape,
                userTags = paste("makeDesign", polygonType))
     message(paste0("calibrating for polygon ", polygonType))
 
@@ -100,21 +102,30 @@ Init <- function(sim) {
                        userTags = paste("executeDesign", polygonType))
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-    calibModel <- loess(cD$finalSize ~ cD$p)
-    #now for the inverse step.
-    xBar <- regime$xBar / cellSize
 
-    Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
-                    calibModel, xBar, # "..."
-                    interval=c(min(cD$p), max(cD$p)),
-                    extendInt = "no",
-                    tol = 0.00001
-                    ), silent = TRUE)
-    if (class(Res) == "try-error") {
-      pJmp <- min(cD$p)
-      message("the loess model may underestimate the spread probability for polygon ", polygonType)
+    if (nrow(cD) > 1) {
+      calibModel <- loess(cD$finalSize ~ cD$p)
+
+      #now for the inverse step.
+      xBar <- regime$xBar / cellSize
+
+      Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+                      calibModel, xBar, # "..."
+                      interval=c(min(cD$p), max(cD$p)),
+                      extendInt = "no",
+                      tol = 0.00001
+                      ), silent = TRUE)
+      if (class(Res) == "try-error") {
+        pJmp <- min(cD$p)
+        message("the loess model may underestimate the spread probability for polygon ", polygonType)
+      } else {
+        pJmp <- Res$root
+      }
     } else {
-      pJmp <- Res$root
+      pJmp <- min(cD$p)
+      xBar <- regime$xBar / cellSize
+      calibModel <- "No Model"
+      Res <- "No Uniroot result"
     }
     #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
@@ -172,14 +183,15 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-
+#Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist){
 
   tempDir <- tempdir()
-  #Buffer study Area
+  #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
+  #TODO: Investigate why some polygons fail
   bStudyArea <- buffer(coreLand, buffDist) %>%
     gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea)
+  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea, makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
