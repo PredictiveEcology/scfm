@@ -15,6 +15,7 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
+    defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("targetN", "numeric", 1000, 1, NA, "target sample size for determining true spread probability")),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
@@ -128,7 +129,7 @@ Init <- function(sim) {
         pJmp <- Res$root
       }
     } else {
-      pJmp <- min(calibData$p)
+      pJmp <- P(sim)$pJmp
       calibModel <- "No Model"
       Res <- "No Uniroot result"
     }

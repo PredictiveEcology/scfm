@@ -141,6 +141,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   xMax <- 0
    #NA might be better, but would take more downstream work SGC 15.10.2018
   maxFireSize <- lxBar <- NA
+  maxFireSize <- 1 
   xVec <- numeric(0)
 
   if (nFires > 0) {
@@ -186,8 +187,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
       }
     }
   } else {
-    message(paste("Insufficient data for polygon ", polygonID, ". It will be excluded from output"))
-    return(NULL)
+    message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
+    #return(NULL)
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
