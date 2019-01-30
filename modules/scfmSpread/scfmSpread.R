@@ -118,7 +118,8 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
  #get fire year, pixels burned, area burned, poly ID of all burned pixels
   tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)
-  tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
+  tempDT$N <- as.numeric(tempDT$N)
+  tempDT$areaBurned <- tempDT$N * as.numeric(sim$landscapeAttr[[1]]$cellSize)
   tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)

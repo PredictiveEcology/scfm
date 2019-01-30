@@ -92,14 +92,14 @@ Escape <- function(sim) {
 
     maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
-    maxSizesNoZero <- maxSizes[maxSizes > 0]
+
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
-                                            start = sim$ignitionLoci[maxSizes > 0],
+                                            start = sim$ignitionLoci,
                                             iterations = 1,
                                             spreadProb = sim$p0,
                                             directions = P(sim)$neighbours,
                                             asRaster = FALSE,
-                                            maxSize = maxSizesNoZero)
+                                            maxSize = maxSizes)
   }
 
   return(invisible(sim))
