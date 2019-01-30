@@ -2,9 +2,10 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmSpread",
-  description = "insert module description here",
-  keywords = c("insert key words here"),
-  authors = c(person(c("First", "Middle"), "Last", email = "email@example.com", role = c("aut", "cre"))),
+  description = "model fire spread",
+  keywords = c("fire", "spread", "scfm"),
+  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("1.1.0.9002"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -25,8 +26,8 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "spreadState", objectClass = "data.table", desc = ""),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
+    expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),

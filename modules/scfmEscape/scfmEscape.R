@@ -4,8 +4,8 @@ defineModule(sim, list(
   name = "scfmEscape",
   description = "This Escapes fire(s) from an initial set of loci returned by an ignition module, and readies the results for use by scfmSpread",
   keywords = c("fire Escape BEACONs"),
-  authors = c(person(c("Steven", "G"), "Cumming",
-                     email = "stevec@sbf.ulaval.ca", role = c("aut"))),
+  authors = c(person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+              person(c("Ian", "MS"), "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -26,8 +26,8 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
+    expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = "Pixel IDs where ignition occurs"),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
