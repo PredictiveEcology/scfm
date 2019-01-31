@@ -106,13 +106,13 @@ Init <- function(sim) {
 
   firePolys <- unlist(sim$firePoints)
 
-  #browser()
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                                firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                firePoints = sim$firePoints, epochLength = epochLength,
                                maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
+
   nullIdx <- sapply(scfmRegimePars, is.null)
   if (any(nullIdx)){
     scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
@@ -125,7 +125,6 @@ Init <- function(sim) {
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                 firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
 
-  #browser()
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -138,10 +137,10 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
   pEscape <- 0
   xBar <- 0
-  xMax <- 1
+  xMax <- 0
    #NA might be better, but would take more downstream work SGC 15.10.2018
   maxFireSize <- lxBar <- NA
-  maxFireSize <- 1
+  maxFireSize <- cellSize
   xVec <- numeric(0)
 
   if (nFires > 0) {

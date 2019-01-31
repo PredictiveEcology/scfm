@@ -70,7 +70,7 @@ Init <- function(sim) {
     landAttr <- sim$landscapeAttr[[polygonType]]
     maxBurnCells <- as.integer(round(regime$emfs / cellSize)) #will return NA if emfs is NA
     if (is.na(maxBurnCells)) {
-      maxBurnCells = 0
+      maxBurnCells = 1
     }
     #we know this table was produced with MinFireSize=2cells.
 
