@@ -138,9 +138,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   pEscape <- 0
   xBar <- 0
   xMax <- 0
-   #NA might be better, but would take more downstream work SGC 15.10.2018
   lxBar <- NA
-  maxFireSize <- cellSize
+  maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
 
   if (nFires > 0) {
@@ -194,7 +193,10 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
-
+  if (maxFireSize < 1){
+    warning("this can't happen")
+    maxFireSize = cellSize
+  }
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,

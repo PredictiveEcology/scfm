@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("stats", "magrittr", "sf", "rgeos", "fasterize"),
+  reqdPkgs = list("stats", "magrittr", "sf", "rgeos", "fasterize", "scam"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -70,17 +70,9 @@ Init <- function(sim) {
     landAttr <- sim$landscapeAttr[[polygonType]]
     maxBurnCells <- as.integer(round(regime$emfs / cellSize)) #will return NA if emfs is NA
     if (is.na(maxBurnCells)) {
-      maxBurnCells = 1
+      warning("This can't happen")
     }
-    #we know this table was produced with MinFireSize=2cells.
-
-    # y <- sim$cTable2$y #What are these supposed to be?
-    # x <- sim$cTable2$p
-    # m.lw <- lowess(y~x, iter = 2)
-    # if (sum(diff(m.lw$y) < 0) > 0)
-    #   warning(sprintf("lowess curve non-monotone in zone %s. Proceed with caution", polygonType))
-    # targetSize <- regime$xBar/cellSize - 1
-    # pJmp <- approx(m.lw$y, m.lw$x, targetSize, rule = 2)$y
+    
     message("generating buffered landscapes...")
     calibLand <- Cache(genSimLand, sim$studyArea[polygonType,], buffDist = P(sim)$buffDist,
                        userTags = paste("genSimLand ", polygonType))
@@ -107,7 +99,8 @@ Init <- function(sim) {
                        userTags = paste("executeDesign", polygonType))
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-    calibModel <- loess(cD$finalSize ~ cD$p)
+    #calibModel <- loess(cD$finalSize ~ cD$p)
+    calibModel <- scam(finalSize ~ s(p, bs="micx", k=20), data=cD)
     
     xBar <- regime$xBar / cellSize
     
@@ -115,7 +108,6 @@ Init <- function(sim) {
   
       #now for the inverse step.
       
-
       Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
                       calibModel, xBar, # "..."
                       interval=c(min(cD$p), max(cD$p)),
