@@ -71,6 +71,7 @@ Init <- function(sim) {
     maxBurnCells <- as.integer(round(regime$emfs / cellSize)) #will return NA if emfs is NA
     if (is.na(maxBurnCells)) {
       warning("This can't happen")
+      maxBurnCells = 1
     }
     
     message("generating buffered landscapes...")
