@@ -140,7 +140,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   xMax <- 0
    #NA might be better, but would take more downstream work SGC 15.10.2018
   lxBar <- NA
-  maxFireSize <- 1
+  maxFireSize <- cellSize
   xVec <- numeric(0)
 
   if (nFires > 0) {
