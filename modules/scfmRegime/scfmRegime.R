@@ -173,8 +173,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
         )
         #browser()
         maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
-      }
-      else {
+      } else {
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
           warning(
@@ -184,10 +183,11 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
         }
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
+    } else {
+      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
     }
   } else {
     message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
-
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
