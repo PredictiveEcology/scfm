@@ -73,7 +73,7 @@ Init <- function(sim) {
       warning("This can't happen")
       maxBurnCells = 1
     }
-    
+
     message("generating buffered landscapes...")
     calibLand <- Cache(genSimLand, sim$studyArea[polygonType,], buffDist = P(sim)$buffDist,
                        userTags = paste("genSimLand ", polygonType))
@@ -211,7 +211,7 @@ genSimLand <- function(coreLand, buffDist){
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.26, q=1){
+makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=1){
   #TODO: Fix makeDesign to work if polygons have no fires
   sampleSize <- round(targetN/pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)

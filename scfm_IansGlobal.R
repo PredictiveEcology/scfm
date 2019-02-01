@@ -1,3 +1,5 @@
+###This is a script I am using to test calibration over multiple polygons## IE
+
 library(magrittr)
 library(raster)
 library(SpaDES)
@@ -6,7 +8,7 @@ inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
 timeunit <- "year"
-times <- list(start = 0, end = 30)
+times <- list(start = 0, end = 100)
 mapDim <- 200
 defaultInterval <- 1.0
 defaultPlotInterval <- 1.0
@@ -48,7 +50,7 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1000)
+  scfmDriver = list(targetN = 1500)
   # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
   #                        mfsMaxRatio = 3,
   #                        mfsMultiplier = 3.25),
@@ -59,26 +61,39 @@ modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
                 "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
 #, "andisonDriver_dataPrep","andisonDriver"
 
-# AndisonFRI <- shapefile("modules/andisonDriver/data/landweb_ltfc_v6.shp")
-# AndisonFRI <- raster::aggregate(AndisonFRI[AndisonFRI$LTHFC > 40,],
-#                                by = 'LTHFC', dissolve = TRUE)
 
-ecoDistricts <- shapefile("C:/Ian/Data/Canada Ecosystem/ecodistrict_shp/Ecodistricts/ecodistricts.shp")
-subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(387, 390, 372),]
-#Three small relatively contiguous ecodistricts in the RIA
+###STUDY AREAS###
+#The OG####
+# ecoDistricts <- shapefile("C:/Ian/Data/Canada Ecosystem/ecodistrict_shp/Ecodistricts/ecodistricts.shp")
+# #Three small relatively contiguous ecodistricts in the RIA
+# subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(387, 390, 372),]
+# subEcoDistricts <- spTransform(x = subEcoDistricts,
+#                                CRSobj = crs(rasterToMatch))
 
-# Generate rasterToMatch WHICH IS NOW REQUIRED!
-# rasterToMatch <- Cache(pemisc::prepInputsLCC,
-#                        studyArea = subEcoDistricts, year = 2005,
-#                        filename2 = "C:/Ian/PracticeDirectory/scfm/subEcoDistricts.tif", overwrite = TRUE)
+#The new BCR6 NWT Ecoregion amalgamation
+# ecoregions <- shapefile("C:/Ian/Data/Canada Ecosystem/ecoregion_shp/Ecoregions/ecoregions.shp")
+# BCR <- shapefile("C:/Ian/Data/BirdConservationRegions/BCR_Terrestrial_master.shp")
+# BCR <- BCR[BCR$BCR == 6,]
+# NWT <- shapefile("C:/Ian/Data/Can_pol_boundaries/provinces/Provincial_Boundaries_OpenCanada/gpr_000b11a_e.shp")
+# NWT <- NWT[NWT$PRUID == 61,]
+#
+# SAmask <- rgeos::gIntersection(BCR, NWT)
+# ecoregions <- spTransform(ecoregions, CRSobj = crs(NWT))
+# studyArea <- crop(ecoregions, SAmask)
+#
+#
+# # Generate rasterToMatch WHICH IS NOW REQUIRED!
+rasterToMatch <- Cache(LandR::prepInputsLCC, studyArea = studyArea, year = 2005,
+                       destinationPath = "C:/Ian/PracticeDirectory/scfm",
+                       filename2 = TRUE, overwrite = TRUE)
+# studyArea <- spTransform(x = studyArea, CRSobj = crs(rasterToMatch))
+# writeOGR(obj = studyArea, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "BCR6_EcoregionsNWT", driver = "ESRI Shapefile")
+studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/BCR6_EcoregionsNWT.shp")
 
-rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/subEcoDistricts.tif")
-subEcoDistricts <- spTransform(x = subEcoDistricts,
-                               CRSobj = crs(rasterToMatch))
+rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/SmallLCC2005_V1_4a.tif")
 
-
-.objects <- list(
-  studyArea =  subEcoDistricts,
+objects <- list(
+  studyArea =  studyArea,
   rasterToMatch = rasterToMatch
 )
 
@@ -90,9 +105,10 @@ setPaths(cachePath = file.path("cache"),
 options(spades.moduleCodeChecks = TRUE)
 
 mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = .objects, paths = getPaths())
+                 objects = objects, paths = getPaths())
 dev()
-set.seed(23657)
+clearPlot()
+set.seed(23658)
 
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 
@@ -107,77 +123,3 @@ report<-function(outSim){
  zonalFri <<- 1/((burned/burnable)/end(outSim))
  return(NULL)
 }
-
-
-#####Test Study Areas
-genRandomBorealArea <- function(size, seed) {
-  #Build extent (= to Boreal Plains)
-  temp <- matrix(c(-606073.8, -606073.8,
-                   1218651, 1218651,
-                   5119032, 6379649,
-                   6379649, 5119032), ncol = 2) %>%
-    Polygon(.)
-
-  temp <- Polygons(srl = list(temp), ID = data.frame("id" = 1))
-  tempSP <- SpatialPolygons(Srl = list(temp))
-  crs(tempSP) <- crs("+proj=aea +lat_1=47.5 +lat_2=54.5 +lat_0=0 +lon_0=-113 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
-                     +ellps=GRS80 +towgs84=0,0,0")
-  set.seed(seed)
-  tempPoint <- sp::spsample(tempSP, n = 1, type = "random") %>%
-    SpatialPoints(.)
-  crs(tempPoint) <- crs("+proj=aea +lat_1=47.5 +lat_2=54.5 +lat_0=0 +lon_0=-113 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs
-                        +ellps=GRS80 +towgs84=0,0,0")
-
-  out <- randomPolygon(x = tempPoint, area = size)
-  out
-}
-
-#RUN 1
-#build SA
-
-# randomArea1 <- genRandomBorealArea(size = 1e9*8)
-# randomArea1$polyID <- 1
-#
-#run SA
-# writeOGR(randomArea1, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "randomArea1", driver = "ESRI Shapefile")
-randomArea1 <- shapefile("C:/Ian/PracticeDirectory/scfm/randomArea1.shp")
-# randomRTM1 <- LandR::prepInputsLCC(studyArea = randomArea1, useSAcrs = TRUE, destinationPath = tempdir())
-# #set SA
-# objects1 <- list(
-#   studyArea =  randomArea1,
-#   rasterToMatch = randomRTM1
-# )
-
-mySimR1 <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects1, paths = getPaths())
-dev()
-outSimR1 <- SpaDES.core::spades(mySimR1, progress = FALSE, debug = TRUE)
-
-outSim$firePoints$IntensityCol <- "blue"
-outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 1] <- "yellow"
-outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 100] <- "orange"
-outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 1000] <- "red"
-outSim$firePoints$IntensityCol[outSim$firePoints$SIZE_HA > 10000] <- "black"
-temp <- outSim$firePoints[outSim$firePoints$SIZE_HA > 1,]
-Plot(outSim$studyAreaRas)
-Plot(temp, addTo = "outSim$studyAreaRas", cols = temp$IntensityCol)
-
-#RUN2
-
-# randomArea2 <- genRandomBorealArea(size = 1e9*3, seed = 2343)
-# randomArea2$polyID <- 2
-# writeOGR(randomArea2, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "RandomArea2", driver = 'ESRI Shapefile')
-randomArea2 <- shapefile("C:/Ian/PracticeDirectory/scfm/randomArea2.shp")
-randomRTM2 <- LandR::prepInputsLCC(studyArea = randomArea2, useSAcrs = TRUE, destinationPath = tempdir())
-plot(randomRTM2)
-objects2 <- list(
-  studyArea =  randomArea2,
-  rasterToMatch = randomRTM2
-)
-
-#run SA
-mySimR2 <- simInit(times = times, params = parameters, modules = modules,
-                   objects = objects2, paths = getPaths())
-dev()
-outSimR2 <- SpaDES.core::spades(mySimR2, progress = FALSE, debug = TRUE)
-
