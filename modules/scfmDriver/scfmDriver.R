@@ -102,14 +102,14 @@ Init <- function(sim) {
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
     #calibModel <- loess(cD$finalSize ~ cD$p)
     calibModel <- scam(finalSize ~ s(p, bs="micx", k=20), data=cD)
-    
+
     xBar <- regime$xBar / cellSize
-    
+
     if  (xBar > 0){
-  
+
       #now for the inverse step.
-      
-      Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM,x) - xBar},
+
+      Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
                       calibModel, xBar, # "..."
                       interval=c(min(cD$p), max(cD$p)),
                       extendInt = "no",
