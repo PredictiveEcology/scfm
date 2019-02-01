@@ -2,7 +2,8 @@ defineModule(sim, list(
   name = "scfmRegime",
   description = "estimates fire regime parameters for BEACONs a la Steve's method",
   keywords = c("fire regime", "BEACONs"),
-  authors = c(person(c("Steven", "G."), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))),
+  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -17,16 +18,16 @@ defineModule(sim, list(
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "",
+    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "contains landscape attributes for each polygon"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
   outputObjects = bind_rows(
-   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  ""),
+   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
    createsOutput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
                  desc = "Fire locations. Points outside studyArea are removed")
   )
@@ -49,13 +50,14 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
 
   tmp <- sim$firePoints
-
+  if (length(sim$firePoints) == 0) {
+    stop("there are no fires in your studyArea. Consider expanding the study Area")
+  }
   #extract and validate fireCause spec
 
   fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
   causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
-
   if (any(!(fc %in% causeSet)))
     stop("illegal fireCause: ", fc)
   tmp <- subset(tmp, CAUSE %in% fc)
@@ -68,7 +70,7 @@ Init <- function(sim) {
   tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-  # browser() #this was line 90 in the master branch
+
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
@@ -104,13 +106,13 @@ Init <- function(sim) {
 
   firePolys <- unlist(sim$firePoints)
 
-  #browser()
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                                firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                firePoints = sim$firePoints, epochLength = epochLength,
                                maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
+
   nullIdx <- sapply(scfmRegimePars, is.null)
   if (any(nullIdx)){
     scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
@@ -123,7 +125,6 @@ Init <- function(sim) {
 calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                                 firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
 
-  #browser()
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -137,8 +138,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
   pEscape <- 0
   xBar <- 0
   xMax <- 0
-   #NA might be better, but would take more downstream work SGC 15.10.2018
-  maxFireSize <- lxBar <- NA
+  lxBar <- NA
+  maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
 
   if (nFires > 0) {
@@ -171,8 +172,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
         )
         #browser()
         maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
-      }
-      else {
+      } else {
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
           warning(
@@ -182,16 +182,21 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
         }
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
+    } else {
+      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
     }
   } else {
-    return(NULL)
+    message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
-
+  if (maxFireSize < 1){
+    warning("this can't happen")
+    maxFireSize = cellSize
+  }
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,

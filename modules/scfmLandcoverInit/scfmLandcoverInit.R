@@ -7,14 +7,15 @@ defineModule(sim,list(
     childModules = character(),
     authors = c(
       person(c("Eliot", "J", "B"),"McIntire", email = "Eliot.McIntire@canada.ca", role = c("aut", "cre")),
-      person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut"))),
+      person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+      person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
     version = numeric_version("0.1.0"),
     spatialExtent = raster::extent(rep(NA_real_, 4)),
     timeframe = as.POSIXlt(c("2005-01-01", NA)),
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development"),
+    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development", "fasterize", "sf"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -32,8 +33,9 @@ defineModule(sim,list(
     ),
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
-      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = ""),
-      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
+      createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
+      createsOutput(objectName = "studyAreaRas", objectClass = "RasterLayer", desc = "Rasterized version of study Area with values representing polygon ID")
     )
   )
 )
@@ -48,8 +50,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
          },
          plot =  {
            Plot(sim$vegMap, new = TRUE)
-           Plot(sim$flammableMap, legend = FALSE) # this is failing probably due to a bug in Plot
-           # EJM is working on it 20160224
+           Plot(sim$flammableMap, legend = FALSE)
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
 
@@ -64,14 +65,19 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 Init <- function(sim) {
-
+  if (class(sim$studyArea) == "SpatialPolygons") {
+    stop("studyArea must be a SpatialPolygonsDataFrame")
+  }
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
 
-  sim$flammableMap <- pemisc::defineFlammable(sim$vegMap, mask = sim$rasterToMatch , filename2 = NULL)
+  temp <- sf::st_as_sf(sim$studyArea)
+  temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
+  sim$studyAreaRas <- fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
 
-  setColors(flammableMap, 2) <- colorRampPalette(c("red", "blue"))(2)
+  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
@@ -97,7 +103,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     stop("illegal neighbours specification")
 
   makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <- Cache(focal, x = 1 - flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
+    neighMap <- Cache(focal, x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
     valsByPoly <- Cache(raster::extract, neighMap, studyArea, cellnumbers = TRUE)
@@ -166,34 +172,36 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
-
-    studyArea <- randomStudyArea(size = 2000000000, seed = 23657)
+    #TODO: remove LandR once this is confirmed working
+    studyArea <- LandR::randomStudyArea(size = 15000000000, seed = 23654)
     sim$studyArea <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- prepInputsLCC(year = 2005,
-                                   destinationPath = dPath,
-                                   studyArea = sim$studyArea,
-                                   useSAcrs = TRUE,
-                                   filename2 = TRUE,
-                                   overwrite = TRUE,
-                                   userTags = c("cacheTags", "rasterToMatch"))
+    rasterToMatch <- LandR::prepInputsLCC(year = 2005,
+                                               destinationPath = dPath,
+                                               studyArea = sim$studyArea,
+                                               useSAcrs = TRUE,
+                                               filename2 = TRUE,
+                                               overwrite = TRUE,
+                                               userTags = c("cacheTags", "rasterToMatch"))
+    sim$rasterToMatch <- rasterToMatch
 
   }
+
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
-    sim$vegMap <- pemisc::prepInputsLCC(year = 2005,
-                                        destinationPath = dPath,
-                                        studyArea = sim$studyArea,
-                                        rasterToMatch = sim$rasterToMatch,
-                                        filename2 = TRUE,
-                                        overwrite = TRUE,
-                                        userTags = c("cacheTags", "vegMap"))
+    sim$vegMap <- prepInputsLCC(year = 2005,
+                                destinationPath = dPath,
+                                studyArea = sim$studyArea,
+                                rasterToMatch = sim$rasterToMatch,
+                                filename2 = TRUE,
+                                overwrite = TRUE,
+                                userTags = c("cacheTags", "vegMap"))
     }
 
   return(invisible(sim))

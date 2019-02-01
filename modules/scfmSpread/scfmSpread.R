@@ -2,9 +2,10 @@
 # are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmSpread",
-  description = "insert module description here",
-  keywords = c("insert key words here"),
-  authors = c(person(c("First", "Middle"), "Last", email = "email@example.com", role = c("aut", "cre"))),
+  description = "model fire spread",
+  keywords = c("fire", "spread", "scfm"),
+  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("1.1.0.9002"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -25,14 +26,15 @@ defineModule(sim, list(
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "spreadState", objectClass = "data.table", desc = ""),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "")
+    expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
-    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map")
+    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
   )
 ))
 
@@ -85,7 +87,9 @@ Init <- function(sim) {
     pSpread <- sim$pSpread * sim$flammableMap
   }
   sim$pSpread <- pSpread
-  setColors(sim$burnMap, n = 2) <- colorRampPalette(c("transparent", "red"))(2)
+  #Create empty data table to store each year's burn data
+  sim$burnSummary <- data.table("igLoc" = "", "N" = "", "year" = "", "areaBurned" = "", "polyID" = "")
+
   return(invisible(sim))
 }
 
@@ -109,5 +113,16 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
+
+
+ #get fire year, pixels burned, area burned, poly ID of all burned pixels
+  tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
+  tempDT$year <- time(sim)
+  tempDT$N <- as.numeric(tempDT$N)
+  tempDT$areaBurned <- tempDT$N * as.numeric(sim$landscapeAttr[[1]]$cellSize)
+  tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
+  setnames(tempDT, c("initialPixels"), c("igLoc"))
+  sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+
   return(invisible(sim))
 }
