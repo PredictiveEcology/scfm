@@ -26,14 +26,13 @@ library(SpaDES)
 #Parameters
 timeunit <- "year"
 times <- list(start = 0, end = 20)
-mapDim <- 200
 defaultInterval <- 1.0
 defaultPlotInterval <- 1.0
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
 parameters <- list(
   .progress = list(type = "text", interval = 1),
-  ageModule = list(
+  ageModule = list( #age is really time since fire, regardless of landcover
     initialAge = 100,
     maxAge = 200,
     returnInterval = defaultInterval,
@@ -67,16 +66,13 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1000)
-  # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-  #                        mfsMaxRatio = 3,
-  #                        mfsMultiplier = 3.25),
-  # andisonDriver_dataPrep = list(minFRI=0)
+  scfmDriver = list(targetN = 1000) #this is an important parameter.
+  #increase targetN for more robust estimates, longer run-time 
 )
 
 modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
                 "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
-#Optional Andison modules: replace scfmDriver with "andisonDriver" and include "andisonDriver_dataPrep"
+
 
 
 #Paths
@@ -86,16 +82,25 @@ paths <- list(
   inputPath = file.path("inputs"),
   outputPath = file.path("outputs")
 )
-####RasterToMatch:
-#if you supply studyArea you should supply rtm to make sure the crs are identical. A default rasterToMatch is provided, however some Spades-Ecocystem modules do not require studyArea and rtm to have identical crs. This is a requirement for scfm  due to overlay fxns. 
-#To easily generate rtm for your own study area, use PredictiveEcology/LandR::prepInputsLCC
+#RasterToMatch:
+#if you supply studyArea you should supply rtm to make sure the crs are identical. 
+#A default rasterToMatch is provided. However some Spades-Ecosystem modules do not
+#require studyArea and rtm to have identical crs, so if running with other spades modules, 
+#it is better to create rasterToMatch prior to running SpaDES. 
+#To easily generate rtm for your own study area, use PredictiveEcology/LandR::prepInputsLCC, 
+#e.g. devtools::install_github("PredictiveEcology/LandR@development") 
+#rasterToMatch <- LandR::prepInputsLCC(year = 2005, destinationPath = tempdir(), studyArea = myStudyArea)
+#then myStudyArea <- spTransform(myStudyArea, CRSobj = as.character(rasterToMatch@crs))
+#Better to reproject the vector to the raster crs to prevent weird cell resolutions
+
+#if run with no studyArea, the default is a small area in southwest Alberta
 objects <- list(
   # studyArea = tempStudyArea,
   # rasterToMatch = rtm
   )
 
 #Run module
-#Sim Init will take ~10 minutes the first time you run due to the NFDB points being SLOW
+#The calibration process may take hours (it's cached)
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
@@ -125,7 +130,7 @@ comparePredictions <- function(polyList, simList) {
     burnSum$N <- as.numeric(burnSum$N)
     burnSum$areaBurned <- as.numeric(burnSum$areaBurned)
     burnSum <- burnSum[burnSum$N > 1]
-    mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times$end - times$start))
+    mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times(sim)$end - times(sim)$start))
     
     pred <- data.frame("PolyId" = x, #Polygon ID
                        "prdMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
@@ -140,6 +145,7 @@ comparePredictions <- function(polyList, simList) {
 
 df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
   rbindlist(.)
+
 #Some useful plots
 plot(df$modMeanSize ~ df$prdMeanSize, ylab = "modeled mean fire size (ha)", xlab = "empirical mean fire size (ha)", 
      main = "SCFM results for 16 ecoregions in BCR6, NWT")

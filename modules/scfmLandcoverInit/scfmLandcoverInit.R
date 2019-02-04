@@ -56,7 +56,6 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
 
          },
          save = {
-
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
          },
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
@@ -89,10 +88,7 @@ Init <- function(sim) {
 
 genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   #calculate the cell size, total area, and number of flammable cells, etc.
-  #
   #All areas in ha
-  #
-
   cellSize <- prod(res(flammableMap)) / 1e4 # in ha
 
   if (neighbours == 8)
@@ -108,8 +104,6 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     # extract table for each polygon
     valsByPoly <- Cache(raster::extract, neighMap, studyArea, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
-
-
     names(valsByPoly) <- studyArea$PolyID
     uniqueZoneNames <- studyArea$PolyID #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
@@ -126,7 +120,6 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
       names(nNbrs) <- 0:8
       return(nNbrs)
     })
-
 
     nFlammable <- lapply(valsByZone, function(x) {
 
@@ -188,9 +181,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
                                                overwrite = TRUE,
                                                userTags = c("cacheTags", "rasterToMatch"))
     sim$rasterToMatch <- rasterToMatch
-
   }
-
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
