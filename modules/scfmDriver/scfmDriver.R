@@ -224,8 +224,8 @@ makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=
   p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
   #the preceding approximation seems inadequate in practice.
   #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L
-  T <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
-  return(T)
+  Temp <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
+  return(Temp)
 }
 
 executeDesign <- function(L, dT, maxCells){
