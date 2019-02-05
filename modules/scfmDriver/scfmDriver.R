@@ -96,7 +96,7 @@ Init <- function(sim) {
     message(paste0("calibrating for polygon ", polygonType))
 
     calibData <- Cache(executeDesign, L = calibLand$flammableMap, dT,
-                       maxCells=maxBurnCells,
+                       maxCells = maxBurnCells,
                        userTags = paste("executeDesign", polygonType))
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
