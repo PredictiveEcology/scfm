@@ -68,7 +68,7 @@ Init <- function(sim) {
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType, targetN = P(sim)$targetN) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
-    maxBurnCells <- as.integer(round(regime$emfs / cellSize)) #will return NA if emfs is NA
+    maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
     if (is.na(maxBurnCells)) {
       warning("This can't happen")
       maxBurnCells = 1

@@ -205,7 +205,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
               #mean log(fire size)
               xMax = xMax,
               #maximum observed size
-              emfs = maxFireSize  #Estimated Maximum Fire Size in ha
+              emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
               )
           )
 }
