@@ -78,16 +78,17 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
 
  dPath <- dataPath(sim)
-
- ageMap <- prepInputs(targetFile = file.path(dPath, "age.tif"),
-                 url = extractURL("ageMap"),
-                 studyArea = sim$studyArea,
-                 rasterToMatch = sim$rasterToMatch,
-                 destinationPath = file.path(dPath, "age"),
-                 overwrite = TRUE,
-                 filename2 = TRUE,
-                 userTags = c("ageMap"),
-                 method = "ngb")
+ preAgeMap <- preProcess(url = extractURL("ageMap"), 
+                         destinationPath = file.path(dPath, "age"))
+ ageMap <- prepInputs(targetFile = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.tif"),
+                      archive = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.zip"),
+                      studyArea = sim$studyArea,
+                      rasterToMatch = sim$rasterToMatch,
+                      destinationPath = file.path(dPath, "age"),
+                      overwrite = TRUE,
+                      filename2 = TRUE,
+                      userTags = c("ageMap"),
+                      method = "ngb")
 
  sim$ageMap <- ageMap
 

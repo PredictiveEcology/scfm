@@ -189,7 +189,7 @@ genSimLand <- function(coreLand, buffDist){
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
   bStudyArea <- buffer(coreLand, buffDist) %>%
-    gDifference(., spgeom2 = coreLand, byid = FALSE)
+    rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
   polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea, makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
@@ -199,7 +199,7 @@ genSimLand <- function(coreLand, buffDist){
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- sf::st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+  landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
 
   calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
   names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
