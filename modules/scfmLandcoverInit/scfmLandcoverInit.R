@@ -17,10 +17,10 @@ defineModule(sim,list(
     citation = list(),
     reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development", "fasterize", "sf"),
     parameters = rbind(
-      defineParameter(".plotInitia+lTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
+      defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
-      defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
+      defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
