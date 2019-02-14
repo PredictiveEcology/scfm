@@ -94,6 +94,7 @@ Init <- function(sim) {
     dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=ifelse(regime$pEscape==0,0.1,regime$pEscape),
                userTags = paste("makeDesign", polygonType))
     message(paste0("calibrating for polygon ", polygonType))
+    message(Sys.time())
 
     calibData <- Cache(executeDesign, L = calibLand$flammableMap, dT,
                        maxCells = maxBurnCells,
