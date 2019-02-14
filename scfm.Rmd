@@ -75,10 +75,7 @@ parameters <- list(
   #increase targetN for more robust estimates, longer run-time 
 )
 
-modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
-                "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
-
-
+modules <- list("group_scfm")
 
 #Paths
 paths <- list(
