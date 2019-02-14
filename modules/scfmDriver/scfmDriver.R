@@ -102,7 +102,7 @@ Init <- function(sim) {
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
     #calibModel <- loess(cD$finalSize ~ cD$p)
-    calibModel <- scam(finalSize ~ s(p, bs="micx", k=20), data=cD)
+    calibModel <- scam::scam(finalSize ~ s(p, bs="micx", k=20), data=cD)
 
     xBar <- regime$xBar / cellSize
 
