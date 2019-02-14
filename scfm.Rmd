@@ -32,6 +32,11 @@ defaultInitialSaveTime <- NA #don't be saving nuffink
 
 parameters <- list(
   .progress = list(type = "text", interval = 1),
+    scfmLandcoverInit = list(
+  .plotInitialTime = times$start,
+  .plotInterval = defaultPlotInterval,
+  .saveInitialTime = defaultInitialSaveTime,
+  .saveInterval = defaultInterval),
   ageModule = list( #age is really time since fire, regardless of landcover
     initialAge = 100,
     maxAge = 200,
@@ -70,10 +75,7 @@ parameters <- list(
   #increase targetN for more robust estimates, longer run-time 
 )
 
-modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
-                "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
-
-
+modules <- list("group_scfm")
 
 #Paths
 paths <- list(

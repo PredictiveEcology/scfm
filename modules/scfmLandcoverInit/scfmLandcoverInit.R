@@ -20,7 +20,7 @@ defineModule(sim,list(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
-      defineParameter(".saveIntervalXXX", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
+      defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
@@ -28,7 +28,7 @@ defineModule(sim,list(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
-        sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
+                   sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
     ),
     outputObjects = bind_rows(
@@ -37,13 +37,13 @@ defineModule(sim,list(
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
       createsOutput(objectName = "studyAreaRas", objectClass = "RasterLayer", desc = "Rasterized version of study Area with values representing polygon ID")
     )
-  )
+)
 )
 
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
          init = {
-
+           
            sim <- Init(sim)
            sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
            sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
@@ -53,14 +53,14 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
            Plot(sim$flammableMap, legend = FALSE)
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
-
+           
          },
          save = {
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
          },
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                        "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
-
+  
   return(invisible(sim))
 }
 Init <- function(sim) {
@@ -70,11 +70,10 @@ Init <- function(sim) {
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
-
+  
   temp <- sf::st_as_sf(sim$studyArea)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
-  sim$studyAreaRas <- fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
-
+  sim$studyAreaRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
   sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
   sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) #this removes attributes, fixes Plot()
   sim$flammableMap <- setColors(sim$flammableMap, value = c("blue", "red"))
