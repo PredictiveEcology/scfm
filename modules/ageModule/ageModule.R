@@ -78,7 +78,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
 
  dPath <- dataPath(sim)
- preProcess(url = extractURL("ageMap"),
+ preProcess(url = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar",
             destinationPath = file.path(dPath, "age"))
  ageMap <- prepInputs(targetFile = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.tif"),
                       archive = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.zip"),
