@@ -75,7 +75,8 @@ Init <- function(sim) {
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$studyAreaRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
   sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-  
+  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) #this removes attributes, fixes Plot()
+  sim$flammableMap <- setColors(sim$flammableMap, value = c("blue", "red"))
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,

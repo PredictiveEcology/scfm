@@ -112,6 +112,7 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
+  sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
 
 
