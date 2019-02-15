@@ -15,7 +15,9 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("raster", "reproducible", "PredictiveEcology/LandR@development", "fasterize", "sf"),
+    reqdPkgs = list("fasterize", "purrr", "raster", "sf",
+                    "PredictiveEcology/LandR@development",
+                    "PredictiveEcology/reproducible@development"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -43,7 +45,7 @@ defineModule(sim,list(
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
          init = {
-           
+
            sim <- Init(sim)
            sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
            sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
@@ -53,14 +55,14 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
            Plot(sim$flammableMap, legend = FALSE)
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
-           
+
          },
          save = {
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
          },
          warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                        "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = "")))
-  
+
   return(invisible(sim))
 }
 Init <- function(sim) {
@@ -70,7 +72,7 @@ Init <- function(sim) {
   if (is.null(sim$studyArea$PolyID)) {
     sim$studyArea$PolyID <- row.names(sim$studyArea)
   }
-  
+
   temp <- sf::st_as_sf(sim$studyArea)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$studyAreaRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
@@ -122,7 +124,6 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     })
 
     nFlammable <- lapply(valsByZone, function(x) {
-
       sum(getValues(flammableMap)[x[, 1]], na.rm = TRUE) #sums flammable pixels in FRI polygons
     })
 

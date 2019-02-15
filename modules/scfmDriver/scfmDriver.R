@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("stats", "magrittr", "sf", "rgeos", "fasterize", "scam"),
+  reqdPkgs = list("fasterize", "magrittr", "reproducible", "rgeos", "scam", "sf", "sp", "stats"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -91,8 +91,9 @@ Init <- function(sim) {
 
     #index is the set of locations where fires may Ignite.
 
-    dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=ifelse(regime$pEscape==0,0.1,regime$pEscape),
-               userTags = paste("makeDesign", polygonType))
+    dT <- Cache(makeDesign, indices = index, targetN = targetN,
+                pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
+                userTags = paste("makeDesign", polygonType))
     message(paste0("calibrating for polygon ", polygonType))
     message(Sys.time())
 
@@ -106,10 +107,8 @@ Init <- function(sim) {
 
     xBar <- regime$xBar / cellSize
 
-    if  (xBar > 0){
-
+    if (xBar > 0) {
       #now for the inverse step.
-
       Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
                       calibModel, xBar, # "..."
                       interval=c(min(cD$p), max(cD$p)),
@@ -184,8 +183,7 @@ Init <- function(sim) {
 }
 
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist){
-
+genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -207,14 +205,13 @@ genSimLand <- function(coreLand, buffDist){
   return(calibrationLandscape)
 }
 
-
 #dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=1){
+makeDesign <- function(indices, targetN, pEscape = 0.1, pmin = 0.21, pmax = 0.2525, q = 1) {
   #TODO: Fix makeDesign to work if polygons have no fires
-  sampleSize <- round(targetN/pEscape)
+  sampleSize <- round(targetN / pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
@@ -229,8 +226,7 @@ makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=
   return(Temp)
 }
 
-executeDesign <- function(L, dT, maxCells){
-
+executeDesign <- function(L, dT, maxCells) {
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
 
   f <- function(x, L, ProbRas){ #L, P are rasters, passed by reference
@@ -285,6 +281,3 @@ executeDesign <- function(L, dT, maxCells){
 
   return(x)
 }
-
-
-

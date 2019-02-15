@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("rgdal"),
+  reqdPkgs = list("raster", "reproducible", "rgdal", "sp"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
@@ -107,9 +107,9 @@ Init <- function(sim) {
   firePolys <- unlist(sim$firePoints)
 
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                               firePoints = sim$firePoints, epochLength = epochLength,
-                               maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
+                           firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
+                           firePoints = sim$firePoints, epochLength = epochLength,
+                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 
@@ -250,9 +250,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
                               all.files = TRUE,
                               full.names = TRUE)
 
-    outFile <- grep(pattern = "*.shp$",
-                    x = zipContents,
-                    value = TRUE)
+    outFile <- grep(pattern = "*.shp$", x = zipContents, value = TRUE)
 
     #Reading this shapefile takes forever even when cached so combining these calls.
     #PrepInputs doesn't work here because we don't know the targetFile (name changes daily)

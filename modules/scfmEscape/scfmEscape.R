@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("raster","data.table","magrittr"),
+  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
@@ -94,12 +94,12 @@ Escape <- function(sim) {
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
 
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
-                                            start = sim$ignitionLoci,
-                                            iterations = 1,
-                                            spreadProb = sim$p0,
-                                            directions = P(sim)$neighbours,
-                                            asRaster = FALSE,
-                                            maxSize = maxSizes)
+                                             start = sim$ignitionLoci,
+                                             iterations = 1,
+                                             spreadProb = sim$p0,
+                                             directions = P(sim)$neighbours,
+                                             asRaster = FALSE,
+                                             maxSize = maxSizes)
   }
 
   return(invisible(sim))
@@ -107,8 +107,8 @@ Escape <- function(sim) {
 
 #same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
+  ## TODO: This module has many dependencies that aren't sourced in .inputObjects
 
-  #This module has many dependencies that aren't sourced in .inputObjects.
   if (!suppliedElsewhere("flammableMap", sim)) {
     sim$flammableMap <- sim$rasterToMatch
     sim$flammableMap[] <- sim$flammableMap[]* 0

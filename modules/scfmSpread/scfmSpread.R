@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
-  reqdPkgs = list("raster","data.table","magrittr"),
+  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
   parameters = rbind(
     defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
@@ -69,7 +69,6 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   sim$burnMap <- sim$flammableMap
   sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
 
@@ -93,8 +92,7 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
-
+Burnemup <- function(sim) { #name is a homage to Walters and Hillborne
   # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
@@ -102,11 +100,11 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
 
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
-                                     spreadProb = sim$pSpread,
-                                     #spreadState = sim$spreadState,
-                                     directions = P(sim)$neighbours,
-                                     # maxSize = maxSizes,  #not sure this works
-                                     asRaster = FALSE)
+                                      spreadProb = sim$pSpread,
+                                      #spreadState = sim$spreadState,
+                                      directions = P(sim)$neighbours,
+                                      # maxSize = maxSizes,  #not sure this works
+                                      asRaster = FALSE)
 
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
