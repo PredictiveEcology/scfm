@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "magrittr", "reproducible", "rgeos",
+  reqdPkgs = list("fasterize", "LandR", "magrittr", "reproducible", "rgeos",
                   "scam", "sf", "sp", "SpaDES.tools", "stats"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
