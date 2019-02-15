@@ -173,7 +173,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- prepInputsLCC(year = 2005,
+    rasterToMatch <- LandR::prepInputsLCC(year = 2005,
                                    destinationPath = dPath,
                                    studyArea = sim$studyArea,
                                    useSAcrs = TRUE,
@@ -186,7 +186,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
 
-    sim$vegMap <- prepInputsLCC(year = 2005,
+    sim$vegMap <- LandR::prepInputsLCC(year = 2005,
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
