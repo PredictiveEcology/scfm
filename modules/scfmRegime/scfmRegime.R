@@ -231,9 +231,8 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
-
     sim$firePoints <- prepInputs(url = extractURL(objectName = "firePoints"),
-                                 studyArea = studyArea, fun = "shapefile",
+                                 studyArea = sim$studyArea, fun = "shapefile",
                                  destination = dPath, overwrite = TRUE,
                                  useSAcrs = TRUE)
   }
