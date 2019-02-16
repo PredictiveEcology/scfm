@@ -95,7 +95,7 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-browser()
+
   frpl <- sim$studyArea$PolyID
   tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
@@ -155,12 +155,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
       zVec <- log(xVec / cellSize)
       if (length(zVec) < 50)
-        warning(
-          sprintf(
-            "Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\n\tConsider using a larger area and/or longer epoch.",
-            polygonID
-          )
-        )
+        warning(paste("Less than 50 \"large\" fires in zone", poly, ".",
+                      "T estimates may be unstable.\n",
+                      "\tConsider using a larger area and/or longer epoch."))
       hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
       That <- hdList$That
       if (That == -1) {
