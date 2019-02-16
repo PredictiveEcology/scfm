@@ -48,7 +48,6 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
@@ -96,7 +95,7 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-
+browser()
   frpl <- sim$studyArea$PolyID
   tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
@@ -122,9 +121,10 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
-
+calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
+                                landscapeAttr = sim$landscapeAttr,
+                                firePoints = sim$firePoints,
+                                epochLength = epochLength, maxSizeFactor) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -231,6 +231,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
   }
+
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
     if (!dir.exists(file.path(dPath, "NFDB_point"))) {
@@ -252,9 +253,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
     outFile <- grep(pattern = "*.shp$", x = zipContents, value = TRUE)
 
-    #Reading this shapefile takes forever even when cached so combining these calls.
-    #PrepInputs doesn't work here because we don't know the targetFile (name changes daily)
-    #And we don't want the file written to the archive because that screws up the grep
+    ## Reading this shapefile takes forever even when cached so combining these calls.
+    ## PrepInputs doesn't work here because we don't know the targetFile (name changes daily)
+    ## and we don't want the file written to the archive because that screws up the grep
     fireDownload <- function(SA, file = outFile) {
       firePoints <- raster::shapefile(file) %>%
       sp::spTransform(CRSobj = crs(SA))
