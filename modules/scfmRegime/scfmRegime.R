@@ -155,7 +155,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
       zVec <- log(xVec / cellSize)
       if (length(zVec) < 50)
-        warning(paste("Less than 50 \"large\" fires in zone", poly, ".",
+        warning(paste("Less than 50 \"large\" fires in zone", polygonID, ".",
                       "T estimates may be unstable.\n",
                       "\tConsider using a larger area and/or longer epoch."))
       hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
