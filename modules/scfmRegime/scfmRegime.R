@@ -234,38 +234,11 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
-    if (!dir.exists(file.path(dPath, "NFDB_point"))) {
 
-      download.file(
-        url = extractURL(objectName = "firePoints"),
-        destfile = file.path(dPath, "NFDB_point.zip")
-      )
-      unzip(
-        zipfile = file.path(dPath, "NFDB_point.zip"),
-        exdir = file.path(dPath, "NFDB_point")
-      )
-    }
-
-    #fire points file name changes daily so must be grepped
-    zipContents <- list.files(file.path(dPath, "NFDB_point"),
-                              all.files = TRUE,
-                              full.names = TRUE)
-
-    outFile <- grep(pattern = "*.shp$", x = zipContents, value = TRUE)
-
-    ## Reading this shapefile takes forever even when cached so combining these calls.
-    ## PrepInputs doesn't work here because we don't know the targetFile (name changes daily)
-    ## and we don't want the file written to the archive because that screws up the grep
-    fireDownload <- function(SA, file = outFile) {
-      firePoints <- raster::shapefile(file) %>%
-      sp::spTransform(CRSobj = crs(SA))
-      firePoints <- postProcess(firePoints, studyArea = SA, rasterToMatch = sim$rasterToMatch,
-                                filename2 = file.path(dPath, "firePoints_SA.shp"),
-                                overwrite = TRUE)
-      return(firePoints)
-    }
-
-    sim$firePoints <- Cache(fireDownload, SA = sim$studyArea, file = outFile)
+    sim$firePoints <- prepInputs(url = extractURL(objectName = "firePoints"),
+                                 studyArea = studyArea, fun = "shapefile",
+                                 destination = dPath, overwrite = TRUE,
+                                 useSAcrs = TRUE)
   }
 
   return(invisible(sim))
