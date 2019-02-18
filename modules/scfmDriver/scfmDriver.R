@@ -17,8 +17,10 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
-    defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability")),
-    #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
+    defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability"),
+    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
+    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
+  ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
@@ -98,9 +100,14 @@ Init <- function(sim) {
 
     message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
 
-    calibData <- Cache(executeDesign, L = calibLand$flammableMap, dT,
+    calibData <- Cache(executeDesign,                    ## TODO: use cloudCache
+                       L = calibLand$flammableMap,
+                       dT,
                        maxCells = maxBurnCells,
-                       userTags = paste("executeDesign", polygonType))
+                       userTags = paste("executeDesign", polygonType),
+                       #useCloud = P(sim)$useCloudCache,
+                       #cloudFolderID = P(sim)$cloudFolderID)
+    )
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
     #calibModel <- loess(cD$finalSize ~ cD$p)
