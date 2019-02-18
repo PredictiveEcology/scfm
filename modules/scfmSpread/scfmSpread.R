@@ -99,7 +99,10 @@ Burnemup <- function(sim){ #name is a homage to Walters and Hillborne
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
   # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
-
+  threadsDT <- getDTthreads()
+  setDTthreads(1)
+  on.exit({setDTthreads(threadsDT)})
+  
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
                                      spreadProb = sim$pSpread,
