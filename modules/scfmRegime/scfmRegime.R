@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("rgdal"),
+  reqdPkgs = list("raster", "reproducible", "rgdal", "sp"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
@@ -48,7 +48,6 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
@@ -107,9 +106,9 @@ Init <- function(sim) {
   firePolys <- unlist(sim$firePoints)
 
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                               firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                               firePoints = sim$firePoints, epochLength = epochLength,
-                               maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
+                           firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
+                           firePoints = sim$firePoints, epochLength = epochLength,
+                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 
@@ -122,9 +121,10 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints, epochLength = epochLength, maxSizeFactor) {
-
+calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
+                                landscapeAttr = sim$landscapeAttr,
+                                firePoints = sim$firePoints,
+                                epochLength = epochLength, maxSizeFactor) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -155,12 +155,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
 
       zVec <- log(xVec / cellSize)
       if (length(zVec) < 50)
-        warning(
-          sprintf(
-            "Less than 50 \"large\" fires in zone %s. T estimates may be unstable.\n\tConsider using a larger area and/or longer epoch.",
-            polygonID
-          )
-        )
+        warning(paste("Less than 50 \"large\" fires in zone", polygonID, ".",
+                      "T estimates may be unstable.\n",
+                      "\tConsider using a larger area and/or longer epoch."))
       hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
       That <- hdList$That
       if (That == -1) {
@@ -231,42 +228,13 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys, landscapeAttr 
     SA <- SA[SA$ECODISTRIC == 348, ]
     sim$studyArea <- SA
   }
+
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
-    if (!dir.exists(file.path(dPath, "NFDB_point"))) {
-
-      download.file(
-        url = extractURL(objectName = "firePoints"),
-        destfile = file.path(dPath, "NFDB_point.zip")
-      )
-      unzip(
-        zipfile = file.path(dPath, "NFDB_point.zip"),
-        exdir = file.path(dPath, "NFDB_point")
-      )
-    }
-
-    #fire points file name changes daily so must be grepped
-    zipContents <- list.files(file.path(dPath, "NFDB_point"),
-                              all.files = TRUE,
-                              full.names = TRUE)
-
-    outFile <- grep(pattern = "*.shp$",
-                    x = zipContents,
-                    value = TRUE)
-
-    #Reading this shapefile takes forever even when cached so combining these calls.
-    #PrepInputs doesn't work here because we don't know the targetFile (name changes daily)
-    #And we don't want the file written to the archive because that screws up the grep
-    fireDownload <- function(SA, file = outFile) {
-      firePoints <- raster::shapefile(file) %>%
-      sp::spTransform(CRSobj = crs(SA))
-      firePoints <- postProcess(firePoints, studyArea = SA, rasterToMatch = sim$rasterToMatch,
-                                filename2 = file.path(dPath, "firePoints_SA.shp"),
-                                overwrite = TRUE)
-      return(firePoints)
-    }
-
-    sim$firePoints <- Cache(fireDownload, SA = sim$studyArea, file = outFile)
+    sim$firePoints <- prepInputs(url = extractURL(objectName = "firePoints"),
+                                 studyArea = sim$studyArea, fun = "shapefile",
+                                 destination = dPath, overwrite = TRUE,
+                                 useSAcrs = TRUE)
   }
 
   return(invisible(sim))

@@ -11,7 +11,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("stats", "magrittr", "sf", "rgeos", "fasterize", "scam"),
+  reqdPkgs = list("fasterize", "LandR", "magrittr", "reproducible", "rgeos",
+                  "scam", "sf", "sp", "SpaDES.tools", "stats"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -91,8 +92,9 @@ Init <- function(sim) {
 
     #index is the set of locations where fires may Ignite.
 
-    dT = Cache(makeDesign, indices=index, targetN = targetN, pEscape=ifelse(regime$pEscape==0,0.1,regime$pEscape),
-               userTags = paste("makeDesign", polygonType))
+    dT <- Cache(makeDesign, indices = index, targetN = targetN,
+                pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
+                userTags = paste("makeDesign", polygonType))
 
     message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
 
@@ -102,14 +104,12 @@ Init <- function(sim) {
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
     #calibModel <- loess(cD$finalSize ~ cD$p)
-    calibModel <- scam::scam(finalSize ~ s(p, bs="micx", k=20), data=cD)
+    calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
 
     xBar <- regime$xBar / cellSize
 
-    if  (xBar > 0){
-
+    if (xBar > 0) {
       #now for the inverse step.
-
       Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
                       calibModel, xBar, # "..."
                       interval=c(min(cD$p), max(cD$p)),
@@ -129,7 +129,7 @@ Init <- function(sim) {
     }
     #check convergence, and out of bounds errors etc
     w <- landAttr$nNbrs
-    w <- w/sum(w)
+    w <- w / sum(w)
     hatPE <- regime$pEscape
     if (hatPE == 0) {
       # no fires in polygon zone escapted
@@ -184,8 +184,7 @@ Init <- function(sim) {
 }
 
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist){
-
+genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -207,14 +206,13 @@ genSimLand <- function(coreLand, buffDist){
   return(calibrationLandscape)
 }
 
-
 #dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=1){
+makeDesign <- function(indices, targetN, pEscape = 0.1, pmin = 0.21, pmax = 0.2525, q = 1) {
   #TODO: Fix makeDesign to work if polygons have no fires
-  sampleSize <- round(targetN/pEscape)
+  sampleSize <- round(targetN / pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
   pVec <- pVec * (pmax-pmin) + pmin
@@ -229,26 +227,24 @@ makeDesign <- function(indices, targetN, pEscape=0.1, pmin=0.21, pmax=0.2525, q=
   return(Temp)
 }
 
-executeDesign <- function(L, dT, maxCells){
-  
+executeDesign <- function(L, dT, maxCells) {
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
 
-  f <- function(x, L, ProbRas){ #L, P are rasters, passed by reference
-    
+  f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
     threadsDT <- getDTthreads()
     setDTthreads(1)
-    on.exit({setDTthreads(threadsDT)})
-    
+    on.exit({setDTthreads(threadsDT)}, add = TRUE)
+
     i <- x[1]
     p0 <- x[2]
     p <-x[3]
-    
-    nbrs <- as.vector(SpaDES.tools::adj(x = L, i, pairs=FALSE, directions=8))
-    #nbrs < nbrs[which(L[nbrs]==1)] #or this?
-    nbrs <- nbrs[L[nbrs]==1] #only flammable neighbours please. also, verify NAs excluded.
+
+    nbrs <- as.vector(SpaDES.tools::adj(x = L, i, pairs = FALSE, directions = 8))
+    #nbrs < nbrs[which(L[nbrs] == 1)] #or this?
+    nbrs <- nbrs[L[nbrs] == 1] #only flammable neighbours please. also, verify NAs excluded.
     #nbrs is a vector of flammable neighbours.
     nn <- length(nbrs)
-    res = c(nn,0,1)
+    res <- c(nn, 0, 1)
     if (nn == 0)
       return(res) #really defaults
     #P is still flammableMap.
@@ -278,7 +274,7 @@ executeDesign <- function(L, dT, maxCells){
 
   probRas <- raster(L)
   probRas[] <- L[]
-  
+
   res <- Cache(apply, dT, 1, f, L, ProbRas = probRas) # Parallelizing isn't efficient here. ~TM 15Feb19
   res <- data.frame("nNeighbours" = res[1,], "initSpreadEvents" = res[2,], "finalSize" = res[3,])
 
@@ -287,6 +283,3 @@ executeDesign <- function(L, dT, maxCells){
 
   return(x)
 }
-
-
-
