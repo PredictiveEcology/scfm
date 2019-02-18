@@ -48,9 +48,9 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
     },
     plot = {
-      tmpRaster <- sim$vegMap
-      values(tmpRaster)[sim$spreadState[, indices]] <- 2 #this reference method is believed to be faster
-      values(tmpRaster)[sim$ignitionLoci] <- 1          #mark the initials specially
+      tmpRaster <- raster(sim$vegMap)
+      values(tmpRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
+      values(tmpRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
       Plot(tmpRaster)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
     },
