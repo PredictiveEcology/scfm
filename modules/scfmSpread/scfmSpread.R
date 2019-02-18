@@ -92,15 +92,17 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-Burnemup <- function(sim) { #name is a homage to Walters and Hillborne
+Burnemup <- function(sim) {
+  ## name is a homage to Walters and Hillborne
+
   # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
   # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
   threadsDT <- getDTthreads()
   setDTthreads(1)
-  on.exit({setDTthreads(threadsDT)})
-  
+  on.exit({setDTthreads(threadsDT)}, add = TRUE)
+
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
                                       spreadProb = sim$pSpread,
@@ -115,7 +117,6 @@ Burnemup <- function(sim) { #name is a homage to Walters and Hillborne
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
-
 
  #get fire year, pixels burned, area burned, poly ID of all burned pixels
   tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
