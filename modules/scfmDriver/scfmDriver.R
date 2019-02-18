@@ -104,9 +104,9 @@ Init <- function(sim) {
                        L = calibLand$flammableMap,
                        dT,
                        maxCells = maxBurnCells,
-                       userTags = paste("executeDesign", polygonType),
+                       userTags = paste("executeDesign", polygonType)#,
                        #useCloud = P(sim)$useCloudCache,
-                       #cloudFolderID = P(sim)$cloudFolderID)
+                       #cloudFolderID = P(sim)$cloudFolderID
     )
 
     cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
