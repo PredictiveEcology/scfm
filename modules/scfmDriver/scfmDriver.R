@@ -78,7 +78,7 @@ Init <- function(sim) {
 
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
   sim$scfmDriverPars <- cloudCache(
-    pemisc::Map2, cl = cl, cloudFolderID = P(sim)$cloudFolderID,
+    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
     useCache = getOption("reproducible.useCache"),
     useCloud = P(sim)$useCloudCache,
     regime = sim$scfmRegimePars, #[[polygonType]]
