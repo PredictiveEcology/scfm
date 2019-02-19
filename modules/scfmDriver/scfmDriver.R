@@ -18,11 +18,12 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
-    defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability"),
-    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
-    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
+    defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability")
   ),
   inputObjects = bind_rows(
+    expectsInput("cloudFolderID", "character", NULL, NA, NA,
+                 paste("URL for Google-drive-backed cloud cache. ",
+                       "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
     expectsInput("scfmRegimePars", "list", desc = ""),
     expectsInput("landscapeAttr", "list", desc = ""),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
@@ -79,8 +80,8 @@ Init <- function(sim) {
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
   sim$scfmDriverPars <- cloudCache(
     pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
-    useCache = getOption("reproducible.useCache"),
-    useCloud = P(sim)$useCloudCache,
+    useCache = getOption("reproducible.useCache", TRUE),
+    useCloud = getOption("reproducible.useCloud", FALSE),
     regime = sim$scfmRegimePars, #[[polygonType]]
     landAttr = sim$landscapeAttr, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
