@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr",
+  reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
                   "scam", "sf", "sp", "SpaDES.tools", "stats"),
   parameters = rbind(
@@ -69,8 +69,6 @@ Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   if (getOption("pemisc.useParallel", FALSE)) {
-    library(parallel)
-    library(pemisc)
     #options("pemisc.useParallel" = TRUE)
     cl <- pemisc::makeOptimalCluster(MBper = 5000, maxNumClusters = length(sim$scfmRegimePars))
     on.exit(try(stopCluster(cl)))
