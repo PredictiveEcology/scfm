@@ -21,7 +21,7 @@ defineModule(sim, list(
     defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability")
   ),
   inputObjects = bind_rows(
-    expectsInput("cloudFolderID", "character", NULL, NA, NA,
+    expectsInput("cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
     expectsInput("scfmRegimePars", "list", desc = ""),
