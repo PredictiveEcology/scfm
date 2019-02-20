@@ -117,7 +117,7 @@ Init <- function(sim) {
       index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
       index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
       index <- index[!is.na(index)]
-      if (length(index)==0)
+      if (length(index) == 0)
         stop("polygon has no flammable cells!")
 
       #index is the set of locations where fires may Ignite.
@@ -128,7 +128,7 @@ Init <- function(sim) {
 
       message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
 
-      calibData <- Cache(executeDesign,                    ## TODO: use cloudCache
+      calibData <- Cache(executeDesign,
                          L = calibLand$flammableMap,
                          dT,
                          maxCells = maxBurnCells,
@@ -145,7 +145,7 @@ Init <- function(sim) {
         #now for the inverse step.
         Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
                                   calibModel, xBar, # "..."
-                                  interval=c(min(cD$p), max(cD$p)),
+                                  interval = c(min(cD$p), max(cD$p)),
                                   extendInt = "no",
                                   tol = 0.00001
         ), silent = TRUE)
@@ -248,7 +248,7 @@ makeDesign <- function(indices, targetN, pEscape = 0.1, pmin = 0.21, pmax = 0.25
   sampleSize <- round(targetN / pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
-  pVec <- pVec * (pmax-pmin) + pmin
+  pVec <- pVec * (pmax - pmin) + pmin
 
   #derive p0 from escapeProb
   #steal code from scfmRegime and friends.
@@ -284,7 +284,7 @@ executeDesign <- function(L, dT, maxCells) {
 
     i <- x[1]
     p0 <- x[2]
-    p <-x[3]
+    p <- x[3]
 
     nbrs <- as.vector(SpaDES.tools::adj(x = L, i, pairs = FALSE, directions = 8))
     #nbrs < nbrs[which(L[nbrs] == 1)] #or this?
@@ -305,8 +305,8 @@ executeDesign <- function(L, dT, maxCells) {
                                           asRaster = FALSE)
 
     tmp <- nrow(spreadState0)
-    res[2:3] <- c(tmp-1,tmp)
-    if (tmp==1) #the fire did not spread.
+    res[2:3] <- c(tmp - 1,tmp)
+    if (tmp == 1) # the fire did not spread
       return(res)
     ProbRas[] <- L[]*p
     spreadState1 <- SpaDES.tools::spread2(landscape = L,
