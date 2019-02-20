@@ -72,7 +72,7 @@ Init <- function(sim) {
   if (getOption("pemisc.useParallel", FALSE)) {
     #options("pemisc.useParallel" = TRUE)
     cl <- pemisc::makeOptimalCluster(MBper = 5000, maxNumClusters = length(sim$scfmRegimePars))
-    on.exit(try(stopCluster(cl)))
+    on.exit(try(stopCluster(cl), silent = TRUE))
   } else {
     cl <- NULL
   }
@@ -263,7 +263,21 @@ makeDesign <- function(indices, targetN, pEscape = 0.1, pmin = 0.21, pmax = 0.25
 executeDesign <- function(L, dT, maxCells) {
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
 
+  iter <- 0
   f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
+    iter <<- iter + 1
+    currentTime <- Sys.time()
+    diffTime <- currentTime - startTime
+    units(diffTime) <- "secs"
+    timePer <- as.numeric(diffTime) / iter
+    timeLeft <- (NROW(dT) - iter) * timePer
+    timeLeft <- round(as.difftime(timeLeft, units = "mins")/60, 1)
+    nrowDT <- NROW(dT)
+    if (iter %% 200 == 0)
+      message("  ", iter, " of ", nrowDT, " total; estimated time remaining: ",
+              format(timeLeft, units = "mins"))
+
+
     threadsDT <- getDTthreads()
     setDTthreads(1)
     on.exit({setDTthreads(threadsDT)}, add = TRUE)
@@ -308,6 +322,7 @@ executeDesign <- function(L, dT, maxCells) {
   probRas <- raster(L)
   probRas[] <- L[]
 
+  startTime <- Sys.time()
   res <- Cache(apply, dT, 1, f, L, ProbRas = probRas) # Parallelizing isn't efficient here. ~TM 15Feb19
   res <- data.frame("nNeighbours" = res[1,], "initSpreadEvents" = res[2,], "finalSize" = res[3,])
 
