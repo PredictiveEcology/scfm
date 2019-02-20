@@ -87,7 +87,11 @@ Init <- function(sim) {
   }
   sim$pSpread <- pSpread
   #Create empty data table to store each year's burn data
-  sim$burnSummary <- data.table("igLoc" = "", "N" = "", "year" = "", "areaBurned" = "", "polyID" = "")
+  sim$burnSummary <- data.table("igLoc" = numeric(0),
+                                "N" = numeric(0),
+                                "year" = numeric(0),
+                                "areaBurned" = numeric(0),
+                                "polyID" = numeric(0))
 
   return(invisible(sim))
 }
@@ -121,8 +125,7 @@ Burnemup <- function(sim) {
  #get fire year, pixels burned, area burned, poly ID of all burned pixels
   tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)
-  tempDT$N <- as.numeric(tempDT$N)
-  tempDT$areaBurned <- tempDT$N * as.numeric(sim$landscapeAttr[[1]]$cellSize)
+  tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
   tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
