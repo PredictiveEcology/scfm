@@ -18,6 +18,8 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
+    defineParameter("pMin", "numeric", 0.195, 0.15, 0.225, "minimum spread range for calibration"),
+    defineParameter("pMax", "numeric", 0.245, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability")
   ),
   inputObjects = bind_rows(
@@ -89,6 +91,8 @@ Init <- function(sim) {
                     studyArea = sim$studyArea,
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
+                    pMin = P(sim)$pMin,
+                    pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours),
     polygonType = names(sim$scfmRegimePars),
     function(polygonType, targetN = P(sim)$targetN,
@@ -96,7 +100,8 @@ Init <- function(sim) {
              cellSize = cellSize,
              studyArea = sim$studyArea,
              buffDist = buffDist,
-             pJmp = pJmp, neighbours = neighbours) {
+             pJmp = pJmp, pMin = pMin, pMax = pMax,
+             neighbours = neighbours) {
       #regime <- sim$scfmRegimePars[[polygonType]] #pass as argument
       #landAttr <- sim$landscapeAttr[[polygonType]] #pass as argument
       maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
@@ -123,6 +128,7 @@ Init <- function(sim) {
       #index is the set of locations where fires may Ignite.
 
       dT <- Cache(makeDesign, indices = index, targetN = targetN,
+                  pmin = pMin, pmax = pMax,
                   pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
                   userTags = paste("makeDesign", polygonType))
 
@@ -136,7 +142,6 @@ Init <- function(sim) {
       )
 
       cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-      #calibModel <- loess(cD$finalSize ~ cD$p)
       calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
 
       xBar <- regime$xBar / cellSize
@@ -150,13 +155,14 @@ Init <- function(sim) {
                                   tol = 0.00001
         ), silent = TRUE)
         if (class(Res) == "try-error") {
+          #TODO: should pick the closest value (of min and max) if error is value not of opposite sign
           pJmp <- min(cD$p)
           message("the loess model may underestimate the spread probability for polygon ", polygonType)
         } else {
           pJmp <- Res$root
         }
       } else {
-        #pJmp <- P(sim)$pJmp
+        #pJmp <- P(sim)$pJmp # don't need this because it is an argument to this function alraedy
         calibModel <- "No Model"
         Res <- "No Uniroot result"
       }
@@ -243,7 +249,7 @@ genSimLand <- function(coreLand, buffDist) {
 
 #this version of makeDesign is the simplest possible...
 
-makeDesign <- function(indices, targetN, pEscape = 0.1, pmin = 0.21, pmax = 0.2525, q = 1) {
+makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
   #TODO: Fix makeDesign to work if polygons have no fires
   sampleSize <- round(targetN / pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
