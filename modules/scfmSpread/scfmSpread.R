@@ -28,7 +28,8 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
+    expectsInput(objectName = "cumulBurn", object = "RasterLayer", desc = "raster indicating which pixels are burned in which years")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
@@ -73,8 +74,6 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   sim$burnMap <- sim$flammableMap
   sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
-  sim$cumulBurn <- sim$vegMap
-  sim$cumulBurn[!is.na(sim$cumulBurn)] <- 0
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)
@@ -135,11 +134,30 @@ Burnemup <- function(sim) {
 
   burns <- getValues(sim$rstCurrentBurn)
   if (P(sim)$spinnup == TRUE){
-    sim$cumulBurn[burns == 1] <- time(sim)-end(sim)
+    if (time(sim) == 0){
+      sim$cumulBurn[burns == 1] <- -9999 # Spinnup raster of time 0
+    } else {
+      sim$cumulBurn[burns == 1] <- time(sim)-end(sim)
+    }
   } else {
-    sim$cumulBurn[burns == 1] <- time(sim)    
+    if (time(sim) == 0){
+      sim$cumulBurn[burns == 1] <- -8888 # No spinnup raster of time 0
+    } else {
+      sim$cumulBurn[burns == 1] <- time(sim)
+    }
   }
-
 
   return(invisible(sim))
 }
+
+.inputObjects <- function(sim) {
+  
+  if(!suppliedElsewhere("cumulBurn", sim)){
+    sim$cumulBurn <- sim$vegMap
+    sim$cumulBurn[!is.na(sim$cumulBurn)] <- 0
+    names(sim$cumulBurn) <- "cummulativeBurnMap"
+  }
+  
+  return(invisible(sim))
+}
+
