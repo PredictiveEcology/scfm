@@ -231,10 +231,10 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
   #this module has many dependencies that aren't sourced in .inputObjects
   if (!suppliedElsewhere("firePoints", sim)) {
-    sim$firePoints <- prepInputs(url = extractURL(objectName = "firePoints"),
+    sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
                                  studyArea = sim$studyArea, fun = "shapefile",
                                  destination = dPath, overwrite = TRUE,
-                                 useSAcrs = TRUE)
+                                 useSAcrs = TRUE, omitArgs = c("dPath", "overwrite"))
   }
 
   return(invisible(sim))
