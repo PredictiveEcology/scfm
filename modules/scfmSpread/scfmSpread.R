@@ -28,16 +28,14 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
-    expectsInput(objectName = "cumulBurn", object = "RasterLayer", desc = "raster indicating which pixels are burned in which years")
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
     createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels"),
-    createsOutput(objectName = "cumulBurn", object = "RasterLayer", desc = "raster indicating which pixels are burned in which years")
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
   )
 ))
 
@@ -132,32 +130,11 @@ Burnemup <- function(sim) {
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
 
-  burns <- getValues(sim$rstCurrentBurn)
-  if (P(sim)$spinnup == TRUE){
-    if (time(sim) == 0){
-      sim$cumulBurn[burns == 1] <- -9999 # Spinnup raster of time 0
-    } else {
-      sim$cumulBurn[burns == 1] <- time(sim)-end(sim)
-    }
-  } else {
-    if (time(sim) == 0){
-      sim$cumulBurn[burns == 1] <- -8888 # No spinnup raster of time 0
-    } else {
-      sim$cumulBurn[burns == 1] <- time(sim)
-    }
-  }
-
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
   
-  if(!suppliedElsewhere("cumulBurn", sim)){
-    sim$cumulBurn <- sim$vegMap
-    sim$cumulBurn[!is.na(sim$cumulBurn)] <- 0
-    names(sim$cumulBurn) <- "cummulativeBurnMap"
-  }
-  
+
   return(invisible(sim))
 }
-
