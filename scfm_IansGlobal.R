@@ -3,28 +3,19 @@
 library(magrittr)
 library(raster)
 library(SpaDES)
+library(LandR)
 
 inputDir <- file.path("inputs")
 outputDir <- file.path("outputs")
 
 timeunit <- "year"
 times <- list(start = 0, end = 100)
-mapDim <- 200
 defaultInterval <- 1.0
 defaultPlotInterval <- 1.0
-defaultInitialSaveTime <- NA #don't be saving nuffink
+defaultInitialSaveTime <- NA
 
 parameters <- list(
   .progress = list(type = "text", interval = 1),
-  ageModule = list(
-    initialAge = 100,
-    maxAge = 200,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
   scfmIgnition = list(
     pIgnition = 0.0001,
     returnInterval = defaultInterval,
@@ -42,15 +33,13 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmSpread = list(
-    pSpread = 0.235,
     returnInterval = defaultInterval,
     startTime = times$start,
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval,
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1500)
+  scfmRegime = list(fireCause=c("L", "H"))
   # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
   #                        mfsMaxRatio = 3,
   #                        mfsMultiplier = 3.25),
@@ -82,19 +71,14 @@ modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
 # studyArea <- crop(ecoregions, SAmask)
 #
 #
-# # Generate rasterToMatch WHICH IS NOW REQUIRED!
-rasterToMatch <- Cache(LandR::prepInputsLCC, studyArea = studyArea, year = 2005,
-                       destinationPath = "C:/Ian/PracticeDirectory/scfm",
-                       filename2 = TRUE, overwrite = TRUE)
-# studyArea <- spTransform(x = studyArea, CRSobj = crs(rasterToMatch))
-# writeOGR(obj = studyArea, dsn = "C:/Ian/PracticeDirectory/scfm", layer = "BCR6_EcoregionsNWT", driver = "ESRI Shapefile")
-studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/BCR6_EcoregionsNWT.shp")
-
-rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/SmallLCC2005_V1_4a.tif")
-
+studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
+rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
+studyArea <- spTransform(studyArea, crs(rasterToMatch))
+cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
 objects <- list(
-  studyArea =  studyArea,
-  rasterToMatch = rasterToMatch
+  "cloudFolderID" = cloudFolderID,
+  "studyArea" =  studyArea,
+  "rasterToMatch" = rasterToMatch
 )
 
 setPaths(cachePath = file.path("cache"),
@@ -104,6 +88,9 @@ setPaths(cachePath = file.path("cache"),
 
 options(spades.moduleCodeChecks = TRUE)
 
+
+options(reproducible.useCloud = FALSE)
+options(reproducible.showSimilar = TRUE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = getPaths())
 dev()
@@ -114,12 +101,4 @@ outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 
 ###############
 ###############
-report<-function(outSim){
- fri <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$fri))
- area <<- unlist(lapply(outSim$scfmDriverPars,function(x)x$burnyArea))
- meanFri <<- sum(fri * (area/sum(area)))
- burnable <<- unlist(lapply(outSim$landscapeAttr,function(x)length(x$cellsByZone)))
- burned <<- unlist(lapply(outSim$landscapeAttr,function(x,y=outSim$burnMap)sum(y[x$cellsByZone])))
- zonalFri <<- 1/((burned/burnable)/end(outSim))
- return(NULL)
-}
+

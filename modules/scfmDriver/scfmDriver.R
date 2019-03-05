@@ -20,7 +20,9 @@ defineModule(sim, list(
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMin", "numeric", 0.195, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.245, 0.24, 0.26, "maximum spread range for calibration"),
-    defineParameter("targetN", "numeric", 1500, 1, NA, "target sample size for determining true spread probability")
+    defineParameter("targetN", "numeric", 3000, 1, NA, "target sample size for determining true spread probability"),
+    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
+    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
   ),
   inputObjects = bind_rows(
     expectsInput("cloudFolderID", "character",
@@ -85,7 +87,6 @@ Init <- function(sim) {
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
     regime = sim$scfmRegimePars, #[[polygonType]]
-    landAttr = sim$landscapeAttr, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
                     studyArea = sim$studyArea,
@@ -93,7 +94,8 @@ Init <- function(sim) {
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
-                    neighbours = P(sim)$neighbours),
+                    neighbours = P(sim)$neighbours,
+                    landAttr = sim$landscapeAttr),
     polygonType = names(sim$scfmRegimePars),
     function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
@@ -109,7 +111,7 @@ Init <- function(sim) {
         warning("This can't happen")
         maxBurnCells = 1
       }
-
+      landAttr <- landAttr[polygonType] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
       calibLand <- Cache(genSimLand, studyArea[polygonType,], buffDist = buffDist,
                          userTags = paste("genSimLand ", polygonType))
@@ -125,15 +127,12 @@ Init <- function(sim) {
       if (length(index) == 0)
         stop("polygon has no flammable cells!")
 
-      #index is the set of locations where fires may Ignite.
-
       dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = pMin, pmax = pMax,
+                  pmin = P(sim)$pMin, pmax = P(sim)$pMax,
                   pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
                   userTags = paste("makeDesign", polygonType))
 
       message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-
       calibData <- Cache(executeDesign,
                          L = calibLand$flammableMap,
                          dT,

@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     #defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter("spinnup", "logical", FALSE, NA, NA, "Is this call a SCFM spinnup?"),
+
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours")
   ),
   inputObjects = bind_rows(
