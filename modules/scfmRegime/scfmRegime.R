@@ -73,29 +73,6 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-  tmp <- sim$firePoints
-
-  #extract and validate fireCause spec
-  fc <- P(sim)$fireCause
-  #should verify CAUSE is a column in the table...
-  causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
-
-  if (any(!(fc %in% causeSet)))
-    stop("illegal fireCause: ", fc)
-  tmp <- subset(tmp,CAUSE %in% fc)
-
-  #extract and validate fireEpoch
-  epoch <- P(sim)$fireEpoch
-  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
-    stop("illegal fireEpoch: ", epoch)
-  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
-
-  epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
-
-  # Assign polygon label to SpatialPoints of fires object
-  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
-  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-
   frpl <- sim$studyArea$PolyID
   tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
