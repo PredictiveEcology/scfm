@@ -82,12 +82,15 @@ Init <- function(sim) {
 ### template for your event1
 Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$scfmDriverPars), function(polygonType) {
-    cells <- sim$landscapeAttr[[polygonType]]$cellsByZone
-    if (is(sim$pIg, "Raster")) {
-      cells[which(runif(length(cells)) < sim$pIg[cells])]
+  ignitions <- lapply(names(sim$scfmDriverPars),
+                      function(polygonType,
+                               landscapeAttr = sim$landscapeAttr,
+                               pIg = sim$pIg) {
+    cells <- landscapeAttr[[polygonType]]$cellsByZone
+    if (is(pIg, "Raster")) {
+      cells[which(runif(length(cells)) < pIg[cells])]
     } else {
-      cells[which(runif(length(cells)) < sim$pIg)]
+      cells[which(runif(length(cells)) < pIg)]
     }
   })
   #resample generates a random permutation of the elements of ignitions
@@ -101,6 +104,6 @@ Ignite <- function(sim) {
 
  if (!suppliedElsewhere(object = "scfmReturnInterval", sim = sim, where = "sim"))
    sim$scfmReturnInterval <- P(sim)$returnInterval
- 
-  return(invisible(sim)) 
+
+  return(invisible(sim))
 }
