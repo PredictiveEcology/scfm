@@ -74,7 +74,7 @@ Init <- function(sim) {
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- sim$studyArea$PolyID
-  tmp$PolyID <- sp::over(tmp, sim$studyArea[sim$studyArea$PolyID,]) #gives studyArea row name to point
+  tmp$PolyID <- sp::over(tmp, sim$studyArea) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
 
   tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
