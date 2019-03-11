@@ -18,9 +18,9 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
-    defineParameter("pMin", "numeric", 0.195, 0.15, 0.225, "minimum spread range for calibration"),
+    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.245, 0.24, 0.26, "maximum spread range for calibration"),
-    defineParameter("targetN", "numeric", 3000, 1, NA, "target sample size for determining true spread probability"),
+    defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
   ),
@@ -89,18 +89,18 @@ Init <- function(sim) {
     regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
-                    studyArea = sim$studyArea,
+                    studyArea = rlang::quo(sim$studyArea),
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours,
-                    landAttr = sim$landscapeAttr),
+                    landAttr = rlang::quo(sim$landscapeAttr)),
     polygonType = names(sim$scfmRegimePars),
-    function(polygonType, targetN = P(sim)$targetN,
+    f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
              cellSize = cellSize,
-             studyArea = sim$studyArea,
+             studyArea = studyArea,
              buffDist = buffDist,
              pJmp = pJmp, pMin = pMin, pMax = pMax,
              neighbours = neighbours) {
@@ -111,9 +111,11 @@ Init <- function(sim) {
         warning("This can't happen")
         maxBurnCells = 1
       }
-      landAttr <- landAttr[polygonType] #landAttr may have invalid polygons, so exclude from Map2 call
+      landAttr <- rlang::eval_tidy(landAttr)
+      landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
-      calibLand <- Cache(genSimLand, studyArea[polygonType,], buffDist = buffDist,
+      studyArea <- rlang::eval_tidy(studyArea)
+      calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
                          userTags = paste("genSimLand ", polygonType))
 
       #Need a vector of igniteable cells
@@ -128,7 +130,7 @@ Init <- function(sim) {
         stop("polygon has no flammable cells!")
 
       dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = P(sim)$pMin, pmax = P(sim)$pMax,
+                  pmin = pMin, pmax = pMax,
                   pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
                   userTags = paste("makeDesign", polygonType))
 
