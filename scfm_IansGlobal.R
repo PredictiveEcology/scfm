@@ -40,37 +40,34 @@ parameters <- list(
     .saveInitialTime = defaultInitialSaveTime,
     .saveInterval = defaultInterval),
   scfmRegime = list(fireCause=c("L", "H"))
-  # andisonDriver =   list(pSpreadOddsRatio = 1,#1.025,
-  #                        mfsMaxRatio = 3,
-  #                        mfsMultiplier = 3.25),
-  # andisonDriver_dataPrep = list(minFRI=0)
 )
 
 modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
                 "ageModule", "scfmRegime", "scfmEscape", "scfmSpread")
-#, "andisonDriver_dataPrep","andisonDriver"
+
+opts <- options(
+  "LandR.verbose" = 1,
+  "map.dataPath" = paths$inputPath,
+  "map.overwrite" = TRUE,
+  "map.useParallel" = TRUE, #!identical("windows", .Platform$OS.type),
+  "reproducible.futurePlan" = FALSE,
+  "reproducible.inputPaths" = if (pemisc::user("emcintir")) "~/data" else NULL,
+  "reproducible.quick" = FALSE,
+  "reproducible.overwrite" = TRUE,
+  "reproducible.useMemoise" = TRUE, # Brings cached stuff to memory during the second run
+  "reproducible.useNewDigestAlgorithm" = TRUE,  # use the new less strict hashing algo
+  "reproducible.useCache" = TRUE,
+  "reproducible.cachePath" = paths$cachePath,
+  "reproducible.showSimilar" = FALSE,
+  "spades.moduleCodeChecks" = FALSE, # Turn off all module's code checking
+  "spades.useRequire" = FALSE, # assuming all pkgs installed correctly
+  "pemisc.useParallel" = FALSE,
+  "reproducible.useCloud" = FALSE
+)
 
 
-###STUDY AREAS###
-#The OG####
-# ecoDistricts <- shapefile("C:/Ian/Data/Canada Ecosystem/ecodistrict_shp/Ecodistricts/ecodistricts.shp")
-# #Three small relatively contiguous ecodistricts in the RIA
-# subEcoDistricts <- ecoDistricts[ecoDistricts$DISTRICT_I %in% c(387, 390, 372),]
-# subEcoDistricts <- spTransform(x = subEcoDistricts,
-#                                CRSobj = crs(rasterToMatch))
 
-#The new BCR6 NWT Ecoregion amalgamation
-# ecoregions <- shapefile("C:/Ian/Data/Canada Ecosystem/ecoregion_shp/Ecoregions/ecoregions.shp")
-# BCR <- shapefile("C:/Ian/Data/BirdConservationRegions/BCR_Terrestrial_master.shp")
-# BCR <- BCR[BCR$BCR == 6,]
-# NWT <- shapefile("C:/Ian/Data/Can_pol_boundaries/provinces/Provincial_Boundaries_OpenCanada/gpr_000b11a_e.shp")
-# NWT <- NWT[NWT$PRUID == 61,]
-#
-# SAmask <- rgeos::gIntersection(BCR, NWT)
-# ecoregions <- spTransform(ecoregions, CRSobj = crs(NWT))
-# studyArea <- crop(ecoregions, SAmask)
-#
-#
+#### RIA RUN ####
 studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
 rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
 studyArea <- spTransform(studyArea, crs(rasterToMatch))
@@ -86,19 +83,37 @@ setPaths(cachePath = file.path("cache"),
          inputPath = inputDir,
          outputPath = outputDir)
 
-options(spades.moduleCodeChecks = TRUE)
-
-
-options(reproducible.useCloud = FALSE)
-options(reproducible.showSimilar = TRUE)
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = getPaths())
-dev()
-clearPlot()
+
 set.seed(23658)
 
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 
-###############
-###############
+# ####Tati's run#######
+wd <- tempdir()
+cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
+NWT.url <- "https://drive.google.com/open?id=1LUxoY2-pgkCmmNH5goagBp3IMpj6YrdU"
+studyAreaNWT <- cloudCache(prepInputs,
+                           url = NWT.url,
+                           destinationPath = wd,
+                           cloudFolderID = cloudFolderID,
+                           omitArgs = c("destinationPath", "cloudFolderID"))
+
+rasterToMatchNWT <- cloudCache(prepInputs, url = "https://drive.google.com/open?id=1fo08FMACr_aTV03lteQ7KsaoN9xGx1Df",
+                            studyArea = studyAreaNWT,
+                            targetFile = "RTM.tif", destinationPath = wd,
+                            useCloud = TRUE,
+                            cloudFolderID = cloudFolderID, overwrite = TRUE, filename2 = NULL,
+                            omitArgs = c("destinationPath", "cloudFolderID", "useCloud", "overwrite", "filename2"))
+
+newObjs <- list(
+  "cloudFolderID" = cloudFolderID,
+  "studyArea" =  studyAreaNWT,
+  "rasterToMatch" = rasterToMatchNWT
+)
+
+mySimT <- simInit(times = times, params = parameters, modules = modules,
+                      objects = newObjs, paths = getPaths())
+outSimT <- SpaDES.core::spades(mySimT, progress = FALSE, debug = TRUE)
 
