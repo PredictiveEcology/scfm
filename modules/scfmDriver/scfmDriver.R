@@ -19,7 +19,7 @@ defineModule(sim, list(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
-    defineParameter("pMax", "numeric", 0.245, 0.24, 0.26, "maximum spread range for calibration"),
+    defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
@@ -75,7 +75,7 @@ Init <- function(sim) {
 
   if (getOption("pemisc.useParallel", FALSE)) {
     #options("pemisc.useParallel" = TRUE)
-    cl <- pemisc::makeOptimalCluster(MBper = 5000, maxNumClusters = length(sim$scfmRegimePars))
+    cl <- pemisc::makeOptimalCluster(MBper = 5000, maxNumClusters = length(sim$scfmRegimePars), outfile = "scfmLog")
     on.exit(try(stopCluster(cl), silent = TRUE))
   } else {
     cl <- NULL

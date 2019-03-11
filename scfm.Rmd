@@ -87,14 +87,6 @@ paths <- list(
 )
 #RasterToMatch:
 #if you supply studyArea you should supply rtm to make sure the crs are identical. 
-#A default rasterToMatch is provided. However some Spades-Ecosystem modules do not
-#require studyArea and rtm to have identical crs, so if running with other spades modules, 
-#it is better to create rasterToMatch prior to running SpaDES. 
-#To easily generate rtm for your own study area, use PredictiveEcology/LandR::prepInputsLCC, 
-#e.g. devtools::install_github("PredictiveEcology/LandR@development") 
-#rasterToMatch <- LandR::prepInputsLCC(year = 2005, destinationPath = tempdir(), studyArea = myStudyArea)
-#then myStudyArea <- spTransform(myStudyArea, CRSobj = as.character(rasterToMatch@crs))
-#Better to reproject the vector to the raster crs to prevent weird cell resolutions
 
 #if run with no studyArea, the default is a small area in southwest Alberta
 objects <- list(
