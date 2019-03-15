@@ -22,7 +22,8 @@ defineModule(sim, list(
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
-    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache")
+    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
+    defineParameter("useParallel", c("logical", "numeric"), .useParallel = getOption("pemisc::useParallel", FALSE), NA, NA)
   ),
   inputObjects = bind_rows(
     expectsInput("cloudFolderID", "character",
@@ -73,14 +74,18 @@ escapeProbDelta <- function(p0, w, hatPE) {
 Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  if (getOption("pemisc.useParallel", FALSE)) {
-    #options("pemisc.useParallel" = TRUE)
-    cl <- pemisc::makeOptimalCluster(MBper = 5000, maxNumClusters = length(sim$scfmRegimePars), outfile = "scfmLog")
+  if (isTRUE(P(sim)$.useParallel) || P(sim)$.useParallel > 1) { # works if numeric or logical
+    maxNumClusters <- length(sim$scfmRegimePars) # this is maximum that is needed
+    if (is.numeric(P(sim)$.useParallel)) {
+      maxNumClusters <- min(maxNumClusters, P(sim)$.useParallel )  # user may set a smaller maximum passed with P(sim)$.useParallel as a numeric
+    }
+    cl <- pemisc::makeOptimalCluster(MBper = 5000,
+                                     maxNumClusters = maxNumClusters,
+                                     outfile = "scfmLog")
     on.exit(try(stopCluster(cl), silent = TRUE))
   } else {
     cl <- NULL
   }
-
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
   sim$scfmDriverPars <- cloudCache(
     pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
