@@ -18,7 +18,7 @@ defineModule(sim, list(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
     defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging aevents"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate aging"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
@@ -49,9 +49,9 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- Init(sim)
 
     # schedule future event(s)
-    sim <- scheduleEvent(sim, params(sim)$ageModule$startTime, "ageModule", "age")
-    sim <- scheduleEvent(sim, params(sim)$ageModule$.plotInitialTime, "ageModule", "plot")
-    sim <- scheduleEvent(sim, params(sim)$ageModule$.saveInitialTime, "ageModule", "save")
+    sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age")
+    sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot")
+    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save")
   } else if (eventType=="age") {
     # do stuff for this event
     sim <- Age(sim)

@@ -17,7 +17,7 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate burning"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate burning"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
@@ -61,7 +61,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
         if (NROW(sim$spreadState[state == "activeSource"]) > 0)
           sim <- Burnemup(sim)
       }
-      sim <- scheduleEvent(sim, time(sim) + params(sim)$scfmSpread$returnInterval, "scfmSpread", "burn")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn")
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -134,7 +134,7 @@ Burnemup <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  
+
 
   return(invisible(sim))
 }

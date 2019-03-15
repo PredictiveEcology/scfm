@@ -17,6 +17,7 @@ defineModule(sim, list(
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA, "simulation time of first escape"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
@@ -42,10 +43,11 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
   switch(
     eventType,
     init = {
+
       sim <- Init(sim)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
-      sim <- scheduleEvent(sim, params(sim)$scfmEscape$.plotInitialTime, "scfmEscape", "plot")
-      #sim <- scheduleEvent(sim, params(sim)$scfmEscape$.saveInitialTime, "scfmEscape", "save")
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot")
+
     },
     plot = {
       tmpRaster <- raster(sim$vegMap)
