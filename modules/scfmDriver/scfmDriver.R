@@ -23,7 +23,8 @@ defineModule(sim, list(
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
-    defineParameter("useParallel", c("logical", "numeric"), .useParallel = getOption("pemisc::useParallel", FALSE), NA, NA)
+      defineParameter("useParallel", class = c("logical", "numeric"), default = getOption("pemisc::useParallel", FALSE),
+                      min = NA, max = NA, desc = "should driver use parallel? Alternatively, how many cores")
   ),
   inputObjects = bind_rows(
     expectsInput("cloudFolderID", "character",
