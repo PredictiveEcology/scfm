@@ -21,10 +21,12 @@ defineModule(sim, list(
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA, "should a cloud cache be used for heavy operations"),
+    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
+                    desc = "should a cloud cache be used for heavy operations"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
-      defineParameter(".useParallel", class = c("logical", "numeric"), default = getOption("pemisc::useParallel", FALSE),
-                      min = NA, max = NA, desc = "should driver use parallel? Alternatively, how many cores")
+    defineParameter(".useParallel", class = "logical",
+                    default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
+                    desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bind_rows(
     expectsInput("cloudFolderID", "character",
