@@ -56,9 +56,14 @@ Init <- function(sim) {
 
   fc <- P(sim)$fireCause
   #should verify CAUSE is a column in the table...
-  causeSet <- if (is.factor(tmp$CAUSE)) levels(tmp$CAUSE) else unique(tmp$CAUSE)
+  if (is.factor(tmp$CAUSE)){
+    causeSet <- levels(tmp$CAUSE)}
+    else {
+    causeSet <- unique(tmp$CAUSE)
+  }
   if (any(!(fc %in% causeSet)))
-    stop("illegal fireCause: ", fc)
+    notPresent <- fc[!fc %in% causeSet]
+    warning("this firecause is not present: ", notPresent)
   tmp <- subset(tmp, CAUSE %in% fc)
 
   #extract and validate fireEpoch
