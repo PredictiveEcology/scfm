@@ -61,9 +61,10 @@ Init <- function(sim) {
     else {
     causeSet <- unique(tmp$CAUSE)
   }
-  if (any(!(fc %in% causeSet)))
+  if (any(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
     warning("this firecause is not present: ", notPresent)
+  }
   tmp <- subset(tmp, CAUSE %in% fc)
 
   #extract and validate fireEpoch
