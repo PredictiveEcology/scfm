@@ -18,31 +18,6 @@ setPaths(cachePath = file.path("cache"),
 paths <- getPaths()
 
 parameters <- list(
-  .progress = list(type = "text", interval = 1),
-  scfmIgnition = list(
-    pIgnition = 0.0001,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmEscape = list(
-    p0 = 0.05,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmSpread = list(
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L", "H"))
 )
 
 modules <- list("scfmLandcoverInit","scfmIgnition","scfmDriver",
@@ -69,14 +44,13 @@ opts <- options(
 )
 
 
-
 #### RIA RUN ####
 
-studyArea <- shapefile("../../data/scfmRIA/RIA_studyArea.shp")
-rasterToMatch <- raster("../../data/scfmRIA/RIA_studyAreaRas.tif")
+# studyArea <- shapefile("../../data/scfmRIA/RIA_studyArea.shp")
+# rasterToMatch <- raster("../../data/scfmRIA/RIA_studyAreaRas.tif")
 
-# studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
-# rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
+studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
+rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
 # studyArea <- spTransform(studyArea, crs(rasterToMatch))
 cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
 

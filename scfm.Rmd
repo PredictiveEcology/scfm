@@ -10,8 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ## Overview
 
-A fire model created by Dr. Steve Cumming. Parameterizes fire regime from NFDB data, post-fire suppression. 
-Does not have vegetation or climate feedbacks. 
+Fire is modelled over a grid of raster cells (pixels) and is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread. The original fire model is described by Cumming et al. (1998), and more accessibly in Armstrong and Cumming (2003), and was recently implemented as a collection of SpaDES modules by Cumming, McIntire, and Eddy (in prep). Each fire module corresponds to one of the processes being modelled). The Ignition stage determines if a fire actually starts in a particular grid cell in a given model time step. The Escape stage models the effect of fire suppression, or other ecological or sampling effects that alter the lower end of the fire size distribution. This is simulated in the model by determining a probability that a fire stays within the cell of origin, and accounts for lakes and other non-flammable geographic features. The Spread stage simulates fire growth, using a spread parameter that determines the probability of a fire spreading across a cell boundary, from a burning cell into an unburnt neighbour.
+
+In addition to these core fire modules, the model also makes use of several support modules involved in parameter estimation and model calibration. Fire regime parameters are estimated from historic fire data using the Canadian National Fire Database (Canadian Forest Service, n.d.) in order to reproduce realistic fire patterns. Parameterization and calibration of the model can be done separately for each geographic region used in the model (e.g., by ecoregion), allowing finer scale parameterization across large geographic areas. Individual spread parameters are determined in each geographic region following a four-part process. First, the region is buffered by a set distance and a flammability map is generated for the buffered region using the 2005 Land Cover Map of Canada (Latifovic et al., 2005). Next, fires are repeatedly simulated on the landscape across a range of spread probabilities. These fires cannot start in the buffered area, but may spread to and from the buffer. This reduces the influence of edge effects in determining mean fire size. Then the spread probabilities and resulting fire sizes are fit with a shape-constrained additive model (SCAM) (Pya and Wood, 2015). The SCAM is monotonic to ensure fire size increases for any incremental increase in spread probability. Lastly, an optimization algorithm is used to predict the spread probability that will generate the estimated mean fire size for the region.
+
+This version of the model considers lightning-caused fires only. Fires are started by applying a random number sequence to each cell independently. Fires are extinguished when no further spread events (jumps) occur. After a fire, forested cells are reset to age 1. Thus, fires are presumed to be stand initiating. These processes result in irregular patches of variously sized burns. The locations of fires are not constant across simulations because of stochastic patterns of fire ignition and growth. The model tracks the sizes and compositions of each burn. Fire sizes follow a probability distribution largely determined by the spread parameter(s). The current implementation does not account for differences in vegetation type with respect to fire spread (e.g., flammability), nor is it climate sensitive. The more experimental fireSense model (Marchal, Cumming, and McIntire 2017), recently implemented in SpaDES, could be used in future updates to explicitly account for climate and vegetation impacts on fires (in prep).
+
+## References
+Armstrong, Glen W, and Steven G Cumming. 2003. “Estimating the Cost of Land Base Changes Due to Wildfire Using Shadow Prices.” Forest Science 49 (5): 719–30. https://doi.org/10.1093/forestscience/49.5.719.
+Cumming, Steve G, D Demarchi, and C Walters. 1998. “A Grid-Based Spatial Model of Forest Dynamics Applied to the Boreal Mixedwood Region.” Working Paper 1998–8. Sustainable Forest Management Network. https://doi.org/10.7939/R35N33.
+Latifovic, Rasim and Darren Pouliot, 2005. "Multi-temporal land cover mapping for Canada: Methodology and Products," Canadian Journal of Remote Sensing, Vol. 31, no. 5, pp. 347-363.
+Marchal, Jean, Steve G Cumming, and Eliot J B McIntire. 2017. “Land Cover, More than Monthly Fire Weather, Drives Fire-Size Distribution in Southern Québec Forests: Implications for Fire Risk Management.” PLoS ONE 12 (6): 1–17. https://doi.org/10.1371/journal.pone.0179294.
+Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
 
 ```{r load-SpaDES, eval=TRUE}
 library(magrittr)
@@ -129,7 +139,7 @@ comparePredictions <- function(polyList, simList) {
     mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times(sim)$end - times(sim)$start)) * 100
     
     pred <- data.frame("PolyId" = x, #Polygon ID
-                       "prdMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
+                       "histMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
                        "modMeanSize" = mean(burnSum$areaBurned), #The modeled mean size of fires
                        "pSpread" = pSpread, # The spread probability estimated from the SCAM model
                        "hist_MAAB" = hist_MAAB,#The empirical mean annual area burned (from NFDB 1970-2000)
@@ -143,10 +153,10 @@ df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
   rbindlist(.)
 #Some useful plots
 breaks = c(0.20, 0.21, 0.22, 0.23, 0.24, 0.25)
-ggplot(df, aes(x = prdMeanSize, y = modMeanSize, color = pSpread)) +
-  geom_point(aes(prdMeanSize, modMeanSize)) + 
+ggplot(df, aes(x = histMeanSize, y = modMeanSize, color = pSpread)) +
+  geom_point(aes(histMeanSize, modMeanSize)) + 
   scale_color_gradient(low = "yellow", high = "red")+
-  labs(y = "predicted size", x = "empirical size") +
+  labs(y = "modeled mean fire size size", x = "historical mean size fire size") +
   theme_minimal() + 
   #geom_text(aes(label = PolyId), hjust = 0, vjust = 0)
   geom_abline(slope = 1)
