@@ -19,7 +19,7 @@ defineModule(sim,list(
                     "PredictiveEcology/LandR@development",
                     "PredictiveEcology/reproducible@development"),
     parameters = rbind(
-      defineParameter(".plotInitialTime", "numeric", 0, NA, NA, desc = "Initial time for plotting"),
+      defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),

@@ -18,7 +18,6 @@ defineModule(sim, list(
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
-    defineParameter("startTime", "numeric", 0, NA, NA, desc = "Simulation time at which to initiate ignitions"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
   ),

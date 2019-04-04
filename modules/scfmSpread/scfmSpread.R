@@ -18,8 +18,8 @@ defineModule(sim, list(
     defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate burning"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", P(sim)$returnInterval, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     #defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
 
