@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
     #defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events"),
+    defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
   inputObjects = bind_rows(
