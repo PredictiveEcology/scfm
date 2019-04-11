@@ -18,13 +18,16 @@ defineModule(sim, list(
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
   ),
   inputObjects = bind_rows(
-    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
+    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
+                 desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "contains landscape attributes for each polygon"),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list",
+                 desc = "contains landscape attributes for each polygon"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+                 desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
@@ -79,8 +82,8 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-  frpl <- sim$studyArea$PolyID
-  tmp$PolyID <- sp::over(tmp, sim$studyArea) #gives studyArea row name to point
+  frpl <- sim$fireRegimePolys$PolyID
+  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
 
   tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
@@ -195,23 +198,19 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using Ecodistrict 348")
 
-    #source shapefile from ecodistict in input folder. Use ecodistrict 348
-    studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
-    SA <- Cache(prepInputs,
-                targetFile  = studyAreaFilename,
-                fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea"),
-                archive = "ecodistrict_shp.zip",
-                filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
-                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-
-    SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea <- SA
   }
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
 
+    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                      destinationPath = dPath,
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch,
+                                      filename2 = TRUE,
+                                      overwrite = TRUE,
+                                      userTags = c("cacheTags", "fireRegimePolys"))
+  }
   #this module has many dependencies that aren't sourced in .inputObjects
   #this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {

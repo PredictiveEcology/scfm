@@ -49,9 +49,13 @@ opts <- options(
 # studyArea <- shapefile("../../data/scfmRIA/RIA_studyArea.shp")
 # rasterToMatch <- raster("../../data/scfmRIA/RIA_studyAreaRas.tif")
 
-studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
-rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
-# studyArea <- spTransform(studyArea, crs(rasterToMatch))
+# studyArea <- shapefile("C:/Ian/PracticeDirectory/scfm/RIA_studyArea.shp")
+# rasterToMatch <- raster("C:/Ian/PracticeDirectory/scfm/RIA_studyAreaRas.tif")
+studyArea <- shapefile("C:/Ian/Data/Canada Ecosystem/ecodistrict_shp/Ecodistricts/ecodistricts.shp")
+studyArea <- studyArea[studyArea$DISTRICT_I %in% c(387, 390, 372),]
+rasterToMatch <- prepInputsLCC(destinationPath = tempdir(), studyArea = studyArea, filename2 = NULL)
+studyArea <- spTransform(studyArea, crs(rasterToMatch))
+
 cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
 
 objects <- list(

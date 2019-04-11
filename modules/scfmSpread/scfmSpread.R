@@ -53,7 +53,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     plot = {
       Plot(sim$burnMap, legend = FALSE)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
+      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
     },
     burn = {
       if (!is.null(sim$spreadState)) {
@@ -126,7 +126,7 @@ Burnemup <- function(sim) {
   tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
-  tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
+  tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
 

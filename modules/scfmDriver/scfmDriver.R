@@ -29,13 +29,16 @@ defineModule(sim, list(
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bind_rows(
-    expectsInput("cloudFolderID", "character",
+    expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput("scfmRegimePars", "list", desc = ""),
-    expectsInput("landscapeAttr", "list", desc = ""),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = "a studyArea where separate polygons denote separate fire regimes")
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "shapefile of study area"),
+    expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "Areas to calibrate individual fire regime parameters",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
@@ -97,7 +100,7 @@ Init <- function(sim) {
     regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
-                    studyArea = rlang::quo(sim$studyArea),
+                    fireRegimePolys = rlang::quo(sim$fireRegimePolys),
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
@@ -108,7 +111,7 @@ Init <- function(sim) {
     f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
              cellSize = cellSize,
-             studyArea = studyArea,
+             fireRegimePolys = fireRegimePolys,
              buffDist = buffDist,
              pJmp = pJmp, pMin = pMin, pMax = pMax,
              neighbours = neighbours) {
@@ -122,8 +125,8 @@ Init <- function(sim) {
       landAttr <- rlang::eval_tidy(landAttr)
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
-      studyArea <- rlang::eval_tidy(studyArea)
-      calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
+      fireRegimePolys <- rlang::eval_tidy(fireRegimePolys)
+      calibLand <- Cache(genSimLand, fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
                          userTags = paste("genSimLand ", polygonType))
 
       #Need a vector of igniteable cells
@@ -228,6 +231,18 @@ Init <- function(sim) {
     studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
     sim$studyArea <- studyArea
   }
+
+  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+  sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                    destinationPath = dPath,
+                                    studyArea = sim$studyArea,
+                                    rasterToMatch = sim$rasterToMatch,
+                                    filename2 = TRUE,
+                                    overwrite = TRUE,
+                                    userTags = c("cacheTags", "fireRegimePolys"))
+  }
   return(invisible(sim))
 }
 
@@ -236,9 +251,9 @@ genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
-  bStudyArea <- buffer(coreLand, buffDist) %>%
+  bfireRegimePoly <- buffer(coreLand, buffDist) %>%
     rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea, makeUniqueIDs = TRUE) #
+  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
@@ -250,7 +265,7 @@ genSimLand <- function(coreLand, buffDist) {
   landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
 
   calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
-  names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
+  names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "lcc", "flammableMap")
   return(calibrationLandscape)
 }
 
