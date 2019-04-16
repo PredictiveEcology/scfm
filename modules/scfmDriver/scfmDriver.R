@@ -251,9 +251,12 @@ genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
-  bfireRegimePoly <- buffer(coreLand, buffDist) %>%
-    rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
+  bfireRegimePoly <- buffer(coreLand, buffDist)
+  if (!gIsValid(bfireRegimePoly, byid = FALSE)) {
+    bfireRegimePoly <- gBuffer(bfireRegimePoly, width = 0)
+  }
+  bfireRegimePoly <-  gDifference(bfireRegimePoly, spgeom2 = coreLand, byid = FALSE)
+  polyLandscape <- rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
@@ -261,8 +264,8 @@ genSimLand <- function(coreLand, buffDist) {
   landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
-  polySF <- sf::st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
+  polySF <- st_as_sf(polyLandscape)
+  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
 
   calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
   names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "lcc", "flammableMap")

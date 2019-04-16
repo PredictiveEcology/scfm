@@ -74,7 +74,6 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 Init <- function(sim) {
-browser()
   message("checking sim$fireRegimePolys for sliver polygons...")
   sim$fireRegimePolys$trueArea <- gArea(sim$fireRegimePolys, byid = TRUE)
   if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {

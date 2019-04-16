@@ -153,7 +153,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
             polygonID
           )
         )
-        #browser()
         maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
       } else {
         maxFireSize <- exp(That) * cellSize

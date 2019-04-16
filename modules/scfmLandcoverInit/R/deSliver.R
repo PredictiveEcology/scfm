@@ -12,6 +12,7 @@
 #' @export
 #' @importFrom sf st_area st_cast st_nearest_feature as_Spatial st_union st_as_sf
 #' @importFrom raster bind
+#' @importFrom rgeos gBuffer
 #' @examples
 #'deSliver(x = intersectedPolygons, threshold = 500)
 
@@ -70,8 +71,12 @@ deSliver <- function(x, threshold) {
   #Remove the temporary column
   m$tempArea <- NULL
 
+  #remove self-intersecting geometries
+  m <- gBuffer(spgeom = m, byid = TRUE, width = 0)
+
   if (backToSf) {
     m <- st_as_sf(m)
   }
+
   return(m)
 }
