@@ -25,7 +25,7 @@ defineModule(sim,list(
       defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
-      defineParameter("sliverThreshold", "numeric", 250*250*100, NA, 0,
+      defineParameter("sliverThreshold", "numeric", NA, NA, NA,
                       desc = "fire regime polygons with area less than this number will be merged")
     ),
     inputObjects = bind_rows(
@@ -76,6 +76,10 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   message("checking sim$fireRegimePolys for sliver polygons...")
   sim$fireRegimePolys$trueArea <- gArea(sim$fireRegimePolys, byid = TRUE)
+  if (is.na(P(sim)$sliverThreshold)) {
+    sim@params[[currentModule(sim)]]$sliverThreshold <- 100 * prod(res(sim$rasterToMatch))
+
+  }
   if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
     message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
   sim$fireRegimePolys <- deSliver(sim$fireRegimePolys, threshold = P(sim)$sliverThreshold)
