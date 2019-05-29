@@ -224,28 +224,6 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-.inputObjects <- function(sim) {
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using random polygon in Alberta")
-    #TODO: remove LandR once this is confirmed working
-    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
-    sim$studyArea <- studyArea
-  }
-
-  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-
-  if (!suppliedElsewhere("fireRegimePolys", sim)) {
-  sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
-                                    destinationPath = dPath,
-                                    studyArea = sim$studyArea,
-                                    rasterToMatch = sim$rasterToMatch,
-                                    filename2 = TRUE,
-                                    overwrite = TRUE,
-                                    userTags = c("cacheTags", "fireRegimePolys"))
-  }
-  return(invisible(sim))
-}
-
 #Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
@@ -363,4 +341,27 @@ executeDesign <- function(L, dT, maxCells) {
   x <- cbind(dT,res)
 
   return(x)
+}
+
+.inputObjects <- function(sim) {
+  dPath <- dataPath(sim)
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("study area not supplied. Using random polygon in Alberta")
+    #TODO: remove LandR once this is confirmed working
+    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
+    sim$studyArea <- studyArea
+  }
+
+  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                      destinationPath = dPath,
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch,
+                                      filename2 = TRUE,
+                                      overwrite = TRUE,
+                                      userTags = c("cacheTags", "fireRegimePolys"))
+  }
+  return(invisible(sim))
 }
