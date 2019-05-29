@@ -126,8 +126,7 @@ Init <- function(sim) {
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
       fireRegimePolys <- rlang::eval_tidy(fireRegimePolys)
-      calibLand <- Cache(genSimLand, fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
-                         userTags = paste("genSimLand ", polygonType))
+      calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
 
       #Need a vector of igniteable cells
       #Item 1 = L, the flammable Map
@@ -140,18 +139,14 @@ Init <- function(sim) {
       if (length(index) == 0)
         stop("polygon has no flammable cells!")
 
-      dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = pMin, pmax = pMax,
-                  pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
-                  userTags = paste("makeDesign", polygonType))
+      dT <- makeDesign(indices = index, targetN = targetN,
+                       pmin = pMin, pmax = pMax,
+                       pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape))
 
       message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-      calibData <- Cache(executeDesign,
-                         L = calibLand$flammableMap,
-                         dT,
-                         maxCells = maxBurnCells,
-                         userTags = paste("executeDesign", polygonType)
-      )
+      calibData <- executeDesign(L = calibLand$flammableMap,
+                                 dT,
+                                 maxCells = maxBurnCells)
 
       cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
       calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
