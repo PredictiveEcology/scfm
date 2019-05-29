@@ -48,12 +48,12 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       sim <- Init(sim)
       # schedule future event(s)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = 7.5)
     },
     plot = {
       Plot(sim$burnMap, legend = FALSE)
-      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
+      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 7.5)
     },
     burn = {
       if (!is.null(sim$spreadState)) {
@@ -61,7 +61,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
         if (NROW(sim$spreadState[state == "activeSource"]) > 0)
           sim <- Burnemup(sim)
       }
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))

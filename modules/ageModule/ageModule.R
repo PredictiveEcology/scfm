@@ -49,9 +49,9 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- Init(sim)
 
     # schedule future event(s)
-    sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age")
-    sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot")
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save")
+    sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
+    sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot", eventPriority = 7.5)
+    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save", eventPriority = 7.5)
   } else if (eventType=="age") {
     # do stuff for this event
     sim <- Age(sim)
