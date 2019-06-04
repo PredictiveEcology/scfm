@@ -47,8 +47,8 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     eventType,
     init = {
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot", eventPriority = 7.5)
 
     },
     plot = {
@@ -56,11 +56,11 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       values(tmpRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
       values(tmpRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
       Plot(tmpRaster)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
       sim <- Escape(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))

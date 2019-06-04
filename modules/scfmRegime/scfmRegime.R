@@ -153,7 +153,6 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
             polygonID
           )
         )
-        #browser()
         maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
       } else {
         maxFireSize <- exp(That) * cellSize
@@ -215,13 +214,15 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   #this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
 
-    a <- Checksums(file.path(dataPath(sim), "NFDB_point"), checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
+    a <- Checksums(file.path(dataPath(sim), "NFDB_point"),
+                   checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
     whRowIsShp <- grep("NFDB_point.*shp$", a$expectedFile)
     whIsOK <- which(a$result[whRowIsShp] == "OK")
     needNewDownload <- TRUE
     if (any(whIsOK)) {
       dateOfFile <- gsub("NFDB_point_|\\.shp", "", a[whRowIsShp[whIsOK], "expectedFile"])
-      if ((as.Date(dateOfFile, format = "%Y%m%d") + dyear(1)) > Sys.Date()) { # can change dyear(...) to whatever... e.g., dyear(0.5) would be 6 months
+      if ((as.Date(dateOfFile, format = "%Y%m%d") + dyear(1)) > Sys.Date()) {
+        # can change dyear(...) to whatever... e.g., dyear(0.5) would be 6 months
         needNewDownload <- FALSE
       }
     }
@@ -232,12 +233,14 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
                                      destination = dPath, overwrite = TRUE,
                                      useSAcrs = TRUE, omitArgs = c("dPath", "overwrite"))
     } else {
-
       NFDBs <- grep(list.files(dPath), pattern = "^NFDB", value = TRUE)
       shps <- grep(list.files(dPath), pattern = ".shp$", value = TRUE)
       aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
-      sim$firePoints <- Cache(postProcess, x = shapefile(file.path(dPath, aFile)), studyArea = sim$studyArea,
-                                    filename2 = NULL, rasterToMatch = sim$rasterToMatch, userTags = "NFDB")
+      firePoints <- Cache(shapefile, file.path(dPath, aFile))
+      sim$firePoints <- Cache(postProcess, x = firePoints,
+                              studyArea = sim$studyArea, filename2 = NULL,
+                              rasterToMatch = sim$rasterToMatch,
+                              userTags = c("cacheTags", "NFDB"))
 
     }
   }

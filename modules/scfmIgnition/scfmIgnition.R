@@ -40,15 +40,15 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     plot = {
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
       sim <- Ignite(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))

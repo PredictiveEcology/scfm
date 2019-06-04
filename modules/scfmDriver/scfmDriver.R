@@ -126,8 +126,7 @@ Init <- function(sim) {
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
       fireRegimePolys <- rlang::eval_tidy(fireRegimePolys)
-      calibLand <- Cache(genSimLand, fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
-                         userTags = paste("genSimLand ", polygonType))
+      calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
 
       #Need a vector of igniteable cells
       #Item 1 = L, the flammable Map
@@ -140,18 +139,14 @@ Init <- function(sim) {
       if (length(index) == 0)
         stop("polygon has no flammable cells!")
 
-      dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = pMin, pmax = pMax,
-                  pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
-                  userTags = paste("makeDesign", polygonType))
+      dT <- makeDesign(indices = index, targetN = targetN,
+                       pmin = pMin, pmax = pMax,
+                       pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape))
 
       message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-      calibData <- Cache(executeDesign,
-                         L = calibLand$flammableMap,
-                         dT,
-                         maxCells = maxBurnCells,
-                         userTags = paste("executeDesign", polygonType)
-      )
+      calibData <- executeDesign(L = calibLand$flammableMap,
+                                 dT,
+                                 maxCells = maxBurnCells)
 
       cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
       calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
@@ -224,36 +219,17 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-.inputObjects <- function(sim) {
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using random polygon in Alberta")
-    #TODO: remove LandR once this is confirmed working
-    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
-    sim$studyArea <- studyArea
-  }
-
-  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-
-  if (!suppliedElsewhere("fireRegimePolys", sim)) {
-  sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
-                                    destinationPath = dPath,
-                                    studyArea = sim$studyArea,
-                                    rasterToMatch = sim$rasterToMatch,
-                                    filename2 = TRUE,
-                                    overwrite = TRUE,
-                                    userTags = c("cacheTags", "fireRegimePolys"))
-  }
-  return(invisible(sim))
-}
-
 #Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
-  bfireRegimePoly <- buffer(coreLand, buffDist) %>%
-    rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
+  bfireRegimePoly <- buffer(coreLand, buffDist)
+  if (!gIsValid(bfireRegimePoly, byid = FALSE)) {
+    bfireRegimePoly <- gBuffer(bfireRegimePoly, width = 0)
+  }
+  bfireRegimePoly <-  gDifference(bfireRegimePoly, spgeom2 = coreLand, byid = FALSE)
+  polyLandscape <- rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
@@ -261,8 +237,8 @@ genSimLand <- function(coreLand, buffDist) {
   landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
-  polySF <- sf::st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
+  polySF <- st_as_sf(polyLandscape)
+  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
 
   calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
   names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "lcc", "flammableMap")
@@ -360,4 +336,27 @@ executeDesign <- function(L, dT, maxCells) {
   x <- cbind(dT,res)
 
   return(x)
+}
+
+.inputObjects <- function(sim) {
+  dPath <- dataPath(sim)
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("study area not supplied. Using random polygon in Alberta")
+    #TODO: remove LandR once this is confirmed working
+    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
+    sim$studyArea <- studyArea
+  }
+
+  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                      destinationPath = dPath,
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch,
+                                      filename2 = TRUE,
+                                      overwrite = TRUE,
+                                      userTags = c("cacheTags", "fireRegimePolys"))
+  }
+  return(invisible(sim))
 }

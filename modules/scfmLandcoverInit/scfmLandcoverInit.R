@@ -15,7 +15,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("fasterize", "purrr", "raster", "sf",
+    reqdPkgs = list("fasterize", "purrr", "raster", "sf", 'rgeos',
                     "PredictiveEcology/LandR@development",
                     "PredictiveEcology/reproducible@development"),
     parameters = rbind(
@@ -24,7 +24,9 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
+      defineParameter("sliverThreshold", "numeric", NA, NA, NA,
+                      desc = "fire regime polygons with area less than this number will be merged")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
@@ -72,8 +74,15 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 Init <- function(sim) {
-  if (class(sim$fireRegimePolys) == "SpatialPolygons") {
-    stop("fireRegimePolys must be a SpatialPolygonsDataFrame")
+  message("checking sim$fireRegimePolys for sliver polygons...")
+  sim$fireRegimePolys$trueArea <- gArea(sim$fireRegimePolys, byid = TRUE)
+  if (is.na(P(sim)$sliverThreshold)) {
+    sim@params[[currentModule(sim)]]$sliverThreshold <- 100 * prod(res(sim$rasterToMatch))
+
+  }
+  if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
+    message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
+  sim$fireRegimePolys <- deSliver(sim$fireRegimePolys, threshold = P(sim)$sliverThreshold)
   }
   if (is.null(sim$fireRegimePolys$PolyID)) {
     if (is.null(sim$fireRegimePolys$REGION_)) {
@@ -81,7 +90,6 @@ Init <- function(sim) {
     } else {
       sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
     }
-    sim$fireRegimePolys$PolyID <- row.names(sim$fireRegimePolys)
   }
 
   temp <- sf::st_as_sf(sim$fireRegimePolys)
@@ -216,6 +224,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       filename2 = TRUE,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
+
   }
   #Must find way to dissolve slivers using rgeos::gArea(sim$fireRegimePolys, TRUE)
   #And then or

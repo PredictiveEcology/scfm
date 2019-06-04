@@ -128,7 +128,7 @@ comparePredictions <- function(polyList, simList) {
   return(out)
 }
 
-df <- comparePredictions(names(outSimT$scfmDriverPars), outSimT) %>%
+df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
   rbindlist(.)
 #Some useful plots
 breaks = c(0.20, 0.21, 0.22, 0.23, 0.24, 0.25)
