@@ -27,7 +27,8 @@ defineModule(sim, list(
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
+    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
+    createsOutput(objectName = "pIgp", objectClass = "numeric", desc = "")
   )
 ))
 

@@ -32,7 +32,10 @@ defineModule(sim, list(
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = "")
+    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
+    createsOutput(objectName = "p0", objectClass = "data.table", desc = ""),
+    createsOutput(objectName = "flammableMap", objectClass = "RasterLayer",
+                  desc = "binary map of landscape flammability")
   )
 ))
 
@@ -43,7 +46,6 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
   switch(
     eventType,
     init = {
-
       sim <- Init(sim)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot")
@@ -94,7 +96,6 @@ Escape <- function(sim) {
 
     maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
-
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
                                              start = sim$ignitionLoci,
                                              iterations = 1,
