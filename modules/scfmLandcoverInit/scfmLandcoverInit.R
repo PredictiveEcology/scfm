@@ -36,7 +36,7 @@ defineModule(sim,list(
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                    desc = "template raster for raster GIS operations. Must be supplied by user"),
       expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
-                   desc = "Areas to calibrate individual fire regime parameters",
+                   desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
     ),
     outputObjects = bind_rows(

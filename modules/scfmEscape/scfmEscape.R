@@ -33,9 +33,7 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
-    createsOutput(objectName = "p0", objectClass = "data.table", desc = ""),
-    createsOutput(objectName = "flammableMap", objectClass = "RasterLayer",
-                  desc = "binary map of landscape flammability")
+    createsOutput(objectName = "p0", objectClass = "data.table", desc = "")
   )
 ))
 
