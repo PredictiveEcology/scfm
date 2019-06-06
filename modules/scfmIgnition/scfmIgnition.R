@@ -12,7 +12,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmIgnition.Rmd"),
-  reqdPkgs = list("raster", "SpaDES.tools"),
+  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
@@ -47,7 +47,9 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
-      sim <- Ignite(sim)
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+        sim <- Ignite(sim)
+      }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],

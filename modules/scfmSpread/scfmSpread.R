@@ -13,7 +13,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
+  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
+                  "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
@@ -56,10 +57,14 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 7.5)
     },
     burn = {
-      if (!is.null(sim$spreadState)) {
-        ## we really want to test if the data table has any rows
-        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
-          sim <- Burnemup(sim)
+
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+
+        if (!is.null(sim$spreadState)) {
+          ## we really want to test if the data table has any rows
+          if (NROW(sim$spreadState[state == "activeSource"]) > 0)
+            sim <- Burnemup(sim)
+        }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
@@ -118,6 +123,8 @@ Burnemup <- function(sim) {
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
+  names(sim$rstCurrentBurn) <- paste0("Year", time(sim))
+
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age

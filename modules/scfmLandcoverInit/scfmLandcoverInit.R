@@ -85,7 +85,8 @@ Init <- function(sim) {
   }
   if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
     message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
-  sim$fireRegimePolys <- deSliver(sim$fireRegimePolys, threshold = P(sim)$sliverThreshold)
+  sim$fireRegimePolys <- Cache(deSliver, sim$fireRegimePolys, threshold = P(sim)$sliverThreshold,
+                               userTags = c("deSliver", currentModule(sim)))
   }
   if (is.null(sim$fireRegimePolys$PolyID)) {
     if (is.null(sim$fireRegimePolys$REGION_)) {
@@ -98,9 +99,10 @@ Init <- function(sim) {
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
-  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) #this removes attributes, fixes Plot()
-  sim$flammableMap <- setColors(sim$flammableMap, value = c("blue", "red"))
+  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL) %>%
+    mask(., mask = sim$fireRegimePolys)
+  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) %>%
+    setColors(., n = 2, value = c("blue", "red"))
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,

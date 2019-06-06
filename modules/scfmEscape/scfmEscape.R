@@ -13,7 +13,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
+  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
+                  "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
@@ -57,7 +58,10 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
-      sim <- Escape(sim)
+
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+        sim <- Escape(sim)
+      }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
