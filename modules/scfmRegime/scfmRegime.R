@@ -214,8 +214,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   #this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
 
-    a <- Checksums(file.path(dataPath(sim), "NFDB_point"),
-                   checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
+    NFDB_pointPath <- file.path(dataPath(sim), "NFDB_point")
+    checkPath(NFDB_pointPath, create = TRUE)
+    a <- Checksums(NFDB_pointPath, checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
     whRowIsShp <- grep("NFDB_point.*shp$", a$expectedFile)
     whIsOK <- which(a$result[whRowIsShp] == "OK")
     needNewDownload <- TRUE
