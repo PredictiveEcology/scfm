@@ -50,15 +50,10 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- Init(sim)
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", eventPriority = 7.5)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = 7.5)
-    },
-    plot = {
-      Plot(sim$burnMap, legend = FALSE)
-      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = 8)
     },
     burn = {
-
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim), "Burn")) {
 
         if (!is.null(sim$spreadState)) {
           ## we really want to test if the data table has any rows
@@ -67,6 +62,12 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
         }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
+    },
+
+    plot = {
+      burnMap <- sim$burnMap
+      Plot(burnMap, new = TRUE, title = "Cumulative Burn", cols = c("grey", "red"))
+      sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -123,7 +124,7 @@ Burnemup <- function(sim) {
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
-  names(sim$rstCurrentBurn) <- paste0("Year", time(sim))
+  names(sim$rstCurrentBurn) <- paste0("Burn", time(sim))
 
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
