@@ -17,9 +17,7 @@ defineModule(sim, list(
     #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
@@ -43,11 +41,8 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite", eventPriority = 7.5)
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
-    plot = {
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot", eventPriority = 7.5)
-    },
     ignite = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim), "Burn")) {
         sim <- Ignite(sim)
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
