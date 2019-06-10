@@ -65,8 +65,8 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
 
     plot = {
-      burnMap <- sim$burnMap
-      Plot(burnMap, new = TRUE, title = "Cumulative Burn", cols = c("grey", "red"))
+      Plot(sim$burnMap, title = "Cumulative Burn")
+      Plot(sim$rstCurrentBurn, title = "Current Burn", addTo = 'sim$rstCurrentBurn', col = c("grey", "red"))
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
