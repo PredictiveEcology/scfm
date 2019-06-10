@@ -100,13 +100,13 @@ Init <- function(sim) {
     regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
-                    fireRegimePolys = rlang::quo(sim$fireRegimePolys),
+                    fireRegimePolys = sim$fireRegimePolys,
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours,
-                    landAttr = rlang::quo(sim$landscapeAttr)),
+                    landAttr = sim$landscapeAttr),
     polygonType = names(sim$scfmRegimePars),
     f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
@@ -122,10 +122,8 @@ Init <- function(sim) {
         warning("This can't happen")
         maxBurnCells = 1
       }
-      landAttr <- rlang::eval_tidy(landAttr)
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
-      fireRegimePolys <- rlang::eval_tidy(fireRegimePolys)
       calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
 
       #Need a vector of igniteable cells
