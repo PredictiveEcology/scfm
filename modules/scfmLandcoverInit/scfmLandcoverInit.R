@@ -99,10 +99,10 @@ Init <- function(sim) {
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
-  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL) %>%
-    mask(., mask = sim$fireRegimePolys)
-  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) %>%
-    setColors(., n = 2, value = c("blue", "red"))
+  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[])
+  sim$flammableMap <-  mask(sim$flammableMap, mask = sim$fireRegimeRas)
+
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
