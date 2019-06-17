@@ -93,7 +93,7 @@ Init <- function(sim) {
     cl <- NULL
   }
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- cloudCache(
+  sim$scfmDriverPars <- Cache(
     pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
