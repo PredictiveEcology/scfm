@@ -65,7 +65,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
 
     plot = {
-      Plot(sim$rstCurrentBurn, title = "Current Burn", new = TRUE, col = c("grey", "red"))
+      Plot(sim$rstCurrentBurn, new = TRUE, col = c("grey", "red"))
       Plot(sim$burnMap, title = "Cumulative Burn", new = TRUE)
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
@@ -122,6 +122,7 @@ Burnemup <- function(sim) {
                                       asRaster = FALSE)
 
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
+  names(sim$rstCurrentBurn) <- NULL
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
