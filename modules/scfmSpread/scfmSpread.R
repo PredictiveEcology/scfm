@@ -53,7 +53,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = 8)
     },
     burn = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim), "Burn")) {
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
 
         if (!is.null(sim$spreadState)) {
           ## we really want to test if the data table has any rows
@@ -65,8 +65,8 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
 
     plot = {
-      Plot(sim$rstCurrentBurn, title = "Current Burn", addTo = 'sim$rstCurrentBurn', col = c("grey", "red"))
-      Plot(sim$burnMap, title = "Cumulative Burn")
+      Plot(sim$rstCurrentBurn, title = "Current Burn", new = TRUE, col = c("grey", "red"))
+      Plot(sim$burnMap, title = "Cumulative Burn", new = TRUE)
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
@@ -124,7 +124,7 @@ Burnemup <- function(sim) {
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
-  names(sim$rstCurrentBurn) <- paste0("Burn", time(sim))
+  sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))

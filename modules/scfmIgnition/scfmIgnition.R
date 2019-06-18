@@ -42,7 +42,7 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim), "Burn")) {
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
         sim <- Ignite(sim)
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)

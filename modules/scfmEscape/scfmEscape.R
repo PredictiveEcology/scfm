@@ -58,7 +58,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim), "Burn")) {
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
         sim <- Escape(sim)
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
