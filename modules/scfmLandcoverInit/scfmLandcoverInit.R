@@ -80,7 +80,7 @@ Init <- function(sim) {
   }
   sim$fireRegimePolys$trueArea <- gArea(sim$fireRegimePolys, byid = TRUE)
   if (is.na(P(sim)$sliverThreshold)) {
-    sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4
+    sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4 * 1e4 #100km2
 
   }
   if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
