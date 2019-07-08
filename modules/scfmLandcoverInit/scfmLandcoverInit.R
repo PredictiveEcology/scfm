@@ -108,7 +108,9 @@ Init <- function(sim) {
                 sim$flammableMap,
                 sim$fireRegimePolys,
                 P(sim)$neighbours)
-  list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
+
+  sim$landscapeAttr <- outs$landscapeAttr
+  sim$cellsByZone <- outs$cellsByZone
   return(invisible(sim))
 }
 
@@ -125,10 +127,10 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     stop("illegal neighbours specification")
 
   makeLandscapeAttr <- function(flammableMap, weight, fireRegimePolys) {
-    neighMap <- Cache(focal, x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
+    neighMap <- focal(x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
-    valsByPoly <- Cache(raster::extract, neighMap, fireRegimePolys, cellnumbers = TRUE)
+    valsByPoly <- extract(neighMap, fireRegimePolys, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
     names(valsByPoly) <- fireRegimePolys$PolyID
     uniqueZoneNames <- fireRegimePolys$PolyID #get unique zones.
@@ -164,7 +166,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     return(landscapeAttr)
   }
 
-  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, fireRegimePolys)
+  landscapeAttr <- makeLandscapeAttr(flammableMap, w, fireRegimePolys)
 
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
 
@@ -176,7 +178,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     return(cellsByZone)
   }
 
-  cellsByZone <- Cache(cellsByZoneFn, flammableMap, landscapeAttr)
+  cellsByZone <- cellsByZoneFn(flammableMap, landscapeAttr)
 
   return(invisible(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone)))
 }
