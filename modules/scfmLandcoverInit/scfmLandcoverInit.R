@@ -233,7 +233,6 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       userTags = c("cacheTags", "fireRegimePolys"))
 
   }
-  #Must find way to dissolve slivers using rgeos::gArea(sim$fireRegimePolys, TRUE)
-  #And then or
+
   return(invisible(sim))
 }
