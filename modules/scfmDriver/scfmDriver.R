@@ -345,9 +345,10 @@ executeDesign <- function(L, dT, maxCells) {
     sim$studyArea <- studyArea
   }
 
-  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
