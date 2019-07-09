@@ -130,7 +130,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     neighMap <- focal(x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
-    valsByPoly <- extract(neighMap, fireRegimePolys, cellnumbers = TRUE)
+    valsByPoly <- raster::extract(neighMap, fireRegimePolys, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
     names(valsByPoly) <- fireRegimePolys$PolyID
     uniqueZoneNames <- fireRegimePolys$PolyID #get unique zones.
