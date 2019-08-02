@@ -78,7 +78,7 @@ Init <- function(sim) {
   if (sf::st_is_longlat(sim$fireRegimePolys) & is.na(P(sim)$sliverThreshold)) {
     stop("You must supply P(sim)$sliverThreshold for fireRegimePolys with an unprojected CRS")
   }
-  sim$fireRegimePolys$trueArea <- gArea(sim$fireRegimePolys, byid = TRUE)
+  sim$fireRegimePolys$trueArea <- round(gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
   if (is.na(P(sim)$sliverThreshold)) {
     sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4
 
