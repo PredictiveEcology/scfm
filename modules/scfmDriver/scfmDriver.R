@@ -93,7 +93,7 @@ Init <- function(sim) {
     cl <- NULL
   }
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- Cache(
+  sim$scfmDriverPars <- Cache(userTags = c("mainFunction::Map2", "objectName::scfmDrivePars"),
     pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
@@ -345,9 +345,10 @@ executeDesign <- function(L, dT, maxCells) {
     sim$studyArea <- studyArea
   }
 
-  message("fireRegimePolys not supplied. Using default ecoregions of Canada")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
