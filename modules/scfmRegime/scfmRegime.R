@@ -51,6 +51,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
+
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
@@ -91,6 +92,7 @@ Init <- function(sim) {
 
   firePolys <- unlist(sim$firePoints)
 
+  #this function estimates the ignition probability and escape probability based on NFDB
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                            firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                            firePoints = sim$firePoints, epochLength = epochLength,
@@ -107,90 +109,6 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
-                                landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints,
-                                epochLength = epochLength, maxSizeFactor) {
-  idx <- firePolys$PolyID == polygonID
-  tmpA <- firePoints[idx, ]
-  landAttr <- landscapeAttr[[polygonID]]
-  cellSize = landAttr$cellSize
-  nFires <- dim(tmpA)[1]
-  if (nFires == 0) {
-    return(NULL)
-  }
-  rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
-
-  pEscape <- 0
-  xBar <- 0
-  xMax <- 0
-  lxBar <- NA
-  maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
-  xVec <- numeric(0)
-
-  if (nFires > 0) {
-    #calculate escaped fires
-    #careful to subtract cellSize where appropriate
-    xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-
-    if (length(xVec) > 0) {
-      pEscape <- length(xVec) / nFires
-      xBar <- mean(xVec)
-      lxBar <- mean(log(xVec))
-      xMax <- max(xVec)
-
-      zVec <- log(xVec / cellSize)
-      if (length(zVec) < 50)
-        warning(paste("Less than 50 \"large\" fires in zone", polygonID, ".",
-                      "T estimates may be unstable.\n",
-                      "\tConsider using a larger area and/or longer epoch."))
-      hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
-      That <- hdList$That
-      if (That == -1) {
-        warning(
-          sprintf(
-            "Hannon-Dahiya convergence failure in zone %s.\n\tUsing sample maximum fire size",
-            polygonID
-          )
-        )
-        maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
-      } else {
-        maxFireSize <- exp(That) * cellSize
-        if (!(maxFireSize > xMax)) {
-          warning(
-            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",polygonID)
-          )
-          maxFireSize <- xMax * maxSizeFactor
-        }
-        #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
-      }
-    } else {
-      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
-    }
-  } else {
-    message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
-  }
-
-  #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #need to addd a name or code for basic verification by Driver module, and time field
-  #to allow for dynamic regeneration of disturbanceDriver pars.
-  #browser()
-  if (maxFireSize < 1){
-    warning("this can't happen")
-    maxFireSize = cellSize
-  }
-  return(list(ignitionRate = rate,
-              pEscape = pEscape,
-              xBar = xBar,
-              #mean fire size
-              lxBar = lxBar,
-              #mean log(fire size)
-              xMax = xMax,
-              #maximum observed size
-              emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
-              )
-          )
-}
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
@@ -219,6 +137,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
     a <- Checksums(NFDB_pointPath, checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
     whRowIsShp <- grep("NFDB_point.*shp$", a$expectedFile)
     whIsOK <- which(a$result[whRowIsShp] == "OK")
+
+    #I don't know why the checksums are not 'OK' for more recent downloads - I've rewritten them. No dice.
+
     needNewDownload <- TRUE
     if (any(whIsOK)) {
       dateOfFile <- gsub("NFDB_point_|\\.shp", "", a[whRowIsShp[whIsOK], "expectedFile"])
@@ -229,15 +150,17 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
     }
     if (needNewDownload) {
       print("downloading NFDB")# put prepInputs here
-        sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
-                                     studyArea = sim$studyArea, fun = "shapefile",
-                                     destination = dPath, overwrite = TRUE,
-                                     useSAcrs = TRUE, omitArgs = c("dPath", "overwrite"))
+      sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
+                              studyArea = sim$studyArea, fun = "shapefile",
+                              destination = dPath, overwrite = TRUE,
+                              purge = 7, rasterToMatch = sim$rasterToMatch,
+                              omitArgs = c("dPath", "overwrite"))
     } else {
       NFDBs <- grep(list.files(dPath), pattern = "^NFDB", value = TRUE)
       shps <- grep(list.files(dPath), pattern = ".shp$", value = TRUE)
       aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
       firePoints <- Cache(shapefile, file.path(dPath, aFile))
+      browser()
       sim$firePoints <- Cache(postProcess, x = firePoints,
                               studyArea = sim$studyArea, filename2 = NULL,
                               rasterToMatch = sim$rasterToMatch,
