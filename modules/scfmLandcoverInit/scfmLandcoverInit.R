@@ -105,9 +105,10 @@ Init <- function(sim) {
 
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
-                sim$flammableMap,
-                sim$fireRegimePolys,
-                P(sim)$neighbours)
+                flammableMap = sim$flammableMap,
+                fireRegimePolys = sim$fireRegimePolys,
+                neighbours = P(sim)$neighbours,
+                userTags = c(currentModule(sim), "genFireMapAttr"))
 
   sim$landscapeAttr <- outs$landscapeAttr
   sim$cellsByZone <- outs$cellsByZone
