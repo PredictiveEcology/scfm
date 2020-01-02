@@ -94,128 +94,24 @@ Init <- function(sim) {
   }
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
   sim$scfmDriverPars <- Cache(userTags = c("mainFunction::Map2", "objectName::scfmDrivePars"),
-    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
+    pemisc::Map2, cl = cl,
+    cloudFolderID = sim$cloudFolderID,
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
-    regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
-    MoreArgs = list(cellSize = cellSize,
+    regime = sim$scfmRegimePars,
+    polygonType = names(sim$scfmRegimePars),
+    MoreArgs = list(targetN = P(sim)$targetN,
+                    landAttr = sim$landscapeAttr,
+                    cellSize = cellSize,
                     fireRegimePolys = sim$fireRegimePolys,
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
-                    neighbours = P(sim)$neighbours,
-                    landAttr = sim$landscapeAttr),
-    polygonType = names(sim$scfmRegimePars),
-    f = function(polygonType, targetN = P(sim)$targetN,
-             regime = regime, landAttr = landAttr,
-             cellSize = cellSize,
-             fireRegimePolys = fireRegimePolys,
-             buffDist = buffDist,
-             pJmp = pJmp, pMin = pMin, pMax = pMax,
-             neighbours = neighbours) {
-
-      maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
-      if (is.na(maxBurnCells)) {
-        warning("This can't happen")
-        maxBurnCells = 1
-      }
-      landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
-      message("generating buffered landscapes...")
-      #this function returns too much data to be cacheable (4 rasters per poly)
-      calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
-
-      #Need a vector of igniteable cells
-      #Item 1 = L, the flammable Map
-      #Item 2 = B (aka the landscape Index) this denotes buffer
-      #Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
-      index <- 1:ncell(calibLand$flammableMap)
-      index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
-      index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
-      index <- index[!is.na(index)]
-      if (length(index) == 0)
-        stop("polygon has no flammable cells!")
-
-
-      message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-
-      #these functions have been wrapped to allow for simpler caching
-      cD <- Cache(makeAndExecuteDesign,
-                  indices = index,
-                  targetN = targetN,
-                  pmin = pMin, pmax = pMax,
-                  pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
-                  L = calibLand$flammableMap,
-                  maxCells = maxBurnCells,
-                  userTags = c(currentModule(sim), "executeDesign", polygonType),
-                  omitArgs = c("indices"))
-      #I believe we ignore indices because they change even if the individual polygon itself doesn't
-
-      calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
-
-      xBar <- regime$xBar / cellSize
-
-      if (xBar > 0) {
-        #now for the inverse step.
-        Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
-                                  calibModel, xBar, # "..."
-                                  interval = c(min(cD$p), max(cD$p)),
-                                  extendInt = "no",
-                                  tol = 0.00001
-        ), silent = TRUE)
-        if (class(Res) == "try-error") {
-          #TODO: should pick the closest value (of min and max) if error is value not of opposite sign
-          pJmp <- min(cD$p)
-          message("the loess model may underestimate the spread probability for polygon ", polygonType)
-        } else {
-          pJmp <- Res$root
-        }
-      } else {
-        #pJmp <- P(sim)$pJmp # don't need this because it is an argument to this function alraedy
-        calibModel <- "No Model"
-        Res <- "No Uniroot result"
-      }
-      #check convergence, and out of bounds errors etc
-      w <- landAttr$nNbrs
-      w <- w / sum(w)
-      hatPE <- regime$pEscape
-      if (hatPE == 0) {
-        # no fires in polygon zone escapted
-        p0 <- 0
-      } else if (hatPE == 1) {
-        # all fires in polygon zone escaped
-        p0 <- 1
-      } else {
-        res <- optimise(escapeProbDelta,
-                        interval = c(hatP0(hatPE, neighbours),
-                                     hatP0(hatPE, floor(sum(w * 0:8)))),
-                        tol = 1e-4,
-                        w = w,
-                        hatPE = hatPE)
-        p0 <- res[["minimum"]]
-        #It is almost obvious that the true minimum must occurr within the interval specified in the
-        #call to optimise, but I have not proved it, nor am I certain that the function being minimised is
-        #monotone.
-      }
-      #don't forget to scale by number of years, as well, if your timestep is ever != 1yr
-      rate <- regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on
-      #an annual time step. How to test / enforce?
-      pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
-      #for Poisson rate << 1, the expected values are the same, partially accounting
-      #for multiple arrivals within years. Formerly, I used a poorer approximation
-      #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
-
-      return(list(pSpread = pJmp,
-                  p0 = p0,
-                  naiveP0 = hatP0(regime$pEscape, 8),
-                  pIgnition = pIgnition,
-                  maxBurnCells = maxBurnCells,
-                  calibModel = calibModel,
-                  uniroot.Res = Res
-      )
-      )
-    })
+                    neighbours = P(sim)$neighbours
+                    ),
+    f = calibrateFireRegimePolys )
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
