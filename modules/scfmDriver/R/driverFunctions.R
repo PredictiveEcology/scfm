@@ -180,7 +180,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
 
   if (xBar > 0) {
     #now for the inverse step.
-    Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
+    Res <- try(stats::uniroot(unirootFunction,
                               calibModel, xBar, # "..."
                               interval = c(min(cD$p), max(cD$p)),
                               extendInt = "no",
@@ -238,4 +238,8 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   )
   return(driverResult)
 
+}
+
+unirootFunction <- function(x, cM, xBar) {
+  predict(cM, list("p" = x)) - xBar
 }

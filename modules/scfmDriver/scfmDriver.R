@@ -92,26 +92,28 @@ Init <- function(sim) {
   } else {
     cl <- NULL
   }
+
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- Cache(userTags = c("mainFunction::Map2", "objectName::scfmDrivePars"),
-    pemisc::Map2, cl = cl,
-    cloudFolderID = sim$cloudFolderID,
-    useCache = getOption("reproducible.useCache", TRUE),
-    useCloud = getOption("reproducible.useCloud", FALSE),
-    omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
-    regime = sim$scfmRegimePars,
-    polygonType = names(sim$scfmRegimePars),
-    MoreArgs = list(targetN = P(sim)$targetN,
-                    landAttr = sim$landscapeAttr,
-                    cellSize = cellSize,
-                    fireRegimePolys = sim$fireRegimePolys,
-                    buffDist = P(sim)$buffDist,
-                    pJmp = P(sim)$pJmp,
-                    pMin = P(sim)$pMin,
-                    pMax = P(sim)$pMax,
-                    neighbours = P(sim)$neighbours
-                    ),
-    f = calibrateFireRegimePolys )
+  sim$scfmDriverPars <- Cache(pemisc::Map2,
+                              cl = cl,
+                              cloudFolderID = sim$cloudFolderID,
+                              useCache = getOption("reproducible.useCache", TRUE),
+                              useCloud = getOption("reproducible.useCloud", FALSE),
+                              omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
+                              regime = sim$scfmRegimePars,
+                              polygonType = names(sim$scfmRegimePars),
+                              MoreArgs = list(targetN = P(sim)$targetN,
+                                              landAttr = sim$landscapeAttr,
+                                              cellSize = cellSize,
+                                              fireRegimePolys = sim$fireRegimePolys,
+                                              buffDist = P(sim)$buffDist,
+                                              pJmp = P(sim)$pJmp,
+                                              pMin = P(sim)$pMin,
+                                              pMax = P(sim)$pMax,
+                                              neighbours = P(sim)$neighbours
+                              ),
+                              f = calibrateFireRegimePolys,
+                              userTags = c("mainFunction::Map2", "objectName::scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
@@ -126,7 +128,6 @@ Init <- function(sim) {
     studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
     sim$studyArea <- studyArea
   }
-
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
