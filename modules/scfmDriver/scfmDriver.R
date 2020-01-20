@@ -113,7 +113,7 @@ Init <- function(sim) {
                                               neighbours = P(sim)$neighbours
                               ),
                               f = calibrateFireRegimePolys,
-                              userTags = c("mainFunction::Map2", "objectName::scfmDriverPars"))
+                              userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
