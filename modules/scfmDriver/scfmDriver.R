@@ -106,7 +106,8 @@ Init <- function(sim) {
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours,
-                    landAttr = sim$landscapeAttr),
+                    landAttr = rlang::quo(sim$landscapeAttr),
+                    LCC05 = sim$LCC05),
     polygonType = names(sim$scfmRegimePars),
     f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
@@ -114,7 +115,7 @@ Init <- function(sim) {
              fireRegimePolys = fireRegimePolys,
              buffDist = buffDist,
              pJmp = pJmp, pMin = pMin, pMax = pMax,
-             neighbours = neighbours) {
+             neighbours = neighbours, LCC05 = LCC05) {
       #regime <- sim$scfmRegimePars[[polygonType]] #pass as argument
       #landAttr <- sim$landscapeAttr[[polygonType]] #pass as argument
       maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
@@ -124,7 +125,9 @@ Init <- function(sim) {
       }
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
-      calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
+      studyArea <- rlang::eval_tidy(studyArea)
+      calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
+                         userTags = paste("genSimLand ", polygonType), LCC05 = LCC05)
 
       #Need a vector of igniteable cells
       #Item 1 = L, the flammable Map
@@ -218,7 +221,7 @@ Init <- function(sim) {
 }
 
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist) {
+genSimLand <- function(coreLand, buffDist, LCC05 = NULL) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -232,7 +235,13 @@ genSimLand <- function(coreLand, buffDist) {
   polyLandscape$Value <- c(1, 0)
 
   #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  if (!is.null(LCC05)) {
+    landscapeLCC <- Cache(postProcess, LCC05, destinationPath = tempDir, 
+                          studyArea = polyLandscape, useSAcrs = TRUE)
+  } else {
+    landscapeLCC <- Cache(prepInputsLCC, destinationPath = tempDir, 
+                          studyArea = polyLandscape, useSAcrs = TRUE)
+  }
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)
