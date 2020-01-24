@@ -90,10 +90,11 @@ Init <- function(sim) {
     cl <- NULL
   }
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- cloudCache(
-    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
-    useCache = getOption("reproducible.useCache", TRUE),
-    useCloud = getOption("reproducible.useCloud", FALSE),
+  sim$scfmDriverPars <- Cache(
+    pemisc::Map2, cl = cl, 
+    # cloudFolderID = sim$cloudFolderID,
+    # useCache = getOption("reproducible.useCache", TRUE),
+    # useCloud = getOption("reproducible.useCloud", FALSE),
     regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
@@ -103,7 +104,8 @@ Init <- function(sim) {
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours,
-                    landAttr = rlang::quo(sim$landscapeAttr)),
+                    landAttr = rlang::quo(sim$landscapeAttr),
+                    LCC05 = sim$LCC05),
     polygonType = names(sim$scfmRegimePars),
     f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
@@ -111,7 +113,7 @@ Init <- function(sim) {
              studyArea = studyArea,
              buffDist = buffDist,
              pJmp = pJmp, pMin = pMin, pMax = pMax,
-             neighbours = neighbours) {
+             neighbours = neighbours, LCC05 = LCC05) {
       #regime <- sim$scfmRegimePars[[polygonType]] #pass as argument
       #landAttr <- sim$landscapeAttr[[polygonType]] #pass as argument
       maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
@@ -124,7 +126,7 @@ Init <- function(sim) {
       message("generating buffered landscapes...")
       studyArea <- rlang::eval_tidy(studyArea)
       calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
-                         userTags = paste("genSimLand ", polygonType))
+                         userTags = paste("genSimLand ", polygonType), LCC05 = LCC05)
 
       #Need a vector of igniteable cells
       #Item 1 = L, the flammable Map
@@ -232,7 +234,7 @@ Init <- function(sim) {
 }
 
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist) {
+genSimLand <- function(coreLand, buffDist, LCC05 = NULL) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -243,7 +245,13 @@ genSimLand <- function(coreLand, buffDist) {
   polyLandscape$Value <- c(1, 0)
 
   #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  if (!is.null(LCC05)) {
+    landscapeLCC <- Cache(postProcess, LCC05, destinationPath = tempDir, 
+                          studyArea = polyLandscape, useSAcrs = TRUE)
+  } else {
+    landscapeLCC <- Cache(prepInputsLCC, destinationPath = tempDir, 
+                          studyArea = polyLandscape, useSAcrs = TRUE)
+  }
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- sf::st_as_sf(polyLandscape)
