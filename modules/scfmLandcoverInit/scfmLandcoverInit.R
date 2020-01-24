@@ -200,7 +200,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message("rasterToMatch not supplied. generating from LCC2005 using studyArea CRS")
 
-    rasterToMatch <- LandR::prepInputsLCC(year = 2005,
+    sim$rasterToMatch <- LandR::prepInputsLCC(year = 2005,
                                    destinationPath = dPath,
                                    studyArea = sim$studyArea,
                                    useSAcrs = TRUE,
