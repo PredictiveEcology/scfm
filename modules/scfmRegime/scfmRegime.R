@@ -27,7 +27,9 @@ defineModule(sim, list(
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
-                 desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
+                 desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea"),
+    expectsInput(objectName = 'fireRegimePolys', objectClass = "RasterLayer",
+                 desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions")
   ),
   outputObjects = bind_rows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),

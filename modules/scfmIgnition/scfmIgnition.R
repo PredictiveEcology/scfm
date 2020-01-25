@@ -26,7 +26,7 @@ defineModule(sim, list(
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
-    createsOutput(objectName = "pIgp", objectClass = "numeric", desc = "")
+    createsOutput(objectName = "pIg", objectClass = "numeric", desc = "ignition probability raster")
   )
 ))
 

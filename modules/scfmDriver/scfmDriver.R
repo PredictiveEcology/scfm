@@ -41,7 +41,8 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
+    createsOutput(objectName = "scfmDriverPars", objectClass = "list",
+                  desc = "burn parameters for each polygon in fireRegimePolys")
   )
 ))
 
