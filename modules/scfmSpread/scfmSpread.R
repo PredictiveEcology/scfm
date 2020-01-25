@@ -49,8 +49,14 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       sim <- Init(sim)
       # schedule future event(s)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", eventPriority = 7.5)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = 8)
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn")
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", 
+                           eventPriority = .last())
+    },
+    plot = {
+      Plot(sim$burnMap, legend = FALSE)
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", 
+                           eventPriority = .last())
     },
     burn = {
       if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
@@ -123,7 +129,6 @@ Burnemup <- function(sim) {
                                       directions = P(sim)$neighbours,
                                       # maxSize = maxSizes,  #not sure this works
                                       asRaster = FALSE)
-
   sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
   names(sim$rstCurrentBurn) <- NULL
   sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
@@ -141,7 +146,6 @@ Burnemup <- function(sim) {
   tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
-
   return(invisible(sim))
 }
 
