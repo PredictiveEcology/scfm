@@ -13,7 +13,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats"),
+                  "scam", "sf", "sp", "SpaDES.tools", "stats", "rlang"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -21,9 +21,9 @@ defineModule(sim, list(
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
-                    desc = "should a cloud cache be used for heavy operations"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
+    defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
+                    desc = "should a cloud cache be used for heavy operations"),
     defineParameter(".useParallel", class = "logical",
                     default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
@@ -81,25 +81,43 @@ escapeProbDelta <- function(p0, w, hatPE) {
 Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  if (isTRUE(P(sim)$.useParallel) || P(sim)$.useParallel > 1) { # works if numeric or logical
-    maxNumClusters <- length(sim$scfmRegimePars) # this is maximum that is needed
-    if (is.numeric(P(sim)$.useParallel)) {
-      maxNumClusters <- min(maxNumClusters, P(sim)$.useParallel )  # user may set a smaller maximum passed with P(sim)$.useParallel as a numeric
-    }
-    cl <- pemisc::makeOptimalCluster(MBper = 5000,
-                                     maxNumClusters = maxNumClusters,
-                                     outfile = "scfmLog")
-    on.exit(try(stopCluster(cl), silent = TRUE))
-  } else {
-    cl <- NULL
-  }
+  cl <- pemisc::makeOptimalCluster(useParallel = P(sim)$.useParallel,
+                                   MBper = (1e9 + objSize(sim$fireRegimePolys) * 3)/ 1e6, # in MB
+                                   maxNumClusters = length(sim$scfmRegimePars),
+                                   outfile = "scfmLog", 
+                                   objects = c("genSimLand"), envir = environment(), 
+                                   libraries = c("rlang", "raster", "rgeos", 
+                                                 "LandR", "sf", "fasterize", "data.table"))
+  on.exit({
+    parallel::stopCluster(cl)
+  })
+  # if (isTRUE(P(sim)$.useParallel) || P(sim)$.useParallel > 1) { # works if numeric or logical
+  #   maxNumClusters <- length(sim$scfmRegimePars) # this is maximum that is needed
+  #   if (is.numeric(P(sim)$.useParallel)) {
+  #     maxNumClusters <- min(maxNumClusters, P(sim)$.useParallel )  # user may set a smaller maximum passed with P(sim)$.useParallel as a numeric
+  #   }
+  #   cl <- pemisc::makeOptimalCluster(MBper = 5000,
+  #                                    maxNumClusters = maxNumClusters,
+  #                                    outfile = "scfmLog")
+  #   on.exit(try(stopCluster(cl), silent = TRUE))
+  # } else {
+  #   cl <- NULL
+  # }
 
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
+  if (is.null(sim$LCC)) {
+    bufferedPoly <- buffer(sim$fireRegimePolys, -(abs(P(sim)$buffDist)))
+    bufferedPoly <- fixErrors(bufferedPoly)
+    landscapeLCC <- Cache(prepInputsLCC, destinationPath = dataPath(sim), studyArea = bufferedPoly, useSAcrs = TRUE,
+                          omitArgs = "destinationPath")
+    if (fromDisk(landscapeLCC))
+      landscapeLCC[] <- landscapeLCC[]
+  }
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
                               useCache = getOption("reproducible.useCache", TRUE),
-                              useCloud = getOption("reproducible.useCloud", FALSE),
+                              useCloud = P(sim)$.useCloud,
                               omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
                               regime = sim$scfmRegimePars,
                               polygonType = names(sim$scfmRegimePars),
@@ -111,9 +129,10 @@ Init <- function(sim) {
                                               pJmp = P(sim)$pJmp,
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
-                                              neighbours = P(sim)$neighbours
+                                              neighbours = P(sim)$neighbours,
+                                              landscapeLCC = landscapeLCC
                               ),
-                              f = calibrateFireRegimePolys,
+                              calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels

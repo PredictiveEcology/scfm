@@ -37,4 +37,5 @@
 "SmallNFDB_point_20190801.prj" "e15626207e03581e" "147" "xxhash64"
 "SmallNFDB_point_20190801.shp" "4681edf758d209ac" "39944" "xxhash64"
 "SmallNFDB_point_20190801.shx" "f335323eac1d41c7" "11484" "xxhash64"
-"NFDB_point.zip" "644c045750334aab" "25718338" "xxhash64"
+"NFDB_point.zip" "57418ffeff1dddff" "25719714" "xxhash64"
+"NFDB_point_update_log.txt" "1544e44255fc513e" "4376" "xxhash64"

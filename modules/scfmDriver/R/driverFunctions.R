@@ -1,5 +1,5 @@
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist) {
+genSimLand <- function(coreLand, buffDist, landscapeLCC = NULL) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -13,7 +13,9 @@ genSimLand <- function(coreLand, buffDist) {
   polyLandscape$Value <- c(1, 0)
 
   #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  if (is.null(landscapeLCC))
+    landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, 
+                                  useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)
@@ -138,7 +140,7 @@ makeAndExecuteDesign <- function(...){
 
 calibrateFireRegimePolys <- function(polygonType, regime,
                                      targetN,  landAttr, cellSize, fireRegimePolys,
-                                     buffDist, pJmp, pMin, pMax, neighbours) {
+                                     buffDist, pJmp, pMin, pMax, neighbours, landscapeLCC = NULL) {
 
   maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
   if (is.na(maxBurnCells)) {
@@ -148,7 +150,10 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   landAttr <- landAttr[[polygonType]] #landAttr may not be equal length as regime due to invalid polygons
   message("generating buffered landscapes...")
   #this function returns too much data to be worth caching (4 rasters per poly)
-  calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist)
+  if (is(fireRegimePolys, "quosure"))
+    fireRegimePolys <- eval_tidy(fireRegimePolys)
+  calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
+                          landscapeLCC = landscapeLCC)
 
   #Need a vector of igniteable cells
   #Item 1 = L, the flammable Map
