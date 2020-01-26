@@ -12,10 +12,16 @@ genSimLand <- function(coreLand, buffDist, landscapeLCC = NULL) {
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
-  #Generate flammability raster
-  if (is.null(landscapeLCC))
-    landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, 
-                                  useSAcrs = TRUE)
+  #Generate flammability raster -- either from an existing landscapeLCC or de novo/download
+  landscapeLCC <- if (is.null(landscapeLCC)) {
+    Cache(prepInputsLCC, destinationPath = tempDir, studyArea = polyLandscape, 
+          useSAcrs = TRUE, omitArgs = "destinationPath", filename2 = NULL)
+  } else {
+    Cache(postProcess, landscapeLCC, studyArea = polyLandscape, 
+          useSAcrs = TRUE, filename2 = NULL)
+  }
+  
+  
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)

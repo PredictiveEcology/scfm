@@ -22,6 +22,8 @@ defineModule(sim, list(
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
+    defineParameter(".useCache", "logical", getOption("reproducible.useCache", TRUE), NA, NA,
+                    desc = "should a cloud cache be used for heavy operations"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     desc = "should a cloud cache be used for heavy operations"),
     defineParameter(".useParallel", class = "logical",
@@ -55,7 +57,7 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       sim <- Init(sim)
     },
-
+    
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -80,43 +82,55 @@ escapeProbDelta <- function(p0, w, hatPE) {
 
 Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-
-  cl <- pemisc::makeOptimalCluster(useParallel = P(sim)$.useParallel,
-                                   MBper = (1e9 + objSize(sim$fireRegimePolys) * 3)/ 1e6, # in MB
-                                   maxNumClusters = length(sim$scfmRegimePars),
-                                   outfile = "scfmLog", 
-                                   objects = c("genSimLand"), envir = environment(), 
-                                   libraries = c("rlang", "raster", "rgeos", 
-                                                 "LandR", "sf", "fasterize", "data.table"))
-  on.exit({
-    parallel::stopCluster(cl)
-  })
-  # if (isTRUE(P(sim)$.useParallel) || P(sim)$.useParallel > 1) { # works if numeric or logical
-  #   maxNumClusters <- length(sim$scfmRegimePars) # this is maximum that is needed
-  #   if (is.numeric(P(sim)$.useParallel)) {
-  #     maxNumClusters <- min(maxNumClusters, P(sim)$.useParallel )  # user may set a smaller maximum passed with P(sim)$.useParallel as a numeric
-  #   }
-  #   cl <- pemisc::makeOptimalCluster(MBper = 5000,
-  #                                    maxNumClusters = maxNumClusters,
-  #                                    outfile = "scfmLog")
-  #   on.exit(try(stopCluster(cl), silent = TRUE))
-  # } else {
-  #   cl <- NULL
-  # }
-
-  # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
+  
+  # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
+  #  pass this one into the calibrateFireRegimePolys, avoiding many downloads (esp when
+  #  in parallel)
   if (is.null(sim$LCC)) {
-    bufferedPoly <- buffer(sim$fireRegimePolys, -(abs(P(sim)$buffDist)))
+    bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC, destinationPath = dataPath(sim), studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
     if (fromDisk(landscapeLCC))
       landscapeLCC[] <- landscapeLCC[]
   }
+  
+  # Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
+  seeIfItHasRun <- CacheDigest(list(pemisc::Map2,
+                                    regime = sim$scfmRegimePars,
+                                    polygonType = names(sim$scfmRegimePars),
+                                    MoreArgs = list(targetN = P(sim)$targetN,
+                                                    landAttr = sim$landscapeAttr,
+                                                    cellSize = cellSize,
+                                                    fireRegimePolys = sim$fireRegimePolys,
+                                                    buffDist = P(sim)$buffDist,
+                                                    pJmp = P(sim)$pJmp,
+                                                    pMin = P(sim)$pMin,
+                                                    pMax = P(sim)$pMax,
+                                                    neighbours = P(sim)$neighbours,
+                                                    landscapeLCC = landscapeLCC
+                                    ),
+                                    calibrateFireRegimePolys))
+  if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
+    cl <- pemisc::makeOptimalCluster(
+      useParallel = P(sim)$.useParallel,
+      # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
+      MBper = rgeos::gArea(studyArea)/(prod(res(landscapeLCC)))/1e3 * 2 + 4e2, # in MB
+      maxNumClusters = length(sim$scfmRegimePars),
+      outfile = "scfmLog", 
+      objects = c("genSimLand"), envir = environment(), 
+      libraries = c("rlang", "raster", "rgeos", "reproducible",
+                    "LandR", "sf", "fasterize", "data.table"))
+    on.exit({
+      parallel::stopCluster(cl)
+    })
+  } else {
+    cl <- NULL
+  }
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              useCache = getOption("reproducible.useCache", TRUE),
+                              useCache = P(sim)$.useCache, #getOption("reproducible.useCache", TRUE),
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
                               regime = sim$scfmRegimePars,
@@ -134,9 +148,9 @@ Init <- function(sim) {
                               ),
                               calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
-
+  
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-
+  
   return(invisible(sim))
 }
 
@@ -148,10 +162,10 @@ Init <- function(sim) {
     studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
     sim$studyArea <- studyArea
   }
-
+  
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-
+    
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,

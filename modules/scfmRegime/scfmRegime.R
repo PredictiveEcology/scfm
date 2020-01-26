@@ -162,7 +162,6 @@ Init <- function(sim) {
       shps <- grep(list.files(dPath), pattern = ".shp$", value = TRUE)
       aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
       firePoints <- Cache(shapefile, file.path(dPath, aFile))
-      browser()
       sim$firePoints <- Cache(postProcess, x = firePoints,
                               studyArea = sim$studyArea, filename2 = NULL,
                               rasterToMatch = sim$rasterToMatch,
