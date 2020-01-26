@@ -19,7 +19,7 @@ defineModule(sim, list(
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
     defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
-                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES"),
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
