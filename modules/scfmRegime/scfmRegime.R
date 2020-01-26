@@ -15,7 +15,9 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
+    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",

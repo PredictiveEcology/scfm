@@ -16,6 +16,7 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
                   "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate burning"),
@@ -23,8 +24,8 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     #defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours")
+    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
