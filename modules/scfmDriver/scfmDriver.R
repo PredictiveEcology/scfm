@@ -120,7 +120,8 @@ Init <- function(sim) {
       libraries = c("rlang", "raster", "rgeos", "reproducible",
                     "LandR", "sf", "fasterize", "data.table"))
     on.exit({
-      parallel::stopCluster(cl)
+      if (!is.null(cl))
+        parallel::stopCluster(cl)
     })
   } else {
     cl <- NULL
