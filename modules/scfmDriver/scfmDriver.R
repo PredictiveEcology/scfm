@@ -86,15 +86,13 @@ Init <- function(sim) {
   # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
   #  pass this one into the calibrateFireRegimePolys, avoiding many downloads (esp when
   #  in parallel)
-  if (is.null(sim$LCC)) {
-    bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
-    bufferedPoly <- fixErrors(bufferedPoly)
-    landscapeLCC <- Cache(prepInputsLCC, destinationPath = dataPath(sim), studyArea = bufferedPoly, useSAcrs = TRUE,
-                          omitArgs = "destinationPath")
-    if (fromDisk(landscapeLCC))
-      landscapeLCC[] <- landscapeLCC[]
-  }
-  
+  bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+  bufferedPoly <- fixErrors(bufferedPoly)
+  landscapeLCC <- Cache(prepInputsLCC, destinationPath = dataPath(sim), studyArea = bufferedPoly, useSAcrs = TRUE,
+                        omitArgs = "destinationPath")
+  if (fromDisk(landscapeLCC))
+    landscapeLCC[] <- landscapeLCC[]
+
   # Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
   seeIfItHasRun <- CacheDigest(list(pemisc::Map2,
                                     regime = sim$scfmRegimePars,
