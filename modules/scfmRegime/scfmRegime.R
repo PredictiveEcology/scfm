@@ -86,8 +86,10 @@ Init <- function(sim) {
   #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
   #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- sim$fireRegimePolys$PolyID
-  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys) #gives studyArea row name to point
-  tmp$PolyID <- tmp$PolyID$PolyID
+  if (is.null(frpl)) 
+    sim$fireRegimePolys$PolyID <- sim$fireRegimePolys[[grep("REGION", names(sim$fireRegimePolys), value = TRUE)[1]]]
+  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
+  # tmp$PolyID <- tmp$PolyID$PolyID
 
   tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
   sim$firePoints <- tmp
@@ -153,10 +155,11 @@ Init <- function(sim) {
     if (needNewDownload) {
       print("downloading NFDB")# put prepInputs here
       sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
-                              studyArea = sim$studyArea, fun = "shapefile",
+                              studyArea = sim$studyArea, fun = "sf::st_read",
                               destination = dPath, overwrite = TRUE,
                               purge = 7, rasterToMatch = sim$rasterToMatch,
-                              omitArgs = c("dPath", "overwrite"))
+                              omitArgs = c("dPath", "overwrite", "purge"))
+      sim$firePoints <- as(sim$firePoints, "Spatial")
     } else {
       NFDBs <- grep(list.files(dPath), pattern = "^NFDB", value = TRUE)
       shps <- grep(list.files(dPath), pattern = ".shp$", value = TRUE)
@@ -168,6 +171,9 @@ Init <- function(sim) {
                               userTags = c("cacheTags", "NFDB"))
 
     }
+  }
+  if (!identicalCRS(sim$firePoints, sim$fireRegimePolys)) {
+    sim$firePoints <- spTransform(sim$firePoints, crs(sim$fireRegimePolys))
   }
   return(invisible(sim))
 }
