@@ -88,7 +88,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   sim$burnMap <- sim$flammableMap
-  sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
+  sim$burnMap[!is.na(sim$burnMap)] <- 0
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)

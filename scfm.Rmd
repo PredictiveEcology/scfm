@@ -97,12 +97,13 @@ paths <- list(
 )
 #RasterToMatch:
 #if you supply studyArea you should supply rtm to make sure the crs are identical. 
-
+set.seed(1002)
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 10000)
+rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, filename2 = NULL, destinationPath = tempdir())
 #if run with no studyArea, the default is a small area in southwest Alberta
 objects <- list(
-  "cloudFolderID" = cloudFolderID
-  # studyArea = tempStudyArea,
-  # rasterToMatch = rtm
+  studyArea = studyArea,
+  rasterToMatch = rasterToMatch
   )
 
 #Run module
