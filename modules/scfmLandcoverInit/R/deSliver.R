@@ -61,13 +61,25 @@ deSliver <- function(x, threshold) {
       return(out)
     }
   )
-
+  otherPolys <- xNotSlivers[!(1:nrow(xNotSlivers) %in% nearestFeature),]
   if (length(mergeSlivers) > 1) {
-    m <- bind(mergeSlivers)
-  } else {
-    m <- mergeSlivers[[1]]
-  }
 
+    #these polygons must be tracked and merged. They may be nrow(0) if every feature was modified in some way
+    if (nrow(otherPolys) != 0) {
+      otherPolys <- list(as_Spatial(otherPolys))
+      bothGroups <- append(x = mergeSlivers, values = otherPolys)
+      m <- bind(bothGroups)
+    } else {
+      m <- bind(mergeSlivers)
+    }
+  } else { #lapply over length 1 is special
+    if (nrow(otherPolys) != 0) {
+      otherPolys <- as_Spatial(otherPolys)
+      m <- bind(mergeSlivers, otherPolys)
+    } else {
+      m <- mergeSlivers[[1]]
+    }
+  }
   #Remove the temporary column
   m$tempArea <- NULL
 
