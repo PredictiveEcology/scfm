@@ -3,14 +3,15 @@ getFirePoints_NFDB <- function(url = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfd
                                redownloadIn = 1, # Time in YEARS that we tolerate the data to be "old" i.e. 0.5 would mean "redownload data older than 6 months"
                                NFDB_pointPath # Can't be NULL. Needs to be an existing location for the fire points
                                ){
-  
   check <- Checksums(NFDB_pointPath, checksumFile = file.path(NFDB_pointPath, "CHECKSUMS.txt"), write = TRUE)
   whRowIsShp <- grep("NFDB_point.*shp$", check$expectedFile)
   whIsOK <- which(check$result[whRowIsShp] == "OK")
   needNewDownload <- TRUE
   if (any(whIsOK)) {
-    dateOfFile <- gsub("NFDB_point_|\\.shp", "", check[whRowIsShp[whIsOK], "expectedFile"])
-    if ((as.Date(dateOfFile, format = "%Y%m%d") + dyear(redownloadIn)) > Sys.Date()) {
+    filesToCheck <- tools::file_path_sans_ext(unlist(lapply(check[whRowIsShp[whIsOK], "expectedFile"], as.character)))
+    dateOfFile <- substr(x = filesToCheck, start = nchar(filesToCheck) - 8 + 
+             1, nchar(filesToCheck))
+    if (any((as.Date(dateOfFile, format = "%Y%m%d") + dyear(redownloadIn)) > Sys.Date())) {
       # can change dyear(...) to whatever... e.g., dyear(0.5) would be 6 months
       needNewDownload <- FALSE
     }
