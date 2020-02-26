@@ -214,7 +214,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   #this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
 
-    sim$fireLocations <- getFirePoints_NFDB(url = extractURL("firePoints", sim),
+    sim$firePoints <- getFirePoints_NFDB(url = extractURL("firePoints", sim),
                                         studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
                                         NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
                                                                    create = TRUE))
