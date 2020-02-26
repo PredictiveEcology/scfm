@@ -1,0 +1,1 @@
+/mnt/data/Micheletti/NWT/functions/getFirePoints_NFDB.R
