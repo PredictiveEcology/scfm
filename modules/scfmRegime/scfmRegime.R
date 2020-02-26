@@ -216,7 +216,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
 
     NFDB_pointPath <- file.path(dataPath(sim), "NFDB_point")
     checkPath(NFDB_pointPath, create = TRUE)
-    a <- Checksums(NFDB_pointPath, checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
+    a <- Checksums(NFDB_pointPath, checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"), write = TRUE)
     whRowIsShp <- grep("NFDB_point.*shp$", a$expectedFile)
     whIsOK <- which(a$result[whRowIsShp] == "OK")
     needNewDownload <- TRUE
