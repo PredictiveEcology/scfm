@@ -210,10 +210,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
   }
-  #this module has many dependencies that aren't sourced in .inputObjects
-  #this workaround prevents checksums updating due to daily name change of NFDB files
+  ## this module has many dependencies that aren't sourced in .inputObjects
+  ## this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
-
     sim$firePoints <- getFirePoints_NFDB(url = extractURL("firePoints", sim),
                                         studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
                                         NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
