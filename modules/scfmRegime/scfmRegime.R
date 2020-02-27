@@ -210,40 +210,13 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
   }
-  #this module has many dependencies that aren't sourced in .inputObjects
-  #this workaround prevents checksums updating due to daily name change of NFDB files
+  ## this module has many dependencies that aren't sourced in .inputObjects
+  ## this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
-
-    NFDB_pointPath <- file.path(dataPath(sim), "NFDB_point")
-    checkPath(NFDB_pointPath, create = TRUE)
-    a <- Checksums(NFDB_pointPath, checksumFile = file.path(dataPath(sim), "CHECKSUMS.txt"))
-    whRowIsShp <- grep("NFDB_point.*shp$", a$expectedFile)
-    whIsOK <- which(a$result[whRowIsShp] == "OK")
-    needNewDownload <- TRUE
-    if (any(whIsOK)) {
-      dateOfFile <- gsub("NFDB_point_|\\.shp", "", a[whRowIsShp[whIsOK], "expectedFile"])
-      if ((as.Date(dateOfFile, format = "%Y%m%d") + dyear(1)) > Sys.Date()) {
-        # can change dyear(...) to whatever... e.g., dyear(0.5) would be 6 months
-        needNewDownload <- FALSE
-      }
-    }
-    if (needNewDownload) {
-      print("downloading NFDB")# put prepInputs here
-        sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
-                                     studyArea = sim$studyArea, fun = "shapefile",
-                                     destination = dPath, overwrite = TRUE,
-                                     useSAcrs = TRUE, omitArgs = c("dPath", "overwrite"))
-    } else {
-      NFDBs <- grep(list.files(dPath), pattern = "^NFDB", value = TRUE)
-      shps <- grep(list.files(dPath), pattern = ".shp$", value = TRUE)
-      aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
-      firePoints <- Cache(shapefile, file.path(dPath, aFile))
-      sim$firePoints <- Cache(postProcess, x = firePoints,
-                              studyArea = sim$studyArea, filename2 = NULL,
-                              rasterToMatch = sim$rasterToMatch,
-                              userTags = c("cacheTags", "NFDB"))
-
-    }
+    sim$firePoints <- getFirePoints_NFDB(url = extractURL("firePoints", sim),
+                                        studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
+                                        NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
+                                                                   create = TRUE))
   }
   return(invisible(sim))
 }
