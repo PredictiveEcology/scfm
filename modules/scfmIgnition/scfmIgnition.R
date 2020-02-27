@@ -102,8 +102,4 @@ Ignite <- function(sim) {
 
 .inputObjects <- function(sim) {
 
- if (!suppliedElsewhere(object = "scfmReturnInterval", sim = sim, where = "sim"))
-   sim$scfmReturnInterval <- P(sim)$returnInterval
-
-  return(invisible(sim))
 }
