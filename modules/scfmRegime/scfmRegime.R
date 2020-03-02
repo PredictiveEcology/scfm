@@ -120,9 +120,6 @@ Init <- function(sim) {
   dPath <- dataPath(sim)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
-  if (!suppliedElsewhere("studyArea", sim)) {
-
-  }
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
 
