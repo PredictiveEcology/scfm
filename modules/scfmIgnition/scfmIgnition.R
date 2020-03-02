@@ -101,5 +101,10 @@ Ignite <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
+ if (!suppliedElsewhere('flammableMap', sim)) {
+   message ("you should run scfmIgnition with scfmLandcoverInit")
+   flammableMap <- raster(nrow = 10, ncol = 10)
+   vals <- sample(x = 0:1, size = 100, replace = TRUE)
+   sim$flammmableMap <- setValues(flammableMap, vals)
+ }
 }
