@@ -107,4 +107,5 @@ Ignite <- function(sim) {
    vals <- sample(x = 0:1, size = 100, replace = TRUE)
    sim$flammmableMap <- setValues(flammableMap, vals)
  }
+  return(sim)
 }
