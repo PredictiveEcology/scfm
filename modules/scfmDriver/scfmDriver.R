@@ -57,7 +57,7 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       sim <- Init(sim)
     },
-    
+
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
   )
@@ -82,7 +82,7 @@ escapeProbDelta <- function(p0, w, hatPE) {
 
 Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-  
+
   # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
   #  pass this one into the calibrateFireRegimePolys, avoiding many downloads (esp when
   #  in parallel)
@@ -115,8 +115,8 @@ Init <- function(sim) {
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
       MBper = rgeos::gArea(studyArea)/(prod(res(landscapeLCC)))/1e3 * 2 + 4e2, # in MB
       maxNumClusters = length(sim$scfmRegimePars),
-      outfile = "scfmLog", 
-      objects = c("genSimLand"), envir = environment(), 
+      outfile = "scfmLog",
+      objects = c("genSimLand"), envir = environment(),
       libraries = c("rlang", "raster", "rgeos", "reproducible",
                     "LandR", "sf", "fasterize", "data.table"))
     on.exit({
@@ -147,9 +147,9 @@ Init <- function(sim) {
                               ),
                               calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
-  
+
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-  
+
   return(invisible(sim))
 }
 
@@ -161,14 +161,13 @@ Init <- function(sim) {
     studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
     sim$studyArea <- studyArea
   }
-  
+
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-    
-    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+
+    sim$fireRegimePolys <- Cache(prepInputs, url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
-                                      rasterToMatch = sim$rasterToMatch,
                                       filename2 = TRUE,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
