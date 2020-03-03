@@ -35,11 +35,12 @@ getFirePoints_NFDB <- function(url = NULL,
     NFDBs <- grep(list.files(NFDB_pointPath), pattern = "^NFDB", value = TRUE)
     shps <- grep(list.files(NFDB_pointPath), pattern = ".shp$", value = TRUE)
     aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
-    firePoints <- Cache(shapefile, file.path(NFDB_pointPath, aFile))
+    firePoints <- sf::read_sf(file.path(NFDB_pointPath, aFile))
     firePoints <- Cache(postProcess, x = firePoints,
                             studyArea = studyArea, filename2 = NULL,
                             rasterToMatch = rasterToMatch,
                             userTags = c("cacheTags", "NFDB"))
+    firePoints <- sf::as_Spatial(firePoints)
   }
   return(firePoints)
 }
