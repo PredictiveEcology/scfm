@@ -121,9 +121,8 @@ Burnemup <- function(sim) {
                                       # maxSize = maxSizes,  #not sure this works
                                       asRaster = FALSE)
 
-  sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
-  names(sim$rstCurrentBurn) <- NULL
-  sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
+  sim$rstCurrentBurn <- raster(sim$vegMap) #must wrap with 'raster' to get around file-backed problems
+  sim$rstCurrentBurn[!is.na(sim$vegMap)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
