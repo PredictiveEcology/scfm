@@ -30,7 +30,8 @@ defineModule(sim, list(
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
+    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
+    expectsInput(objectName = 'fireRegimeRas', objectClass = 'RasterLayer', desc = 'raster with fire regimes from fireRegimePolys')
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
@@ -51,18 +52,18 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- Init(sim)
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", 
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot",
                            eventPriority = .last())
     },
     plot = {
       burnMap <- sim$burnMap
       Plot(burnMap, legend = FALSE, title = "burn map")
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", 
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot",
                            eventPriority = .last())
     },
     burn = {
       if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
-        
+
         if (!is.null(sim$spreadState)) {
           ## we really want to test if the data table has any rows
           if (NROW(sim$spreadState[state == "activeSource"]) > 0)
@@ -71,7 +72,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
-    
+
     plot = {
       if (!is.null(sim$rstCurrentBurn)){
         Plot(sim$rstCurrentBurn, new = TRUE, col = c("grey", "red"),
@@ -109,13 +110,14 @@ Init <- function(sim) {
                                 "year" = numeric(0),
                                 "areaBurned" = numeric(0),
                                 "polyID" = numeric(0))
-  
+
   return(invisible(sim))
 }
 
 Burnemup <- function(sim) {
+
   ## name is a homage to Walters and Hillborne
-  
+
   # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
@@ -123,7 +125,7 @@ Burnemup <- function(sim) {
   threadsDT <- getDTthreads()
   setDTthreads(1)
   on.exit({setDTthreads(threadsDT)}, add = TRUE)
-  
+
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,
                                       spreadProb = sim$pSpread,
@@ -136,11 +138,11 @@ Burnemup <- function(sim) {
   sim$rstCurrentBurn[!is.na(sim$vegMap)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
-  
+
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
   sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
-  
+
   #get fire year, pixels burned, area burned, poly ID of all burned pixels
   tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)

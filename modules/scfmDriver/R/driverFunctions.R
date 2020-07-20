@@ -14,14 +14,14 @@ genSimLand <- function(coreLand, buffDist, landscapeLCC = NULL) {
 
   #Generate flammability raster -- either from an existing landscapeLCC or de novo/download
   landscapeLCC <- if (is.null(landscapeLCC)) {
-    Cache(prepInputsLCC, destinationPath = tempDir, studyArea = polyLandscape, 
+    Cache(prepInputsLCC, destinationPath = tempDir, studyArea = polyLandscape,
           useSAcrs = TRUE, omitArgs = "destinationPath", filename2 = NULL)
   } else {
-    Cache(postProcess, landscapeLCC, studyArea = polyLandscape, 
+    Cache(postProcess, landscapeLCC, studyArea = polyLandscape,
           useSAcrs = TRUE, filename2 = NULL)
   }
-  
-  
+
+
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)
@@ -185,9 +185,18 @@ calibrateFireRegimePolys <- function(polygonType, regime,
               userTags = c('scfmDriver', "executeDesign", polygonType),
               omitArgs = c("indices"))
 
-  calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
-
-  xBar <- regime$xBar / cellSize
+  count <- 0
+  kcount <- 30
+  calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
+  while (count < 5 & class(calibModel) == 'try-error') {
+    kcount <- kcount + 5
+    count <- count + 1
+    calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
+  }
+  if (class(calibModel) == 'try-error') {
+    stop("could not calibrate fire model. Contact module developers")
+  }
+    xBar <- regime$xBar / cellSize
 
   if (xBar > 0) {
     #now for the inverse step.

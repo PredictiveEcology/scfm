@@ -110,6 +110,7 @@ Init <- function(sim) {
                                     ),
                                     calibrateFireRegimePolys))
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
+
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
