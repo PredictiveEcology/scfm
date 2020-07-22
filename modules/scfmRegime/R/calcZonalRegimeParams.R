@@ -63,7 +63,7 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   }
 
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #need to addd a name or code for basic verification by Driver module, and time field
+  #need to add a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
   if (maxFireSize < 1){

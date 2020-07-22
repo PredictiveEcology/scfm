@@ -28,7 +28,7 @@ getFirePoints_NFDB <- function(url = NULL,
   }
   if (needNewDownload) {
     print("downloading NFDB")
-    firePoints <- Cache(prepInputs, url = url, studyArea = studyArea, fun = "shapefile",
+    firePoints <- Cache(prepInputs, url = url, studyArea = studyArea, fun = "sf::read_sf",
                         destination = NFDB_pointPath, useCache = "overwrite",
                         useSAcrs = TRUE, omitArgs = c("NFDB_pointPath", "overwrite"))
   } else {
