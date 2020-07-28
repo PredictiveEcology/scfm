@@ -188,12 +188,12 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   count <- 0
   kcount <- 30
   calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
-  while (count < 5 & class(calibModel) == 'try-error') {
+  while (count < 5 & inherits(calibModel, 'try-error')) {
     kcount <- kcount + 5
     count <- count + 1
     calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
   }
-  if (class(calibModel) == 'try-error') {
+  if (inherits(calibModel, 'try-error')) {
     stop("could not calibrate fire model. Contact module developers")
   }
     xBar <- regime$xBar / cellSize
