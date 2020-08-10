@@ -36,7 +36,8 @@ defineModule(sim, list(
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
     createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels"),
+    createsOutput(objectName = "annualBurnMap", object = "list", desc = "annual burn map preserved in a list")
   )
 ))
 
@@ -66,6 +67,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 
     plot = {
       Plot(sim$rstCurrentBurn, new = TRUE, col = c("grey", "red"))
+      sim$annualBurnMap[[paste0("year", time(sim))]] <- sim$rstCurrentBurn
       Plot(sim$burnMap, title = "Cumulative Burn", new = TRUE)
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
@@ -98,6 +100,7 @@ Init <- function(sim) {
                                 "year" = numeric(0),
                                 "areaBurned" = numeric(0),
                                 "polyID" = numeric(0))
+  sim$annualBurnMap <- list()
 
   return(invisible(sim))
 }

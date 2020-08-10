@@ -13,7 +13,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats"),
+                  "scam (==1.2.3)", "sf", "sp", "SpaDES.tools", "stats"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -147,6 +147,7 @@ Init <- function(sim) {
                                  maxCells = maxBurnCells)
 
       cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
+
       calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
 
       xBar <- regime$xBar / cellSize
@@ -213,7 +214,6 @@ Init <- function(sim) {
     })
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-
   return(invisible(sim))
 }
 

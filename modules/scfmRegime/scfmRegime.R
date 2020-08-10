@@ -15,11 +15,21 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
+    defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
+    defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
+                    paste0("Name of the column that has fire cause. ",
+                           "In the latest dataset, its FIRECAUS.")),
+    defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
+                    paste0("Name of the column that has fire size. ",
+                           "In the latest dataset, its POLY_HA.")),
+    defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
+                    paste0("Name of the column that has fire size. ",
+                           "In the latest dataset, its YEAR"))
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
-                 desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
+                 desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
+                               'YEAR', and 'SIZE_HA', or pass the parameters to identify those"),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list",
@@ -42,7 +52,7 @@ defineModule(sim, list(
 
 doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
-    Init(sim)
+    sim <- Init(sim)
   } else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -51,31 +61,47 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  tmp <- sim$firePoints
+  if (is(sim$firePoints, "list")){
+    tmp <- do.call(what = bind, args = list(sim$firePoints))
+  } else {
+    tmp <- sim$firePoints
+  }
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
   }
   #extract and validate fireCause spec
 
   fc <- P(sim)$fireCause
+
   #should verify CAUSE is a column in the table...
-  if (is.factor(tmp$CAUSE)){
-    causeSet <- levels(tmp$CAUSE)}
+  if (!P(sim)$fireCauseColumnName %in% names(tmp))
+    stop(paste0("The column ", P(sim)$fireCauseColumnName, " does not exist",
+                " in the fire database used. Please pass the correct column name ",
+                "for the fire cause."))
+  if (is.factor(tmp[[P(sim)$fireCauseColumnName]])){
+    causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])}
     else {
-    causeSet <- unique(tmp$CAUSE)
+    causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
   if (any(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
-    warning("this firecause is not present: ", notPresent)
+    warning(paste0("This firecause is not present: ", notPresent,
+                   " The following are the fire causes: ",
+                   paste(causeSet, collapse = ", "),
+                   ". Original cause will be replaced by ",
+                         paste(causeSet, collapse = ", ")), immediate. = TRUE)
+    fc <- causeSet
   }
-  tmp <- subset(tmp, CAUSE %in% fc)
+  tmp <- subset(tmp,  get(P(sim)$fireCauseColumnName) %in% fc)
 
   #extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
   if (length(epoch) != 2 ||
       !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
     stop("illegal fireEpoch: ", epoch)
-  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
+
+  tmp <- subset(tmp, get(P(sim)$fireYearColumnName) >= epoch[1] &
+                  get(P(sim)$fireYearColumnName) <= epoch[2])
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
@@ -86,15 +112,24 @@ Init <- function(sim) {
   tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys) #gives studyArea row name to point
   tmp$PolyID <- tmp$PolyID$PolyID
 
-  tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
-  sim$firePoints <- tmp
+  if (any(is.na(tmp$PolyID)))
+    tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
 
-  firePolys <- unlist(sim$firePoints)
+  # sim$firePoints <- tmp # TM ~ Terrible terrible idea. Other modules might use this object and
+  # espect it to be the list of fire points
+  # You shouldn't modify it unless its a dataPrep module or smth and even so, its dangerous.
+  # Just use your local variable, or save as a new sim.Object if this needs to go across modules.
+  # I checked all SCFM modules, and only regime uses firePoints, so I am keeping the local
+  # Object
+
+  # firePolys <- unlist(sim$firePoints) # TM ~ Use tmp, as its already unlisted!
+  firePolys <- tmp # TM ~ Use tmp, as its already unlisted!
 
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                            firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                           firePoints = sim$firePoints, epochLength = epochLength,
-                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
+                           firePoints = firePolys, epochLength = epochLength,
+                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                           fireSizeColumnName = P(sim)$fireSizeColumnName)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 
@@ -107,10 +142,12 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
-                                landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints,
-                                epochLength = epochLength, maxSizeFactor) {
+calcZonalRegimePars <- function(polygonID, firePolys,
+                                landscapeAttr,
+                                firePoints,
+                                epochLength,
+                                maxSizeFactor,
+                                fireSizeColumnName) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -131,7 +168,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   if (nFires > 0) {
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
-    xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
+    # xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]fireSizeColumnName # Hardcoded!! Breaks
+    # as soon as you use another fire points database
+    xVec <- tmpA[[fireSizeColumnName]][tmpA[[fireSizeColumnName]] > cellSize]
 
     if (length(xVec) > 0) {
       pEscape <- length(xVec) / nFires
@@ -158,14 +197,17 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
           warning(
-            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",polygonID)
+            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",
+                    polygonID)
           )
           maxFireSize <- xMax * maxSizeFactor
         }
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
     } else {
-      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
+      #TODO Default values need to be used, except they are not being used here! Just a message saying
+      # they are. But they are all zeroed, NOT default! This is NOT producing fires!
+      message(paste("no fires larger than cellsize in ", polygonID, "."))
     }
   } else {
     message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
