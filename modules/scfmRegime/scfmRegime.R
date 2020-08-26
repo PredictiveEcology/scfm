@@ -16,6 +16,7 @@ defineModule(sim, list(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
+    defineParameter("targetBurnRate", "numeric", NA, 0, 1, "proportion anual area burned"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     paste0("Name of the column that has fire cause. ",
                            "In the latest dataset, its FIRECAUS.")),
