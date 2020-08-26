@@ -1,7 +1,9 @@
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
-                                landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints,
-                                epochLength = epochLength, maxSizeFactor) {
+calcZonalRegimePars <- function(polygonID, firePolys,
+                                landscapeAttr,
+                                firePoints,
+                                epochLength, 
+                                maxSizeFactor,
+                                fireSizeColumnName) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -23,8 +25,9 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
   if (nFires > 0) {
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
-    xFireSize <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-    xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
+    # xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]fireSizeColumnName # Hardcoded!! Breaks
+    # as soon as you use another fire points database
+    xVec <- tmpA[[fireSizeColumnName]][tmpA[[fireSizeColumnName]] > cellSize]
     
     if (length(xVec) > 0) {
       pEscape <- length(xVec) / nFires
@@ -51,14 +54,17 @@ calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
           warning(
-            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",polygonID)
+            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",
+                    polygonID)
           )
           maxFireSize <- xMax * maxSizeFactor
         }
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
     } else {
-      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
+      #TODO Default values need to be used, except they are not being used here! Just a message saying
+      # they are. But they are all zeroed, NOT default! This is NOT producing fires!
+      message(paste("no fires larger than cellsize in ", polygonID, "."))
     }
   } else {
     message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
