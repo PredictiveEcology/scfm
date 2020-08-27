@@ -3,7 +3,8 @@ calcZonalRegimePars <- function(polygonID, firePolys,
                                 firePoints,
                                 epochLength, 
                                 maxSizeFactor,
-                                fireSizeColumnName) {
+                                fireSizeColumnName,
+                                targetBurnRate) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -81,8 +82,8 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   
   burnRate <- (nFires * xFireSize) / (epochLength * landAttr$burnyArea) 
   
-  if  (!is.na(P(sim)$targetBurnRate)){
-    ratio <- P(sim)$targetBurnRate / burnyArea
+  if  (!is.na(targetBurnRate)){
+    ratio <- targetBurnRate / landAttr$burnyArea
     xFireSize <- xFireSize * ratio
   }
   
