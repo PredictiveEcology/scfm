@@ -130,7 +130,8 @@ Init <- function(sim) {
                            firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                            firePoints = firePolys, epochLength = epochLength,
                            maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName)
+                           fireSizeColumnName = P(sim)$fireSizeColumnName,
+                           targetBurnRate = P(sim)$targetBurnRate)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 
