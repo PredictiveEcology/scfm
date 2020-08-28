@@ -97,7 +97,7 @@ Init <- function(sim) {
   
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
   sim$scfmDriverPars <- Cache(userTags = c("mainFunction::Map2", "objectName::scfmDrivePars"),
-    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
+    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID, # cacheId = "2d124ffe1da1affa" # This is the cached object as of 28AUG20
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
     regime = sim$scfmRegimePars, #[[polygonType]]
@@ -140,8 +140,9 @@ Init <- function(sim) {
       index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
       index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
       index <- index[!is.na(index)]
-      if (length(index) == 0)
+      if (length(index) == 0){
         stop("polygon has no flammable cells!")
+      }
 
       dT <- makeDesign(indices = index, targetN = targetN,
                        pmin = pMin, pmax = pMax,
@@ -245,32 +246,39 @@ genSimLand <- function(coreLand, buffDist, polygonType) {
   if (!gIsValid(bfireRegimePoly, byid = FALSE)) {
     bfireRegimePoly <- gBuffer(bfireRegimePoly, width = 0)
   }
-  tryCatch({
-    bfireRegimePoly <-  gDifference(bfireRegimePoly, 
-                                    spgeom2 = coreLand, 
-                                    byid = FALSE)
-  }, error = function(e){
-     warning(paste0("Polygon ", polygonType, 
-                    " probably has holes, which returned the following error:",
-                    e$message, ". Attempting to fix it."), immediate. = TRUE)
-    coreLand <- spatialEco::remove.holes(coreLand)
-    bfireRegimePoly <-  gDifference(bfireRegimePoly, 
-                                    spgeom2 = coreLand, 
-                                    byid = FALSE)
-           })
-  polyLandscape <- rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
+  coreLand <- spatialEco::remove.holes(coreLand)
+  bfireRegimePoly <- gDifference(bfireRegimePoly, 
+                                 spgeom2 = coreLand, 
+                                 byid = FALSE)
+  polyLandscape <- rbind.SpatialPolygons(coreLand, 
+                                         bfireRegimePoly, 
+                                         makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
   #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, 
+                                studyArea = polyLandscape, 
+                                useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)
   landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+  if (all(unique(landscapeIndex[!is.na(landscapeIndex)]) == 0)){
+    stop(paste0("Polygon's ", polygonType, 
+                   " landscapeIndex is == 0. ",
+                "Please debug scfmDriver'genSimLand()."), 
+            immediate. = TRUE)
+  }
 
-  calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
-  names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "lcc", "flammableMap")
+  calibrationLandscape <- list(polyLandscape, 
+                               landscapeIndex, 
+                               landscapeLCC, 
+                               landscapeFlam)
+  names(calibrationLandscape) <- c("fireRegimePoly", 
+                                   "landscapeIndex", 
+                                   "lcc", 
+                                   "flammableMap")
   return(calibrationLandscape)
 }
 
