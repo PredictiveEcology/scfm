@@ -14,7 +14,6 @@ calcZonalRegimePars <- function(polygonID, firePolys,
     return(NULL)
   }
   rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
-  
   pEscape <- 0
   xBar <- 0 # mean fire size
   xMax <- 0
@@ -35,7 +34,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
       xBar <- mean(xVec)
       lxBar <- mean(log(xVec))
       xMax <- max(xVec)
-      xFireSize <- mean(xFireSize)
+      xFireSize <- mean(tmpA[[fireSizeColumnName]]) ## mean size of all fires
       zVec <- log(xVec / cellSize)
       if (length(zVec) < 30)
         warning(paste("Less than 30 \"large\" fires in zone", polygonID, ".",
