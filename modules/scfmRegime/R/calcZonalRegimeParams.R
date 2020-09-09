@@ -20,7 +20,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   lxBar <- NA
   maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
-  xFireSize <- 0 
+ 
   
   if (nFires > 0) {
     #calculate escaped fires
@@ -34,7 +34,6 @@ calcZonalRegimePars <- function(polygonID, firePolys,
       xBar <- mean(xVec)
       lxBar <- mean(log(xVec))
       xMax <- max(xVec)
-      xFireSize <- mean(tmpA[[fireSizeColumnName]]) ## mean size of all fires
       zVec <- log(xVec / cellSize)
       if (length(zVec) < 30)
         warning(paste("Less than 30 \"large\" fires in zone", polygonID, ".",
@@ -73,18 +72,53 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
-  #browser()
+browser()
   if (maxFireSize < 1){
     warning("this can't happen")
     maxFireSize = cellSize
   }
   
-  burnRate <- (nFires * xFireSize) / (epochLength * landAttr$burnyArea) 
+# AnaFireSize <- 0 
+# AnaFireSize <- mean(tmpA[[fireSizeColumnName]]) ## mean size of all fires not just escapes
+  empiricalBurnRate <- sum(tmpA[[fireSizeColumnName]]) / (epochLength * landAttr$burnyArea) 
   
-  if  (!is.na(targetBurnRate)){
-    ratio <- targetBurnRate / landAttr$burnyArea
-    xFireSize <- xFireSize * ratio
+  # ratio <- 1
+  # 
+  # if  (!is.na(targetBurnRate)){
+  #   ratio <- empiricalBurnRate/ targetBurnRate  
+  #   #AnaFireSize <- AnaFireSize * ratio
+  # }
+  
+if (!is.na(targetBurnRate)){
+  ratio <-  targetBurnRate/empiricalBurnRate 
+  if (ratio > 1){ #what happens if ratio is < 1??
+    newFireValues <- ratioPartition(targetBurnRate = targetBurnRate, 
+                                  empiricalBurnRate = empiricalBurnRate,
+                                  pEscape = pEscape,
+                                  xBar = xBar,
+                                  rate = rate)
+     rate <- newFireValues$rate
+     pEscape = newFireValues$pEscape
+     xBar = newFireValues$xBar
+     
   }
+ }
+  
+  #fireRegime does not have any control 
+  #if we are going to say that escape, Nfires and burnRate to make a fictional fire 
+  #regime. Modify scfm Regime Pars so that the desire burnRate is achieve.
+  # the solution is to make all changes in Regime, will take care of all changes. 
+  # 
+
+  # pEscapeRatio <- sqrt(ratio) # pEscape no bigger than  ratio 1 and sqrt(ratio) no more than 2
+  #   
+  #   if (any(pEscapeRatio > 2, pEscapeRatio  > ratio)){
+  #   stop(paste("this can't happen. Need pEscapeRation < 2"))
+  #   } else if (ratio != 1){
+  #   xBarRatio <- xBar  * ratio / pEscapeRatio 
+  #   pEscape <- pEscape * pEscapeRatio 
+  #   
+  # }
   
   return(list(ignitionRate = rate,
               pEscape = pEscape,
@@ -93,8 +127,8 @@ calcZonalRegimePars <- function(polygonID, firePolys,
               lxBar = lxBar,
               #mean log(fire size)
               xMax = xMax,
-              xFireSize = xFireSize,
-              burnRate = burnRate,
+              empiricalBurnRate = empiricalBurnRate,
+              ratioBurnRate = ratio,
               #maximum observed size
               emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
   )
