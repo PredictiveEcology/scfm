@@ -9,6 +9,7 @@
 getFirePoints_NFDB <- function(url = NULL,
                                studyArea = NULL, rasterToMatch = NULL, redownloadIn = 1,
                                NFDB_pointPath = NULL) {
+
   if (is.null(NFDB_pointPath)) stop("NFDB_pointPath cannot be null. Specify a file path.")
 
   if (is.null(url))
@@ -31,6 +32,7 @@ getFirePoints_NFDB <- function(url = NULL,
     firePoints <- Cache(prepInputs, url = url, studyArea = studyArea, fun = "sf::read_sf",
                         destination = NFDB_pointPath, useCache = "overwrite",
                         useSAcrs = TRUE, omitArgs = c("NFDB_pointPath", "overwrite"))
+    firePoints <- sf::as_Spatial(firePoints)
   } else {
     NFDBs <- grep(list.files(NFDB_pointPath), pattern = "^NFDB", value = TRUE)
     shps <- grep(list.files(NFDB_pointPath), pattern = ".shp$", value = TRUE)

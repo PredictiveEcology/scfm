@@ -186,7 +186,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
               omitArgs = c("indices"))
 
   count <- 0
-  kcount <- 30
+  kcount <- 50
   calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
   while (count < 5 & inherits(calibModel, 'try-error')) {
     kcount <- kcount + 5
