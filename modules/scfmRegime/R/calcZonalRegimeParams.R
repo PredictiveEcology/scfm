@@ -91,7 +91,7 @@ browser()
   
 if (!is.na(targetBurnRate)){
   ratio <-  targetBurnRate/empiricalBurnRate 
-  if (ratio > 1){ #what happens if ratio is < 1??
+  if (ratio > 1){ #what happens if ratio is < 1?? TODO: GIVE AN STOP
     newFireValues <- ratioPartition(targetBurnRate = targetBurnRate, 
                                   empiricalBurnRate = empiricalBurnRate,
                                   pEscape = pEscape,
