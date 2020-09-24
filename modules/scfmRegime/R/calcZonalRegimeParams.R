@@ -72,7 +72,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
   #need to addd a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
-browser()
+
   if (maxFireSize < 1){
     warning("this can't happen")
     maxFireSize = cellSize
@@ -91,8 +91,8 @@ browser()
   
 if (!is.na(targetBurnRate)){
   ratio <-  targetBurnRate/empiricalBurnRate 
-  if (ratio > 1){ #what happens if ratio is < 1?? TODO: GIVE AN STOP
-    newFireValues <- ratioPartition(targetBurnRate = targetBurnRate, 
+  if (ratio >= 1){ #what happens if ratio is < 1?? TODO: GIVE AN STOP
+    newFireValues <- ratioPartition2(targetBurnRate = targetBurnRate, 
                                   empiricalBurnRate = empiricalBurnRate,
                                   pEscape = pEscape,
                                   xBar = xBar,
@@ -102,7 +102,10 @@ if (!is.na(targetBurnRate)){
      xBar = newFireValues$xBar
      
   }
- }
+  else{
+    stop("ratio cannot be < 1. Please make sure this does not happen")
+  }
+}
   
   #fireRegime does not have any control 
   #if we are going to say that escape, Nfires and burnRate to make a fictional fire 
