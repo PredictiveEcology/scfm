@@ -94,6 +94,7 @@ Init <- function(sim) {
     pSpread <- sim$pSpread * sim$flammableMap
   }
   sim$pSpread <- pSpread
+ 
   #Create empty data table to store each year's burn data
   sim$burnSummary <- data.table("igLoc" = numeric(0),
                                 "N" = numeric(0),

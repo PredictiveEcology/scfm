@@ -78,20 +78,16 @@ calcZonalRegimePars <- function(polygonID, firePolys,
     maxFireSize = cellSize
   }
   
-# AnaFireSize <- 0 
-# AnaFireSize <- mean(tmpA[[fireSizeColumnName]]) ## mean size of all fires not just escapes
+
   empiricalBurnRate <- sum(tmpA[[fireSizeColumnName]]) / (epochLength * landAttr$burnyArea) 
   
-  # ratio <- 1
-  # 
-  # if  (!is.na(targetBurnRate)){
-  #   ratio <- empiricalBurnRate/ targetBurnRate  
-  #   #AnaFireSize <- AnaFireSize * ratio
-  # }
   
+if (is.na(targetBurnRate)) {
+   ratio <- 1
+ } 
 if (!is.na(targetBurnRate)){
   ratio <-  targetBurnRate/empiricalBurnRate 
-  if (ratio >= 1){ #what happens if ratio is < 1?? TODO: GIVE AN STOP
+  if (ratio >= 1){ 
     newFireValues <- ratioPartition2(targetBurnRate = targetBurnRate, 
                                   empiricalBurnRate = empiricalBurnRate,
                                   pEscape = pEscape,
@@ -107,22 +103,7 @@ if (!is.na(targetBurnRate)){
   }
 }
   
-  #fireRegime does not have any control 
-  #if we are going to say that escape, Nfires and burnRate to make a fictional fire 
-  #regime. Modify scfm Regime Pars so that the desire burnRate is achieve.
-  # the solution is to make all changes in Regime, will take care of all changes. 
-  # 
-
-  # pEscapeRatio <- sqrt(ratio) # pEscape no bigger than  ratio 1 and sqrt(ratio) no more than 2
-  #   
-  #   if (any(pEscapeRatio > 2, pEscapeRatio  > ratio)){
-  #   stop(paste("this can't happen. Need pEscapeRation < 2"))
-  #   } else if (ratio != 1){
-  #   xBarRatio <- xBar  * ratio / pEscapeRatio 
-  #   pEscape <- pEscape * pEscapeRatio 
-  #   
-  # }
-  
+ 
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,
