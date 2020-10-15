@@ -216,7 +216,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
-                                filename2 = TRUE,
+                                filename2 = 'rstLCC.tif',
                                 overwrite = TRUE,
                                 userTags = c(cacheTags, "vegMap"))
   }
@@ -227,7 +227,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch,
-                                      filename2 = 'rstLCC.tif',
+                                      filename2 = TRUE,
                                       overwrite = TRUE,
                                       userTags = c(cacheTags, "fireRegimePolys"))
 
