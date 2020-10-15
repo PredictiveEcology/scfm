@@ -207,31 +207,29 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                    useSAcrs = TRUE,
                                    filename2 = TRUE,
                                    overwrite = TRUE,
-                                   userTags = c("cacheTags", "rasterToMatch"))
+                                   userTags = c(cacheTags, "rasterToMatch"))
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-
     sim$vegMap <- LandR::prepInputsLCC(year = 2005,
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
                                 filename2 = TRUE,
                                 overwrite = TRUE,
-                                userTags = c("cacheTags", "vegMap"))
+                                userTags = c(cacheTags, "vegMap"))
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch,
-                                      filename2 = TRUE,
+                                      filename2 = 'rstLCC.tif',
                                       overwrite = TRUE,
-                                      userTags = c("cacheTags", "fireRegimePolys"))
+                                      userTags = c(cacheTags, "fireRegimePolys"))
 
   }
 
