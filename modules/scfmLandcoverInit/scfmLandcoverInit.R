@@ -227,10 +227,8 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch,
-                                      filename2 = TRUE,
-                                      overwrite = TRUE,
+                                      filename2 = NULL,
                                       userTags = c(cacheTags, "fireRegimePolys"))
-
   }
 
   return(invisible(sim))
