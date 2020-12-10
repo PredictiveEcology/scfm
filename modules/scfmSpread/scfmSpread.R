@@ -140,7 +140,7 @@ Burnemup <- function(sim) {
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
   sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
-  sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
+  # sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
   sim$ageMap[sim$burnDT$pixels] <- 0 #update age
 
   #get fire year, pixels burned, area burned, poly ID of all burned pixels
