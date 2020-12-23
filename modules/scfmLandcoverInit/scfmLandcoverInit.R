@@ -35,6 +35,8 @@ defineModule(sim,list(
                    sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                    desc = "template raster for raster GIS operations. Must be supplied by user"),
+      expectsInput(objectName = "flammableMap", objectClass = "RasterLayer",
+                   desc = "binary flammability map -defaults to using LandR::prepInputsLCC"),
       expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
                    desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
@@ -42,7 +44,7 @@ defineModule(sim,list(
     outputObjects = bind_rows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame",
                     desc = "explains which raster cells are in which polygon"),
-      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
+      #createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
       createsOutput(objectName = "fireRegimeRas", objectClass = "RasterLayer",
                     desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
@@ -95,13 +97,12 @@ Init <- function(sim) {
       sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
     }
   }
-
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
-  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[])
-  sim$flammableMap <-  mask(sim$flammableMap, mask = sim$fireRegimeRas)
+  # sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+  # sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[])
+  # sim$flammableMap <-  mask(sim$flammableMap, mask = sim$fireRegimeRas)
 
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
@@ -217,8 +218,18 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
                                 filename2 = TRUE,
+                                filename2 = 'rstLCC.tif',
                                 overwrite = TRUE,
                                 userTags = c("cacheTags", "vegMap"))
+    
+  }
+  
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    message ("flammableMap not supplied. Using LCC 2005 to create flammableMap")
+      flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+      flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
+      sim$flammableMap <-  mask(flammableMap, mask = sim$rasterToMatch)
+    
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
