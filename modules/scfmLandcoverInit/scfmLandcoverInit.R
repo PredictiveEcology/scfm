@@ -211,7 +211,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
 
   vegMapSupplied <- TRUE
   if (!suppliedElsewhere("vegMap", sim)) {
-    missingVegMap <- FALSE
+    vegMapSupplied <- FALSE
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
     sim$vegMap <- LandR::prepInputsLCC(year = 2005,
                                 destinationPath = dPath,
@@ -223,14 +223,14 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    if (vegMapSupplied){
+    if (vegMapSupplied) {
       stop("vegMap supplied but flammableMap is not. Please provide both or neither")
     }
-    message ("flammableMap not supplied. veg map to create flammableMap") {
-      flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-      flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
-      sim$flammableMap <-  mask(flammableMap, mask = sim$rasterToMatch)
-    }
+    message("flammableMap not supplied. veg map to create flammableMap")
+    flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+    flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
+    sim$flammableMap <-  mask(flammableMap, mask = sim$rasterToMatch)
+
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
