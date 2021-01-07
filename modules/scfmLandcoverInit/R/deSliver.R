@@ -75,6 +75,7 @@ deSliver <- function(x, threshold) {
   } else { #lapply over length 1 is special
     if (nrow(otherPolys) != 0) {
       otherPolys <- as_Spatial(otherPolys)
+      mergeSlivers <- mergeSlivers[[1]]
       m <- bind(mergeSlivers, otherPolys)
     } else {
       m <- mergeSlivers[[1]]

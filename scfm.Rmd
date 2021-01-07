@@ -32,7 +32,7 @@ library(SpaDES)
 ## Usage example
 
 ```{r module usage example, eval = FALSE}
-cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
+
 
 #Parameters
 timeunit <- "year"
