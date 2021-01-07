@@ -125,7 +125,6 @@ Init <- function(sim) {
 
   # firePolys <- unlist(sim$firePoints) # TM ~ Use tmp, as its already unlisted!
   firePolys <- tmp # TM ~ Use tmp, as its already unlisted!
-
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
                            firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
                            firePoints = firePolys, epochLength = epochLength,

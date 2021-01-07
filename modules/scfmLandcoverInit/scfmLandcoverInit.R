@@ -97,6 +97,7 @@ Init <- function(sim) {
       sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
     }
   }
+ 
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
   sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
