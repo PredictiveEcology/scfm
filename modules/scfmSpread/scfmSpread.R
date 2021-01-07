@@ -38,7 +38,8 @@ defineModule(sim, list(
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
     createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels"),
+    createsOutput(objectName = "annualBurnMap", object = "list", desc = "annual burn map preserved in a list")
   )
 ))
 
@@ -110,6 +111,7 @@ Init <- function(sim) {
                                 "year" = numeric(0),
                                 "areaBurned" = numeric(0),
                                 "polyID" = numeric(0))
+  sim$annualBurnMap <- list()
 
   return(invisible(sim))
 }

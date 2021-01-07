@@ -13,8 +13,10 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats", "rlang"),
+                  "scam (==1.2.3)", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"),
   parameters = rbind(
+    defineParameter("quickCalibration", "logical", FALSE, NA, NA, paste0("Cached version of calibration for each polygon.",
+                                                                         "Should only be used for DEVELOPMENT, not PRODUCTION!")),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
@@ -150,7 +152,6 @@ Init <- function(sim) {
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-
   return(invisible(sim))
 }
 
