@@ -26,13 +26,13 @@ defineModule(sim, list(
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = "Pixel IDs where ignition occurs"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
     createsOutput(objectName = "p0", objectClass = "data.table", desc = "")
   )

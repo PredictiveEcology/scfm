@@ -21,12 +21,12 @@ defineModule(sim, list(
     defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
     createsOutput(objectName = "pIg", objectClass = "numeric", desc = "ignition probability raster")
   )
