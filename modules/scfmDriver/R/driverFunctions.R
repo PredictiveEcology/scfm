@@ -74,9 +74,9 @@ executeDesign <- function(L, dT, maxCells) {
               format(timeLeft, units = "mins"))
 
 
-    threadsDT <- getDTthreads()
-    setDTthreads(1)
-    on.exit({setDTthreads(threadsDT)}, add = TRUE)
+    threadsDT <- data.table::getDTthreads()
+    data.table::setDTthreads(1)
+    on.exit({data.table::setDTthreads(threadsDT)}, add = TRUE)
 
     i <- x[1]
     p0 <- x[2]

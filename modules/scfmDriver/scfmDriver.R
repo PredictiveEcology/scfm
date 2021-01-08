@@ -15,8 +15,6 @@ defineModule(sim, list(
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
                   "scam (==1.2.3)", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"),
   parameters = rbind(
-    defineParameter("quickCalibration", "logical", FALSE, NA, NA, paste0("Cached version of calibration for each polygon.",
-                                                                         "Should only be used for DEVELOPMENT, not PRODUCTION!")),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
@@ -32,19 +30,14 @@ defineModule(sim, list(
                     default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "shapefile of study area"),
-    expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "Areas to calibrate individual fire regime parameters",
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list",
                   desc = "burn parameters for each polygon in fireRegimePolys")
   )
@@ -157,22 +150,12 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using random polygon in Alberta")
-    #TODO: remove LandR once this is confirmed working
-    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
-    sim$studyArea <- studyArea
+
+  if (any(!suppliedElsewhere("scfmRegimePars", sim),
+          !suppliedElsewhere("landscapeAttr", sim))) {
+    stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
+
   }
 
-  if (!suppliedElsewhere("fireRegimePolys", sim)) {
-    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-
-    sim$fireRegimePolys <- Cache(prepInputs, url = extractURL("fireRegimePolys", sim),
-                                      destinationPath = dPath,
-                                      studyArea = sim$studyArea,
-                                      filename2 = TRUE,
-                                      overwrite = TRUE,
-                                      userTags = c("cacheTags", "fireRegimePolys"))
-  }
   return(invisible(sim))
 }
