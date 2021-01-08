@@ -28,7 +28,7 @@ defineModule(sim,list(
       defineParameter("sliverThreshold", "numeric", NA, NA, NA,
                       desc = "fire regime polygons with area less than this number will be merged")
     ),
-    inputObjects = bind_rows(
+    inputObjects = bindrows(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "Landcover to build flammability map",
@@ -38,18 +38,21 @@ defineModule(sim,list(
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                    desc = "template raster for raster GIS operations. Must be supplied by user"),
       expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
-                   desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions",
+                   desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
+                                "Must have numeric field 'PolyID' or it will be created for individual polygons"),
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
     ),
-    outputObjects = bind_rows(
+    outputObjects = bindrows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame",
                     desc = "explains which raster cells are in which polygon"),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
+      createsOutput(objectName = 'fireRegimePolys', objectClass = "SpatialPolygonsDataFrame",
+                    desc = paste("areas to calibrate individual fire regime parameters",
+                                 "modified by removing slivers and adding polyID field where applicable")),
       createsOutput(objectName = "fireRegimeRas", objectClass = "RasterLayer",
                     desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
     )
-)
-)
+))
 
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
@@ -204,7 +207,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                    destinationPath = dPath,
                                    studyArea = sim$studyArea,
                                    useSAcrs = TRUE,
-                                   filename2 = TRUE,
+                                   filename2 = NULL,
                                    overwrite = TRUE,
                                    userTags = c(cacheTags, "rasterToMatch"))
   }
@@ -217,8 +220,8 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
-                                filename2 = 'rstLCC.tif',
-                                overwrite = TRUE,
+                                filename2 = NULL,
+                                useCache = TRUE,
                                 userTags = c(cacheTags, "vegMap"))
   }
 
