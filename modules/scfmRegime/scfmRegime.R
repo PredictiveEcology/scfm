@@ -16,16 +16,17 @@ defineModule(sim, list(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
-                    paste0("Name of the column that has fire cause. ",
-                           "In the latest dataset, its FIRECAUS.")),
+                    desc = "Name of the column that has fire cause, consistent with P(sim)$fireCause"),
+    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
-                    paste0("Name of the column that has fire size. ",
-                           "In the latest dataset, its POLY_HA.")),
+                    desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
-                    paste0("Name of the column that has fire size. ",
-                           "In the latest dataset, its YEAR"))
+                    desc = "Name of the column that has fire size"),
+    defineParameter("targetBurnRate", "numeric", NULL, NA, NA,
+                    desc = paste("default annual proportional area burned if fire data",
+                                 "is insufficient. Defaults to 0"))
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
                  desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
                                'YEAR', and 'SIZE_HA', or pass the parameters to identify those"),
@@ -37,12 +38,14 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                  desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea"),
-    expectsInput(objectName = 'fireRegimePolys', objectClass = "RasterLayer",
-                 desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions")
+    expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+                 desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons"),
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
-   createsOutput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
+   createsOutput(objectName = "fireRegimePoints", objectClass = "SpatialPointsDataFrame",
                  desc = "Fire locations. Points outside studyArea are removed")
   )
 ))
@@ -104,31 +107,21 @@ Init <- function(sim) {
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
   # Assign polygon label to SpatialPoints of fires object
-  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
-  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
   frpl <- sim$fireRegimePolys$PolyID
-  if (is.null(frpl)) 
-    sim$fireRegimePolys$PolyID <- sim$fireRegimePolys[[grep("REGION", names(sim$fireRegimePolys), value = TRUE)[1]]]
-  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
-  # tmp$PolyID <- tmp$PolyID$PolyID
+  if (is.null(frpl)) {
+   stop("fireRegimePolys must have a numeric field called 'PolyID'")
+  }
+    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
 
   if (any(is.na(tmp$PolyID)))
     tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
 
-  # sim$firePoints <- tmp # TM ~ Terrible terrible idea. Other modules might use this object and
-  # espect it to be the list of fire points
-  # You shouldn't modify it unless its a dataPrep module or smth and even so, its dangerous.
-  # Just use your local variable, or save as a new sim.Object if this needs to go across modules.
-  # I checked all SCFM modules, and only regime uses firePoints, so I am keeping the local
-  # Object
-
-  # firePolys <- unlist(sim$firePoints) # TM ~ Use tmp, as its already unlisted!
-  firePolys <- tmp # TM ~ Use tmp, as its already unlisted!
+  sim$fireRegimePoints <- tmp
 
   #this function estimates the ignition probability and escape probability based on NFDB
   scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                           firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                           firePoints = firePolys, epochLength = epochLength,
+                           firePolys = sim$fireRegimePolys, landscapeAttr = sim$landscapeAttr,
+                           firePoints = sim$fireRegimePoints, epochLength = epochLength,
                            maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
                            fireSizeColumnName = P(sim)$fireSizeColumnName,
                            targetBurnRate = P(sim)$targetBurnRate)
@@ -156,9 +149,9 @@ Init <- function(sim) {
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch,
-                                      filename2 = TRUE,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
+    sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
   }
   ## this module has many dependencies that aren't sourced in .inputObjects
   ## this workaround prevents checksums updating due to daily name change of NFDB files

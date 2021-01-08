@@ -1,10 +1,10 @@
 calcZonalRegimePars <- function(polygonID, firePolys,
                                 landscapeAttr,
                                 firePoints,
-                                epochLength, 
+                                epochLength,
                                 maxSizeFactor,
                                 fireSizeColumnName,
-                                targetBurnRate) {
+                                targetBurnRate = NULL) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[idx, ]
   landAttr <- landscapeAttr[[polygonID]]
@@ -14,22 +14,22 @@ calcZonalRegimePars <- function(polygonID, firePolys,
     return(NULL)
   }
   rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
-  
+
   pEscape <- 0
   xBar <- 0 # mean fire size
   xMax <- 0
   lxBar <- NA
   maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
-  xFireSize <- 0 
-  
+  xFireSize <- 0
+
   if (nFires > 0) {
     #calculate escaped fires
     #careful to subtract cellSize where appropriate
     # xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]fireSizeColumnName # Hardcoded!! Breaks
     # as soon as you use another fire points database
     xVec <- tmpA[[fireSizeColumnName]][tmpA[[fireSizeColumnName]] > cellSize]
-    
+
     if (length(xVec) > 0) {
       pEscape <- length(xVec) / nFires
       xBar <- mean(xVec)
@@ -63,30 +63,35 @@ calcZonalRegimePars <- function(polygonID, firePolys,
         #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
       }
     } else {
-      #TODO Default values need to be used, except they are not being used here! Just a message saying
+      #TODO
+      # Default values need to be used, except they are not being used here! Just a message saying
       # they are. But they are all zeroed, NOT default! This is NOT producing fires!
+      #IE: default is perhaps the wrong word -
+      #it defaults to zero because the polygons with no fires are often very inflammable
+      # there should be a way to pass non-zero defaults but I'm not sure whether we would specify by polygon
+      # and if so, how, given the initial polygons may be modified during sliver removal
       message(paste("no fires larger than cellsize in ", polygonID, "."))
     }
   } else {
     message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
   }
-  
+
   #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #need to addd a name or code for basic verification by Driver module, and time field
+  #need to add a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
   if (maxFireSize < 1){
     warning("this can't happen")
     maxFireSize = cellSize
   }
-  
-  burnRate <- (nFires * xFireSize) / (epochLength * landAttr$burnyArea) 
-  
-  if  (!is.na(targetBurnRate)){
+
+  burnRate <- (nFires * xFireSize) / (epochLength * landAttr$burnyArea)
+
+  if  (!is.null(targetBurnRate)){
     ratio <- targetBurnRate / landAttr$burnyArea
     xFireSize <- xFireSize * ratio
   }
-  
+
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,
