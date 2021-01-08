@@ -27,19 +27,18 @@ defineModule(sim, list(
     defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
     expectsInput(objectName = 'fireRegimeRas', objectClass = 'RasterLayer', desc = 'raster with fire regimes from fireRegimePolys')
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
     createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
     createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
     createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels"),
-    createsOutput(objectName = "annualBurnMap", object = "list", desc = "annual burn map preserved in a list")
+    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
   )
 ))
 
@@ -58,7 +57,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     plot = {
       burnMap <- sim$burnMap
-      Plot(burnMap, legend = FALSE, title = "burn map")
+      Plot(burnMap, legend = FALSE, title = "burn map", col = c("grey", "red"))
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot",
                            eventPriority = .last())
     },
@@ -111,7 +110,6 @@ Init <- function(sim) {
                                 "year" = numeric(0),
                                 "areaBurned" = numeric(0),
                                 "polyID" = numeric(0))
-  sim$annualBurnMap <- list()
 
   return(invisible(sim))
 }
@@ -124,7 +122,7 @@ Burnemup <- function(sim) {
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
   # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
-  threadsDT <- getDTthreads()
+  threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
   on.exit({setDTthreads(threadsDT)}, add = TRUE)
 
