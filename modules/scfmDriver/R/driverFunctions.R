@@ -187,16 +187,17 @@ calibrateFireRegimePolys <- function(polygonType, regime,
 
   count <- 0
   kcount <- 50
-  calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
+  scamFormula <- "finalSize ~ s(p, bs = 'micx', k = kcount)"
+  calibModel <- try(scam::scam(as.formula(scamFormula), data = cD), silent = TRUE)
   while (count < 5 & inherits(calibModel, 'try-error')) {
     kcount <- kcount + 5
     count <- count + 1
-    calibModel <- try(scam::scam(finalSize ~ s(p, bs = "micx", k = kcount), data = cD), silent = TRUE)
+    calibModel <- try(scam::scam(as.formula(scamFormula), data = cD), silent = TRUE)
   }
   if (inherits(calibModel, 'try-error')) {
     stop("could not calibrate fire model. Contact module developers")
   }
-    xBar <- regime$xBar / cellSize
+  xBar <- regime$xBar / cellSize
 
   if (xBar > 0) {
     #now for the inverse step.
