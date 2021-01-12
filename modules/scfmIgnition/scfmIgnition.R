@@ -83,16 +83,10 @@ Init <- function(sim) {
 Ignite <- function(sim) {
   sim$ignitionLoci <- NULL #initialise FFS
   ignitions <- lapply(names(sim$scfmDriverPars),
-                      function(polygonType,
-                               landscapeAttr = sim$landscapeAttr,
-                               pIg = sim$pIg) {
-    cells <- landscapeAttr[[polygonType]]$cellsByZone
-    if (is(pIg, "Raster")) {
-      cells[which(runif(length(cells)) < pIg[cells])]
-    } else {
-      cells[which(runif(length(cells)) < pIg)]
-    }
-  })
+                      FUN = calcIgnitions,
+                      landscapeAttr = sim$landscapeAttr,
+                      pIg = sim$pIg)
+
   #resample generates a random permutation of the elements of ignitions
   #so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
@@ -100,12 +94,39 @@ Ignite <- function(sim) {
   return(invisible(sim))
 }
 
+calcIgnitions <- function(polygonType, landscapeAttr, pIg){
+  cells <- landscapeAttr[[polygonType]]$cellsByZone
+  if (is(pIg, "Raster")) {
+    cells <- cells[which(runif(length(cells)) < pIg[cells])]
+  } else {
+    cells <- cells[which(runif(length(cells)) < pIg)]
+  }
+  return(cells)
+}
+
+
 .inputObjects <- function(sim) {
- if (!suppliedElsewhere('flammableMap', sim)) {
-   message ("you should run scfmIgnition with scfmLandcoverInit")
-   flammableMap <- raster(nrow = 10, ncol = 10)
-   vals <- sample(x = 0:1, size = 100, replace = TRUE)
-   sim$flammmableMap <- setValues(flammableMap, vals)
- }
+  if (!suppliedElsewhere('flammableMap', sim)) {
+    message ("you should run scfmIgnition with scfmLandcoverInit")
+    flammableMap <- raster(nrow = 10, ncol = 10)
+    vals <- sample(x = 0:1, size = 100, replace = TRUE)
+    sim$flammmableMap <- setValues(flammableMap, vals)
+  }
+  if (!suppliedElsewhere("landscapeAttr", sim)){
+    stop("landscapeAttr is missing. Please run scfmLandcoverInit")
+    #placeholder
+    sim$landscapeAttr <- list("1" = list(cellsByZone = 1))
+  }
+
+  if (!suppliedElsewhere("scfmDriverPars", sim)) {
+    stop("scfmDriverPars is missing. Please run scfmDriver")
+    sim$scfmDriverPars <- list("1" = list(pSpread = 0.23,
+                                          p0 = 0.01,
+                                          naieveP0 = 0.01,
+                                          pIgnition = 0.01,
+                                          maxBurncells = 10,
+                                          uniroot.res = 0.23))
+  }
+
   return(sim)
 }
