@@ -16,13 +16,9 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
-<<<<<<< Updated upstream
     defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration"),
     defineParameter("mfsMaxRatio", "numeric", 2, 0.125, 8, desc = "maximum ratio to increase msf"),
     defineParameter("mfsMultiplier", "numeric", 1, 0.1, 4, desc = "hack to increase pSpread")
-=======
-    defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration")
->>>>>>> Stashed changes
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
