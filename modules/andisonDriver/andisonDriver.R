@@ -16,20 +16,16 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider"),
-<<<<<<< Updated upstream
     defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration"),
     defineParameter("mfsMaxRatio", "numeric", 2, 0.125, 8, desc = "maximum ratio to increase msf"),
     defineParameter("mfsMultiplier", "numeric", 1, 0.1, 4, desc = "hack to increase pSpread")
-=======
-    defineParameter("pSpreadOddsRatio", "numeric", 1, 0, 100, desc = "allow to override pSpread calibration")
->>>>>>> Stashed changes
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
-                 desc = "A csv 10,000 (pSpread, size) pairs simiulated on a 1000x1000 landscape,to calibrate pSpread agains mean fire size",  
+                 desc = "A csv 10,000 (pSpread, size) pairs simiulated on a 1000x1000 landscape,to calibrate pSpread agains mean fire size",
                  sourceURL = "https://drive.google.com/open?id=155fOsdEJUJNX0yAO_82YpQeS2-bA1KGd"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
@@ -88,7 +84,7 @@ Init <- function(sim) {
   }
 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
-  
+
   sim$scfmDriverPars <- lapply(names(sim$scfmRegimePars), function(polygonType) {
     regime <- sim$scfmRegimePars[[polygonType]]
     landAttr <- sim$landscapeAttr[[polygonType]]
@@ -132,7 +128,7 @@ Init <- function(sim) {
         ratio <- targetAAB / scfmAAB
       }
       if (ratio > 1.05) { #now we will make escaped fires larger than the data say
-        mfs <- mfs * min(ratio, P(sim)$mfsMaxRatio) 
+        mfs <- mfs * min(ratio, P(sim)$mfsMaxRatio)
         scfmAAB <- rate * landAttr$burnyArea * pEscape * mfs
         ratio <- targetAAB / scfmAAB
       }
