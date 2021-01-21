@@ -21,10 +21,7 @@ defineModule(sim, list(
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
                     desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
-                    desc = "Name of the column that has fire size"),
-    defineParameter("targetBurnRate", "numeric", NULL, NA, NA,
-                    desc = paste("default annual proportional area burned if fire data",
-                                 "is insufficient. Defaults to 0"))
+                    desc = "Name of the column that has fire size")
   ),
   inputObjects = bindrows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
@@ -124,8 +121,7 @@ Init <- function(sim) {
                            firePolys = sim$fireRegimePolys, landscapeAttr = sim$landscapeAttr,
                            firePoints = sim$fireRegimePoints, epochLength = epochLength,
                            maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName,
-                           targetBurnRate = P(sim)$targetBurnRate)
+                           fireSizeColumnName = P(sim)$fireSizeColumnName)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 

@@ -3,8 +3,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
                                 firePoints,
                                 epochLength,
                                 maxSizeFactor,
-                                fireSizeColumnName,
-                                targetBurnRate = NULL) {
+                                fireSizeColumnName) {
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[firePoints$PolyID == as.numeric(polygonID),]
   landAttr <- landscapeAttr[[polygonID]]
@@ -20,7 +19,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   lxBar <- NA
   maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
-  xFireSize <- 0
+
 
   if (nFires > 0) {
     #calculate escaped fires
@@ -77,12 +76,6 @@ calcZonalRegimePars <- function(polygonID, firePolys,
     maxFireSize = cellSize
   }
 
-  burnRate <- (nFires * xFireSize) / (epochLength * landAttr$burnyArea)
-
-  if  (!is.null(targetBurnRate)){
-    ratio <- targetBurnRate / landAttr$burnyArea
-    xFireSize <- xFireSize * ratio
-  }
 
   return(list(ignitionRate = rate,
               pEscape = pEscape,
@@ -91,8 +84,6 @@ calcZonalRegimePars <- function(polygonID, firePolys,
               lxBar = lxBar,
               #mean log(fire size)
               xMax = xMax,
-              ifNoDataFireSize = xFireSize,
-              burnRate = burnRate,
               #maximum observed size
               emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
   )
