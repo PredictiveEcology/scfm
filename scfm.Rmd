@@ -28,6 +28,7 @@ library(magrittr)
 library(raster)
 library(SpaDES)
 library(LandR)
+library(ggplot2)
 ```
 
 ## Usage example
@@ -37,8 +38,8 @@ library(LandR)
 
 #Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 10)
-defaultPlotInterval <- 1
+times <- list(start = 0, end = 20)
+defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
 parameters <- list(
@@ -71,7 +72,7 @@ paths <- list(
 center <- SpatialPoints(coords = data.frame(x = c(-1209980), 
             y = c(7586895)), proj4string = CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
-studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 15000, center = center, seed = 1000)
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
 rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, destinationPath = paths$inputPath)
 #do not pass filename2 or it will cause headaches when vegMap is downloaded due to internal cache calls
@@ -103,8 +104,8 @@ comparePredictions <- function(polyList, simList) {
     regime <- sim$scfmRegimePars[[x]]
     driver <- sim$scfmDriverPars[[x]]
     landscapeAttr <- sim$landscapeAttr[[x]]
-    firePoints <- outSim$firePoints[outSim$firePoints$PolyID == x,]
-    hist_MAAB <- sum(firePoints$SIZE_HA[firePoints$SIZE_HA > landscapeAttr$cellSize])/
+    fireRegimePoints <- outSim$fireRegimePoints[outSim$fireRegimePoints$PolyID == as.numeric(x),]
+    hist_MAAB <- sum(fireRegimePoints$SIZE_HA[fireRegimePoints$SIZE_HA > landscapeAttr$cellSize])/
       (landscapeAttr$burnyArea*(sim@params$scfmRegime$fireEpoch[2] - sim@params$scfmRegime$fireEpoch[1] + 1)) * 100
     #This is a long way of saying, sum of fires/ (flammable landscape * fire epoch )
     #hist_mfs will be NaN if there were no fires larger than one pixel
@@ -147,3 +148,5 @@ ggplot(df, aes(x = hist_MAAB, y = mod_MAAB, col = pSpread)) +
   geom_abline(slope = 1)
   # xlim(c(0, 8000)) + 
   # ylim(c(0, 12000)) # + 
+```
+
