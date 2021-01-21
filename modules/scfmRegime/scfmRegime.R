@@ -81,7 +81,7 @@ Init <- function(sim) {
                 "for the fire cause."))
   if (is.factor(tmp[[P(sim)$fireCauseColumnName]])){
     causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])}
-    else {
+  else {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
   if (any(!(fc %in% causeSet))) {
@@ -90,7 +90,7 @@ Init <- function(sim) {
                    " The following are the fire causes: ",
                    paste(causeSet, collapse = ", "),
                    ". Original cause will be replaced by ",
-                         paste(causeSet, collapse = ", ")), immediate. = TRUE)
+                   paste(causeSet, collapse = ", ")), immediate. = TRUE)
     fc <- causeSet
   }
   tmp <- subset(tmp,  get(P(sim)$fireCauseColumnName) %in% fc)
@@ -101,6 +101,7 @@ Init <- function(sim) {
       !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
     stop("illegal fireEpoch: ", epoch)
 
+  quotes <- paste0("tmp$", paste(eval(P(sim)$fireYearColumnName)))
   tmp <- subset(tmp, get(P(sim)$fireYearColumnName) >= epoch[1] &
                   get(P(sim)$fireYearColumnName) <= epoch[2])
 
@@ -109,13 +110,13 @@ Init <- function(sim) {
   # Assign polygon label to SpatialPoints of fires object
   frpl <- sim$fireRegimePolys$PolyID
   if (is.null(frpl)) {
-   stop("fireRegimePolys must have a numeric field called 'PolyID'")
+    stop("fireRegimePolys must have a numeric field called 'PolyID'")
   }
-    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
+  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
 
-  if (any(is.na(tmp$PolyID)))
+  if (any(is.na(tmp$PolyID))) {
     tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
-
+  }
   sim$fireRegimePoints <- tmp
 
   #this function estimates the ignition probability and escape probability based on NFDB
