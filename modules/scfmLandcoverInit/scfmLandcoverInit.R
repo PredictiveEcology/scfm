@@ -63,7 +63,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
            sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
          },
          plot =  {
-           Plot(sim$vegMap, new = TRUE)
+           Plot(sim$fireRegimeRas, title = c("fire regimes"), new = TRUE)
            Plot(sim$flammableMap, legend = FALSE)
            # schedule future event(s)
            sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
@@ -93,10 +93,13 @@ Init <- function(sim) {
                                userTags = c("deSliver", currentModule(sim)))
   }
   if (is.null(sim$fireRegimePolys$PolyID)) {
-    if (is.null(sim$fireRegimePolys$REGION_)) {
+    if (is.null(sim$fireRegimePolys$ECOREGION)) {
+      warning(paste("no PolyID variable in fireRegimePolys - this is used to determine unique fire regimes.",
+                    "Using row.names as default"))
       sim$fireRegimePolys$PolyID <- row.names(sim$fireRegimePolys)
     } else {
-      sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
+      #default fireRegimePolys were likely used
+      sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
     }
   }
 
@@ -249,8 +252,9 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       userTags = c(cacheTags, "fireRegimePolys"))
 
     #this is now necessary due to the gridded nature of ecoregion file
-    sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOZONE)
-    sim$fireRegimePolys$PolyID <- as.numeric(row.names(sim$fireRegimePolys))
+    sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOREGION)
+    sim$fireRegimePolys$ECOREGION <- row.names(sim$fireRegimePolys)
+
   }
 
   return(invisible(sim))
