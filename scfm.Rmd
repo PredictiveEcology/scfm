@@ -27,6 +27,7 @@ Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Stati
 library(magrittr)
 library(raster)
 library(SpaDES)
+library(LandR)
 ```
 
 ## Usage example
@@ -36,57 +37,27 @@ library(SpaDES)
 
 #Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 20)
-defaultInterval <- 1.0
-defaultPlotInterval <- 1.0
+times <- list(start = 0, end = 10)
+defaultPlotInterval <- 1
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
 parameters <- list(
-  .progress = list(type = "text", interval = 1),
-    scfmLandcoverInit = list(
-  .plotInitialTime = times$start,
-  .plotInterval = defaultPlotInterval,
-  .saveInitialTime = defaultInitialSaveTime,
-  .saveInterval = defaultInterval),
-  ageModule = list( #age is really time since fire, regardless of landcover
-    initialAge = 100,
-    maxAge = 200,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmIgnition = list(
-    pIgnition = 0.0001,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmEscape = list(
-    p0 = 0.05,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
+  scfmLandcoverInit = list(
+    sliverThreshold = 1e8),
+  scfmIgnition = list(),
+  scfmEscape = list(),
   scfmSpread = list(
-    pSpread = 0.235,
-    returnInterval = defaultInterval,
-    startTime = times$start,
     .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1000) #this is an important parameter.
-  #increase targetN for more robust estimates, longer run-time 
-)
+    .plotInterval = defaultPlotInterval),
+  scfmRegime = list(fireCause=c("L")),
+  scfmDriver = list(targetN = 1000, 
+                    .useCache = 'overwrite') #increase targetN for more robust estimates, longer run-time 
+) 
 
-modules <- list("group_scfm")
+
+modules <- list('scfmLandcoverInit', 'scfmRegime', 'scfmDriver',
+                'scfmIgnition', 'scfmEscape', 'scfmSpread')
+# list #if no age desired 
 
 #Paths
 paths <- list(
@@ -97,10 +68,15 @@ paths <- list(
 )
 #RasterToMatch:
 #if you supply studyArea you should supply rtm to make sure the crs are identical. 
-set.seed(1002)
-studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 10000)
-rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, filename2 = NULL, destinationPath = tempdir())
-#if run with no studyArea, the default is a small area in southwest Alberta
+center <- SpatialPoints(coords = data.frame(x = c(-1209980), 
+            y = c(7586895)), proj4string = CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
+            "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 15000, center = center, seed = 1000)
+
+rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, destinationPath = paths$inputPath)
+#do not pass filename2 or it will cause headaches when vegMap is downloaded due to internal cache calls
+
+#if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
   rasterToMatch = rasterToMatch
@@ -110,12 +86,12 @@ objects <- list(
 #The calibration process may take hours (it's cached)
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
+
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
 
 dev()
 clearPlot()
-set.seed(23657)
 
 outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
 ```

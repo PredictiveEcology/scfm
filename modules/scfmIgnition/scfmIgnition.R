@@ -18,13 +18,13 @@ defineModule(sim, list(
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
-    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "list of fire regime polygon attributes")
   ),
   outputObjects = bindrows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
@@ -44,9 +44,7 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
-        sim <- Ignite(sim)
-      }
+      sim <- Ignite(sim)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],

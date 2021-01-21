@@ -38,7 +38,7 @@ defineModule(sim,list(
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                    desc = "template raster for raster GIS operations. Must be supplied by user"),
       expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
-                   desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
+                   desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                                 "Must have numeric field 'PolyID' or it will be created for individual polygons"),
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
     ),
@@ -102,8 +102,11 @@ Init <- function(sim) {
 
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
-  sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
 
+  fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
+ #fireRegimeRas is inheriting the color table of vegMap. workaround below
+  sim$fireRegimeRas <- raster(fireRegimeRas)
+  sim$fireRegimeRas <- setValues(sim$fireRegimeRas, getValues(fireRegimeRas))
 
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
@@ -244,6 +247,10 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                       rasterToMatch = sim$rasterToMatch,
                                       filename2 = NULL,
                                       userTags = c(cacheTags, "fireRegimePolys"))
+
+    #this is now necessary due to the gridded nature of ecoregion file
+    sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOZONE)
+    sim$fireRegimePolys$PolyID <- as.numeric(row.names(sim$fireRegimePolys))
   }
 
   return(invisible(sim))

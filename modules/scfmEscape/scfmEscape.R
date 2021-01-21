@@ -21,8 +21,6 @@ defineModule(sim, list(
     defineParameter("startTime", "numeric", start(sim), NA, NA, "simulation time of first escape"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
-    #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    #defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
@@ -51,16 +49,15 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
 
     },
     plot = {
-      tmpRaster <- raster(sim$vegMap)
-      values(tmpRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
-      values(tmpRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
-      Plot(tmpRaster)
+      escapeRaster <- raster(sim$vegMap)
+      values(escapeRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
+      values(escapeRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
+      Plot(escapeRaster, title = paste0("Annual fire escapes", time(sim)))
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
-        sim <- Escape(sim)
-      }
+      sim <- Escape(sim)
+
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],

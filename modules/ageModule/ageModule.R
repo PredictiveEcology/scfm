@@ -97,8 +97,10 @@ Age <- function(sim) {
 
   newAges <- pmin(P(sim)$maxAge, getValues(sim$ageMap) + P(sim)$returnInterval)
   sim$ageMap <- setValues(sim$ageMap, newAges)
-  burn <- getValues(sim$rstCurrentBurn)
-  sim$ageMap[!is.na(burn) & burn == 1] <- 0
+  if (!is.null(sim$rstCurrentBurn)) {
+    burn <- getValues(sim$rstCurrentBurn)
+    sim$ageMap[!is.na(burn) & burn == 1] <- 0
+  }
   return(invisible(sim))
 }
 

@@ -17,14 +17,13 @@ defineModule(sim, list(
                   "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
-    defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
+    defineParameter("pSpread", "numeric", 0.23, 0, 1,
+                    desc = "default spread probability if scfmDriverPars is not supplied"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate burning"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    #defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
@@ -58,13 +57,10 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
                            eventPriority = .last())
     },
     burn = {
-      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
-
-        if (!is.null(sim$spreadState)) {
-          ## we really want to test if the data table has any rows
-          if (NROW(sim$spreadState[state == "activeSource"]) > 0)
-            sim <- Burnemup(sim)
-        }
+      if (!is.null(sim$spreadState)) {
+        ## we really want to test if the data table has any rows
+        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
+          sim <- Burnemup(sim)
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
@@ -72,7 +68,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     plot = {
       if (!is.null(sim$rstCurrentBurn)){
         Plot(sim$rstCurrentBurn, new = TRUE, col = c("grey", "red"),
-             title = paste0("annual burn ", time(sim)))
+             title = paste0("annual burn: year", time(sim)))
         Plot(sim$burnMap, title = "Cumulative Burn", addTo = TRUE)
       }
       sim <- scheduleEvent(sim, eventTime = time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
@@ -97,7 +93,7 @@ Init <- function(sim) {
       pSpread <- sim$flammableMap * sim$scfmDriverPars[[1]]$pSpread
     }
   } else {
-    pSpread <- sim$pSpread * sim$flammableMap
+    pSpread <- P(sim)$pSpread * sim$flammableMap
   }
   sim$pSpread <- pSpread
   #Create empty data table to store each year's burn data
