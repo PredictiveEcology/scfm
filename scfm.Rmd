@@ -38,7 +38,7 @@ library(ggplot2)
 
 #Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 100)
+times <- list(start = 0, end = 20)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
@@ -79,6 +79,9 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
 rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, destinationPath = paths$inputPath)
+rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
+
+
 #do not pass filename2 or it will cause headaches when vegMap is downloaded due to internal cache calls
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(

@@ -103,6 +103,11 @@ Init <- function(sim) {
     }
   }
 
+  if (length(unique(sim$fireRegimePolys$PolyID)) != length(outSim$fireRegimePolys)) {
+    stop("mismatch between PolyID and fireRegimePolys. Must be 1 PolyID value per multipolygon object")
+  }
+
+
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
 
