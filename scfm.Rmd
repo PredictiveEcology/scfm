@@ -79,6 +79,7 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
 rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, destinationPath = paths$inputPath)
+#this is a silly workaround to a SpaDES recoveryMode issue when prepInputsLCC is called again in module
 rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
 
 
