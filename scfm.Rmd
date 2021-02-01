@@ -42,19 +42,28 @@ times <- list(start = 0, end = 20)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
+globCache <- FALSE
+
 parameters <- list(
   scfmLandcoverInit = list(
-    sliverThreshold = 1e8),  
-  #polygons smaller than 100 km2 are merged with closest nonsliver neighbour
-  scfmIgnition = list(),
-  scfmEscape = list(),
+    useCache = globCache,
+    sliverThreshold = 1e8), #polygons <100 km2 are merged with closest non-sliver neighbour
+  scfmIgnition = list(
+    .useCache = globCache
+  ),
+  scfmEscape = list(
+    .useCache = globCache
+  ),
   scfmSpread = list(
+    .useCache = globCache,
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval),
   scfmRegime = list(
+    .useCache = globCache,
     fireCause=c("L")
   ),
   scfmDriver = list(
+    .useCache = globCache, 
     targetN = 1000 #increase targetN for more robust estimates, longer run-time
   )# default targetN = 4000, for reference. 
 ) 
@@ -62,7 +71,8 @@ parameters <- list(
 
 modules <- list('scfmLandcoverInit', 'scfmRegime', 'scfmDriver',
                 'scfmIgnition', 'scfmEscape', 'scfmSpread')
-# list #if no age desired 
+#replace modules with "group_scfm" to include ageModule 
+#ageModule isn't necessary to run and download of ageMap takes time
 
 #Paths
 paths <- list(
@@ -88,7 +98,7 @@ rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
 objects <- list(
   studyArea = studyArea,
   rasterToMatch = rasterToMatch
-  )
+)
 
 #Run module
 #The calibration process may take hours (it's cached)
