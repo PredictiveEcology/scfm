@@ -42,7 +42,7 @@ times <- list(start = 0, end = 20)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- FALSE
+globCache <- c('.inputObjects', 'init') 
 
 parameters <- list(
   scfmLandcoverInit = list(
