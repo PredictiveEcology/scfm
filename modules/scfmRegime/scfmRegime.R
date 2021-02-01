@@ -21,7 +21,9 @@ defineModule(sim, list(
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
                     desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
-                    desc = "Name of the column that has fire size")
+                    desc = "Name of the column that has fire size"),
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",

@@ -22,7 +22,9 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
