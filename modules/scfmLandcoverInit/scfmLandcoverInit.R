@@ -103,7 +103,7 @@ Init <- function(sim) {
     }
   }
 
-  if (length(unique(sim$fireRegimePolys$PolyID)) != length(outSim$fireRegimePolys)) {
+  if (length(unique(sim$fireRegimePolys$PolyID)) != length(sim$fireRegimePolys)) {
     stop("mismatch between PolyID and fireRegimePolys. Must be 1 PolyID value per multipolygon object")
   }
 
