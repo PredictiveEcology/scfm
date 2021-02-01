@@ -32,7 +32,7 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list",
-                 desc = "contains landscape attributes for each polygon"),
+                 desc = "list of landscape attributes for each polygon"),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
@@ -43,7 +43,8 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
   ),
   outputObjects = bindrows(
-   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
+   createsOutput(objectName = "scfmRegimePars", objectClass = "list",
+                 desc =  "list of fire regime parameters for each polygon"),
    createsOutput(objectName = "fireRegimePoints", objectClass = "SpatialPointsDataFrame",
                  desc = "Fire locations. Points outside studyArea are removed")
   )

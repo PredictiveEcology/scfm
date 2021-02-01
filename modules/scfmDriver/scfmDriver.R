@@ -34,8 +34,10 @@ defineModule(sim, list(
     expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list",
+                 desc = "list of fire regime parameters for each polygon"),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list",
+                 desc = "contains landscape attributes for each polygon")
   ),
   outputObjects = bindrows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list",

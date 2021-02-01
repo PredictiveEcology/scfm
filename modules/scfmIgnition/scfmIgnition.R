@@ -27,7 +27,7 @@ defineModule(sim, list(
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "list of fire regime polygon attributes")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
+    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "vector of ignition locations"),
     createsOutput(objectName = "pIg", objectClass = "numeric", desc = "ignition probability raster")
   )
 ))
