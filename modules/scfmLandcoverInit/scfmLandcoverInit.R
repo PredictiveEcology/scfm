@@ -48,7 +48,7 @@ defineModule(sim,list(
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
       createsOutput(objectName = 'fireRegimePolys', objectClass = "SpatialPolygonsDataFrame",
                     desc = paste("areas to calibrate individual fire regime parameters",
-                                 "modified by removing slivers and adding polyID field where applicable")),
+                                 "modified by removing slivers and adding PolyID field where applicable")),
       createsOutput(objectName = "fireRegimeRas", objectClass = "RasterLayer",
                     desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
     )
@@ -249,12 +249,14 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+    #cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
-                                      rasterToMatch = sim$rasterToMatch,
+                                      # rasterToMatch = sim$rasterToMatch,
                                       filename2 = NULL,
                                       userTags = c(cacheTags, "fireRegimePolys"))
+    sim$fireRegimePolys <- spTransform(sim$fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
 
     #this is now necessary due to the gridded nature of ecoregion file
     sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOREGION)
