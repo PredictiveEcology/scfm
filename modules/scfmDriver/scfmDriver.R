@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
-    defineParameter(".useCache", "character", c(".inputObjects", "init"), NA, NA,
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     desc = "should a cloud cache be used for heavy operations"),
