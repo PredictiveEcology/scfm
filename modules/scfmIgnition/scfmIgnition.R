@@ -12,14 +12,12 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmIgnition.Rmd"),
-  reqdPkgs = list("raster", "SpaDES.tools"),
+  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events")
   ),
   inputObjects = bind_rows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
@@ -27,7 +25,8 @@ defineModule(sim, list(
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
+    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = ""),
+    createsOutput(objectName = "pIgp", objectClass = "numeric", desc = "")
   )
 ))
 
@@ -39,15 +38,14 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot")
-    },
-    plot = {
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
-      sim <- Ignite(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite")
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+        sim <- Ignite(sim)
+      }
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))

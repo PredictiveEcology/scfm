@@ -13,7 +13,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
+  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
+                  "SpaDES.tools", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
@@ -22,7 +23,7 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
     #defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events"),
+    defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
   ),
   inputObjects = bind_rows(
@@ -32,7 +33,8 @@ defineModule(sim, list(
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
   outputObjects = bind_rows(
-    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = "")
+    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
+    createsOutput(objectName = "p0", objectClass = "data.table", desc = "")
   )
 ))
 
@@ -43,10 +45,9 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
   switch(
     eventType,
     init = {
-
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape", eventPriority = 7.5)
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot", eventPriority = 7.5)
 
     },
     plot = {
@@ -54,11 +55,13 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
       values(tmpRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
       values(tmpRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
       Plot(tmpRaster)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
-      sim <- Escape(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
+      if (LandR::scheduleDisturbance(sim$rstCurrentBurn, currentYear = time(sim))) {
+        sim <- Escape(sim)
+      }
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -94,7 +97,6 @@ Escape <- function(sim) {
 
     maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
     maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
-
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
                                              start = sim$ignitionLoci,
                                              iterations = 1,

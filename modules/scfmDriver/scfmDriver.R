@@ -13,8 +13,10 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
                   "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats"),
+                  "scam (==1.2.3)", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"),
   parameters = rbind(
+    defineParameter("quickCalibration", "logical", FALSE, NA, NA, paste0("Cached version of calibration for each polygon.",
+                                                                         "Should only be used for DEVELOPMENT, not PRODUCTION!")),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
@@ -29,13 +31,16 @@ defineModule(sim, list(
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bind_rows(
-    expectsInput("cloudFolderID", "character",
+    expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput("scfmRegimePars", "list", desc = ""),
-    expectsInput("landscapeAttr", "list", desc = ""),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = "a studyArea where separate polygons denote separate fire regimes")
+    expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = ""),
+    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
+    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "shapefile of study area"),
+    expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+                 desc = "Areas to calibrate individual fire regime parameters",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
   ),
   outputObjects = bind_rows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
@@ -89,29 +94,32 @@ Init <- function(sim) {
   } else {
     cl <- NULL
   }
+  
   # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- cloudCache(
-    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
+  sim$scfmDriverPars <- Cache(userTags = c("mainFunction::Map2", "objectName::scfmDrivePars"),
+    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID, # cacheId = "2d124ffe1da1affa" # This is the cached object as of 28AUG20
     useCache = getOption("reproducible.useCache", TRUE),
     useCloud = getOption("reproducible.useCloud", FALSE),
     regime = sim$scfmRegimePars, #[[polygonType]]
     omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
     MoreArgs = list(cellSize = cellSize,
-                    studyArea = rlang::quo(sim$studyArea),
+                    fireRegimePolys = sim$fireRegimePolys,
                     buffDist = P(sim)$buffDist,
                     pJmp = P(sim)$pJmp,
                     pMin = P(sim)$pMin,
                     pMax = P(sim)$pMax,
                     neighbours = P(sim)$neighbours,
-                    landAttr = rlang::quo(sim$landscapeAttr)),
+                    landAttr = sim$landscapeAttr),
+    quickCalibration = P(sim)$quickCalibration,
     polygonType = names(sim$scfmRegimePars),
     f = function(polygonType, targetN = P(sim)$targetN,
              regime = regime, landAttr = landAttr,
              cellSize = cellSize,
-             studyArea = studyArea,
+             fireRegimePolys = fireRegimePolys,
              buffDist = buffDist,
              pJmp = pJmp, pMin = pMin, pMax = pMax,
-             neighbours = neighbours) {
+             neighbours = neighbours,
+             quickCalibration = quickCalibration) {
       #regime <- sim$scfmRegimePars[[polygonType]] #pass as argument
       #landAttr <- sim$landscapeAttr[[polygonType]] #pass as argument
       maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
@@ -119,12 +127,10 @@ Init <- function(sim) {
         warning("This can't happen")
         maxBurnCells = 1
       }
-      landAttr <- rlang::eval_tidy(landAttr)
       landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
       message("generating buffered landscapes...")
-      studyArea <- rlang::eval_tidy(studyArea)
-      calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
-                         userTags = paste("genSimLand ", polygonType))
+      calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], 
+                              buffDist = buffDist, polygonType = polygonType)
 
       #Need a vector of igniteable cells
       #Item 1 = L, the flammable Map
@@ -134,23 +140,34 @@ Init <- function(sim) {
       index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
       index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
       index <- index[!is.na(index)]
-      if (length(index) == 0)
+      if (length(index) == 0){
         stop("polygon has no flammable cells!")
+      }
 
-      dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = pMin, pmax = pMax,
-                  pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
-                  userTags = paste("makeDesign", polygonType))
-
+      dT <- makeDesign(indices = index, targetN = targetN,
+                       pmin = pMin, pmax = pMax,
+                       pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape))
+      
       message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-      calibData <- Cache(executeDesign,
-                         L = calibLand$flammableMap,
-                         dT,
-                         maxCells = maxBurnCells,
-                         userTags = paste("executeDesign", polygonType)
-      )
+
+      if (quickCalibration){ 
+        # /!\ ATTENTION /!\
+        # quickCalibration is NOT to be used in production mode, only development!!!
+        calibData <- Cache(executeDesign, L = calibLand$flammableMap, 
+                           dT = dT,
+                           maxCells = maxBurnCells,
+                           omitArgs = "dT",
+                           userTags = c("mainFun:executeDesign", 
+                                        paste0("polygonType:", polygonType)))  
+      } else {
+        calibData <- executeDesign(L = calibLand$flammableMap,
+                           dT,
+                           maxCells = maxBurnCells)
+      }
+      
 
       cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
+
       calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
 
       xBar <- regime$xBar / cellSize
@@ -217,40 +234,51 @@ Init <- function(sim) {
     })
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-
-  return(invisible(sim))
-}
-
-.inputObjects <- function(sim) {
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using random polygon in Alberta")
-    #TODO: remove LandR once this is confirmed working
-    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
-    sim$studyArea <- studyArea
-  }
   return(invisible(sim))
 }
 
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist) {
+genSimLand <- function(coreLand, buffDist, polygonType) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
-  bStudyArea <- buffer(coreLand, buffDist) %>%
-    rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea, makeUniqueIDs = TRUE) #
+  bfireRegimePoly <- buffer(coreLand, buffDist)
+  if (!gIsValid(bfireRegimePoly, byid = FALSE)) {
+    bfireRegimePoly <- gBuffer(bfireRegimePoly, width = 0)
+  }
+  coreLand <- spatialEco::remove.holes(coreLand)
+  bfireRegimePoly <- gDifference(bfireRegimePoly, 
+                                 spgeom2 = coreLand, 
+                                 byid = FALSE)
+  polyLandscape <- rbind.SpatialPolygons(coreLand, 
+                                         bfireRegimePoly, 
+                                         makeUniqueIDs = TRUE) #
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
   #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
+  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, 
+                                studyArea = polyLandscape, 
+                                useSAcrs = TRUE)
   landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
-  polySF <- sf::st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
+  polySF <- st_as_sf(polyLandscape)
+  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+  if (all(unique(landscapeIndex[!is.na(landscapeIndex)]) == 0)){
+    stop(paste0("Polygon's ", polygonType, 
+                   " landscapeIndex is == 0. ",
+                "Please debug scfmDriver'genSimLand()."), 
+            immediate. = TRUE)
+  }
 
-  calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
-  names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
+  calibrationLandscape <- list(polyLandscape, 
+                               landscapeIndex, 
+                               landscapeLCC, 
+                               landscapeFlam)
+  names(calibrationLandscape) <- c("fireRegimePoly", 
+                                   "landscapeIndex", 
+                                   "lcc", 
+                                   "flammableMap")
   return(calibrationLandscape)
 }
 
@@ -277,7 +305,7 @@ makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
 
 executeDesign <- function(L, dT, maxCells) {
   # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
-
+  
   iter <- 0
   f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
     iter <<- iter + 1
@@ -345,4 +373,28 @@ executeDesign <- function(L, dT, maxCells) {
   x <- cbind(dT,res)
 
   return(x)
+}
+
+.inputObjects <- function(sim) {
+  dPath <- dataPath(sim)
+  if (!suppliedElsewhere("studyArea", sim)) {
+    message("study area not supplied. Using random polygon in Alberta")
+    #TODO: remove LandR once this is confirmed working
+    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
+    sim$studyArea <- studyArea
+  }
+
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
+    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                      destinationPath = dPath,
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch,
+                                      filename2 = TRUE,
+                                      overwrite = TRUE,
+                                      userTags = c("cacheTags", "fireRegimePolys"))
+  }
+  return(invisible(sim))
 }

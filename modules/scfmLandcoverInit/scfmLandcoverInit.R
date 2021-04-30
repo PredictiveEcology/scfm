@@ -15,7 +15,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("fasterize", "purrr", "raster", "sf",
+    reqdPkgs = list("fasterize", "purrr", "raster", "sf", 'rgeos',
                     "PredictiveEcology/LandR@development",
                     "PredictiveEcology/reproducible@development"),
     parameters = rbind(
@@ -24,20 +24,30 @@ defineModule(sim,list(
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
-      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
+      defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
+      defineParameter("sliverThreshold", "numeric", NA, NA, NA,
+                      desc = "fire regime polygons with area less than this number will be merged")
     ),
     inputObjects = bind_rows(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
+      expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "Landcover to build flammability map",
                    sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
-      expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
+      expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+                   desc = "template raster for raster GIS operations. Must be supplied by user"),
+      expectsInput(objectName = "flammableMap", objectClass = "RasterLayer",
+                   desc = "binary flammability map -defaults to using LandR::prepInputsLCC"),
+      expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+                   desc = "Areas to calibrate individual fire regime parameters. Defaults to ecoregions",
+                   sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
     ),
     outputObjects = bind_rows(
-      createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
-      createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
+      createsOutput(objectName = "cellsByZone", objectClass = "data.frame",
+                    desc = "explains which raster cells are in which polygon"),
+      #createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
-      createsOutput(objectName = "studyAreaRas", objectClass = "RasterLayer", desc = "Rasterized version of study Area with values representing polygon ID")
+      createsOutput(objectName = "fireRegimeRas", objectClass = "RasterLayer",
+                    desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
     )
 )
 )
@@ -66,29 +76,47 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 Init <- function(sim) {
-  if (class(sim$studyArea) == "SpatialPolygons") {
-    stop("studyArea must be a SpatialPolygonsDataFrame")
+  message("checking sim$fireRegimePolys for sliver polygons...")
+  if (sf::st_is_longlat(sim$fireRegimePolys) & is.na(P(sim)$sliverThreshold)) {
+    stop("You must supply P(sim)$sliverThreshold for fireRegimePolys with an unprojected CRS")
   }
-  if (is.null(sim$studyArea$PolyID)) {
-    sim$studyArea$PolyID <- row.names(sim$studyArea)
-  }
+  sim$fireRegimePolys$trueArea <- round(gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
+  if (is.na(P(sim)$sliverThreshold)) {
+    sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4
 
-  temp <- sf::st_as_sf(sim$studyArea)
+  }
+  if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
+    message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
+  sim$fireRegimePolys <- Cache(deSliver, sim$fireRegimePolys, threshold = P(sim)$sliverThreshold,
+                               userTags = c("deSliver", currentModule(sim)))
+  }
+  if (is.null(sim$fireRegimePolys$PolyID)) {
+    if (is.null(sim$fireRegimePolys$REGION_)) {
+      sim$fireRegimePolys$PolyID <- row.names(sim$fireRegimePolys)
+    } else {
+      sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
+    }
+  }
+ 
+  temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
-  sim$studyAreaRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
-  sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-  sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[]) #this removes attributes, fixes Plot()
-  sim$flammableMap <- setColors(sim$flammableMap, value = c("blue", "red"))
+  sim$fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$vegMap, field = "PolyID")
+  # sim$flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+  # sim$flammableMap <- setValues(raster(sim$flammableMap), sim$flammableMap[])
+  # sim$flammableMap <-  mask(sim$flammableMap, mask = sim$fireRegimeRas)
+
   # This makes sim$landscapeAttr & sim$cellsByZone
   outs <- Cache(genFireMapAttr,
                 sim$flammableMap,
-                sim$studyArea,
+                sim$fireRegimePolys,
                 P(sim)$neighbours)
-  list2env(outs, envir = envir(sim)) # move 2 objects to sim environment without copy
+
+  sim$landscapeAttr <- outs$landscapeAttr
+  sim$cellsByZone <- outs$cellsByZone
   return(invisible(sim))
 }
 
-genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
+genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   #calculate the cell size, total area, and number of flammable cells, etc.
   #All areas in ha
   cellSize <- prod(res(flammableMap)) / 1e4 # in ha
@@ -100,14 +128,14 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
   else
     stop("illegal neighbours specification")
 
-  makeLandscapeAttr <- function(flammableMap, weight, studyArea) {
-    neighMap <- Cache(focal, x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
+  makeLandscapeAttr <- function(flammableMap, weight, fireRegimePolys) {
+    neighMap <- focal(x = flammableMap, w = w, na.rm = TRUE) #default function is sum(...,na.rm)
 
     # extract table for each polygon
-    valsByPoly <- Cache(raster::extract, neighMap, studyArea, cellnumbers = TRUE)
+    valsByPoly <- raster::extract(neighMap, fireRegimePolys, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
-    names(valsByPoly) <- studyArea$PolyID
-    uniqueZoneNames <- studyArea$PolyID #get unique zones.
+    names(valsByPoly) <- fireRegimePolys$PolyID
+    uniqueZoneNames <- fireRegimePolys$PolyID #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))
@@ -140,7 +168,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     return(landscapeAttr)
   }
 
-  landscapeAttr <- Cache(makeLandscapeAttr, flammableMap, w, studyArea)
+  landscapeAttr <- makeLandscapeAttr(flammableMap, w, fireRegimePolys)
 
   cellsByZoneFn <- function(flammableMap, landscapeAttr) {
 
@@ -152,7 +180,7 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
     return(cellsByZone)
   }
 
-  cellsByZone <- Cache(cellsByZoneFn, flammableMap, landscapeAttr)
+  cellsByZone <- cellsByZoneFn(flammableMap, landscapeAttr)
 
   return(invisible(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone)))
 }
@@ -181,7 +209,6 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
                                    filename2 = TRUE,
                                    overwrite = TRUE,
                                    userTags = c("cacheTags", "rasterToMatch"))
-
   }
 
   if (!suppliedElsewhere("vegMap", sim)) {
@@ -192,9 +219,32 @@ genFireMapAttr <- function(flammableMap, studyArea, neighbours) {
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
                                 filename2 = TRUE,
+                                filename2 = 'rstLCC.tif',
                                 overwrite = TRUE,
                                 userTags = c("cacheTags", "vegMap"))
-    }
+    
+  }
+  
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    message ("flammableMap not supplied. Using LCC 2005 to create flammableMap")
+      flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
+      flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
+      sim$flammableMap <-  mask(flammableMap, mask = sim$rasterToMatch)
+    
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+
+    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
+                                      destinationPath = dPath,
+                                      studyArea = sim$studyArea,
+                                      rasterToMatch = sim$rasterToMatch,
+                                      filename2 = TRUE,
+                                      overwrite = TRUE,
+                                      userTags = c("cacheTags", "fireRegimePolys"))
+
+  }
 
   return(invisible(sim))
 }
