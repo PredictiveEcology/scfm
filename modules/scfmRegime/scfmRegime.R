@@ -122,7 +122,7 @@ Init <- function(sim) {
   if (is.null(frpl)) {
     stop("fireRegimePolys must have a numeric field called 'PolyID'")
   }
-  browser() #test what happens if you do tmp$polyID <- tmp$PolyID$PolyID
+
   tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
 
   if (any(is.na(tmp$PolyID))) {
