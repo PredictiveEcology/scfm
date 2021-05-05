@@ -3,7 +3,10 @@ calcZonalRegimePars <- function(polygonID, firePolys,
                                 firePoints,
                                 epochLength,
                                 maxSizeFactor,
-                                fireSizeColumnName) {
+                                fireSizeColumnName,
+                                targetBurnRate = NULL,
+                                targetMaxFireSize = NULL) {
+
   idx <- firePolys$PolyID == polygonID
   tmpA <- firePoints[firePoints$PolyID == as.numeric(polygonID),]
   landAttr <- landscapeAttr[[polygonID]]
@@ -20,6 +23,9 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
   xVec <- numeric(0)
 
+  #check for user supplied defaults
+  targetBurnRate <- targetBurnRate[polygonID]
+  targetMaxFireSize <- targetMaxFireSize[polygonID]
 
   if (nFires > 0) {
     #calculate escaped fires
@@ -76,7 +82,39 @@ calcZonalRegimePars <- function(polygonID, firePolys,
     maxFireSize = cellSize
   }
 
+  empiricalBurnRate <- sum(tmpA[[fireSizeColumnName]]) / (epochLength * landAttr$burnyArea)
 
+
+  if (is.na(targetBurnRate) | is.null(targetBurnRate)) {
+    ratio <- 1
+  }
+
+  if (!is.na(targetBurnRate)| is.null(targetBurnRate)) {
+    ratio <-  targetBurnRate/empiricalBurnRate
+    if (ratio >= 1) {
+      newFireValues <- ratioPartition2(targetBurnRate = targetBurnRate,
+                                       empiricalBurnRate = empiricalBurnRate,
+                                       pEscape = pEscape,
+                                       xBar = xBar,
+                                       rate = rate)
+      rate <- newFireValues$rate
+      pEscape = newFireValues$pEscape
+      xBar = newFireValues$xBar
+    }
+    else{
+      stop("ratio cannot be < 1. Please make sure this does not happen")
+    }
+  }
+
+  #override maximum fire size if user supplied
+  if (!is.na(targetMaxFireSize)| is.null(targetMaxFireSize)) {
+
+    maxFireSize <- targetMaxFireSize
+    xMax <- targetMaxFireSize
+
+  }
+
+  #max fire size is returned twice - I think this is a backwards compatibility decision
   return(list(ignitionRate = rate,
               pEscape = pEscape,
               xBar = xBar,

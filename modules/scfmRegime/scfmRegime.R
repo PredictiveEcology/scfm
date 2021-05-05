@@ -22,6 +22,16 @@ defineModule(sim, list(
                     desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
                     desc = "Name of the column that has fire size"),
+    defineParameter("targetBurnRate", "numeric", NA, 0, 1,
+                    desc = paste("a named vector giving the proportional annual area burned of each fire regime polygon.",
+                                 "These override the default estimate of scfm and are used to estimate a new mean",
+                                 "fire size and ignition rate. Names should correspond to polyID.",
+                                 "A partial set of polygons is allowed - missing polys are estimated from data")),
+    defineParameter("targetMaxFireSize", "numeric", NA, 0, NA,
+                    desc = paste("a named vector giving the estimated max fire size in ha of each fire regime polygon.",
+                                 "These will override the default estimate of scfm and will be used to estimate",
+                                 "a new spread probability. Names should correspond to polyID.",
+                                 "A partial set of polygons is allowed - missing polys are estimated from data")),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
@@ -112,6 +122,7 @@ Init <- function(sim) {
   if (is.null(frpl)) {
     stop("fireRegimePolys must have a numeric field called 'PolyID'")
   }
+  browser() #test what happens if you do tmp$polyID <- tmp$PolyID$PolyID
   tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
 
   if (any(is.na(tmp$PolyID))) {
@@ -124,7 +135,9 @@ Init <- function(sim) {
                            firePolys = sim$fireRegimePolys, landscapeAttr = sim$landscapeAttr,
                            firePoints = sim$fireRegimePoints, epochLength = epochLength,
                            maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName)
+                           fireSizeColumnName = P(sim)$fireSizeColumnName,
+                           targetBurnRate = P(sim)$targetBurnRate,
+                           targetMaxFireSize = P(sim)$targetMaxFireSize)
 
   names(scfmRegimePars) <- names(sim$landscapeAttr)
 
