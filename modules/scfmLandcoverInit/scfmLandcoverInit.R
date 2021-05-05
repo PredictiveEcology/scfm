@@ -79,8 +79,12 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
 }
 Init <- function(sim) {
   message("checking sim$fireRegimePolys for sliver polygons...")
-  if (sf::st_is_longlat(sim$fireRegimePolys) & is.na(P(sim)$sliverThreshold)) {
-    stop("You must supply P(sim)$sliverThreshold for fireRegimePolys with an unprojected CRS")
+
+  if (sf::st_is_longlat(sim$fireRegimePolys)) {
+    warning("fireRegimePolys has a long/lat projection. This is untested")
+    if (is.na(P(sim)$sliverThreshold)) {
+      stop("You must supply P(sim)$sliverThreshold for fireRegimePolys with ")
+    }
   }
   sim$fireRegimePolys$trueArea <- round(gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
   if (is.na(P(sim)$sliverThreshold)) {
