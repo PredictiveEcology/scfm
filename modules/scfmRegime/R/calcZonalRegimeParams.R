@@ -102,7 +102,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
       xBar = newFireValues$xBar
     }
     else{
-      stop("ratio cannot be < 1. Please make sure this does not happen")
+      warning("ratio cannot be < 1. Please make sure this does not happen")
     }
   }
 
@@ -111,7 +111,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
 
     maxFireSize <- targetMaxFireSize
     xMax <- targetMaxFireSize
-
+   #TODO: add check that max is larger than mean, else stop
   }
 
   #max fire size is returned twice - I think this is a backwards compatibility decision
@@ -123,7 +123,8 @@ calcZonalRegimePars <- function(polygonID, firePolys,
               #mean log(fire size)
               xMax = xMax,
               #maximum observed size
-              emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
+              emfs_ha = maxFireSize,#Estimated Maximum Fire Size in ha
+              empiricalBurnRate = empiricalBurnRate
   )
   )
 }
