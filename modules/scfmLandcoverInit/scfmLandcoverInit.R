@@ -23,6 +23,8 @@ defineModule(sim,list(
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
       defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
       defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
+      defineParameter("removeSlivers", "logical", TRUE, NA, NA,
+                      desc = "automatically merge polygons smaller than sliverThreshold param"),
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
       defineParameter("sliverThreshold", "numeric", NA, NA, NA,
@@ -87,10 +89,12 @@ Init <- function(sim) {
     sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4 * 1e4 #100km2
 
   }
-  if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
-    message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
-  sim$fireRegimePolys <- Cache(deSliver, sim$fireRegimePolys, threshold = P(sim)$sliverThreshold,
-                               userTags = c("deSliver", currentModule(sim)))
+  if (P(sim)$removeSlivers){
+    if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
+      message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
+      sim$fireRegimePolys <- Cache(deSliver, sim$fireRegimePolys, threshold = P(sim)$sliverThreshold,
+                                   userTags = c("deSliver", currentModule(sim)))
+    }
   }
   if (is.null(sim$fireRegimePolys$PolyID)) {
     if (is.null(sim$fireRegimePolys$ECOREGION)) {
