@@ -13,15 +13,8 @@ paths <- list(inputPath = 'inputs',
 
 do.call(setPaths, paths)
 
-studyArea <- prepInputs(url = 'http://www.ccea-ccae.org/wp-content/uploads/2021/01/Canada_Ecozones_V5b_15M_simplify.shp_v20140218.zip',
+studyArea <- prepInputs(url = 'https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip',
                         destinationPath = 'inputs')
-#crop to terrestrial canada
-studyArea <- studyArea[!studyArea$Name %in% c("Arctic Archipelago", "Arctic Basin", "Offshore Pacific",
-                                              "Southern Shelf", "Gulf of Saint Lawrence",
-                                              "Newfoundland-Labrador Shelves", "Scotian Shelf", "Northern Arctic",
-                                              "Strait of Georgia",
-                                              "Northern Shelf", "Eastern Arctic", "Hudson Bay Complex",
-                                              "Western Arctic"),]
 
 studyArea <- spTransform(studyArea, crs('+proj=lcc +lat_0=0 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs'))
 
