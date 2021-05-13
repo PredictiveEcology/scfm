@@ -126,12 +126,12 @@ Burnemup <- function(sim) {
                                       # maxSize = maxSizes,  #not sure this works
                                       asRaster = FALSE)
 
-  sim$rstCurrentBurn <- raster(sim$flammableMap) #must wrap with 'raster' to get around file-backed problems
+  sim$rstCurrentBurn <- raster(sim$fireRegimeRas) #must wrap with 'raster' to get around file-backed problems
   sim$rstCurrentBurn[!is.na(sim$flammableMap)] <- 0 #reset annual burn
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
-  sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
+  sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 #update cumulative burn
   # sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
 
   #get fire year, pixels burned, area burned, poly ID of all burned pixels
