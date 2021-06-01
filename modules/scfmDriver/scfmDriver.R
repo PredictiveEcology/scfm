@@ -36,7 +36,7 @@ defineModule(sim, list(
   inputObjects = bindrows(
     expectsInput(objectName = "bufferedFlammableMap", "RasterLayer",
                  desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
-                              "Defaults to LCC2005. Must be supplied by user flammableMap is also supplied")),
+                              "Defaults to LCC2010. Must be supplied by user flammableMap is also supplied")),
     expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
@@ -167,12 +167,12 @@ Init <- function(sim) {
                           res = res(sim$rasterToMatch),
                           studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
-    if (P(sim)$bufferLCCYear == 2010){
+    if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
     } else if (P(sim)$bufferLCCYear == 2005) {
       nonFlamClasses <- c(0L, 25L, 30L, 33L, 36L, 37L, 38L, 39L)
     } else {
-      stop("invalid bufferLCCYear")
+      stop("invalid bufferLCCYear - please supply bufferedFlammableMap")
     }
     sim$bufferedFlammableMap <- defineFlammable(landscapeLCC, nonFlammClasses = nonFlamClasses)
   }
