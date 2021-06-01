@@ -251,7 +251,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     message("flammableMap not supplied. veg map to create flammableMap")
     flammableMap <- defineFlammable(sim$vegMap,
                                     mask = sim$rasterToMatch,
-                                    nonFlammClasses = c(13, 16, 17, 18, 19)
+                                    nonFlammClasses = c(13, 16, 17, 18, 19),
                                     filename2 = NULL)
     sim$flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
   }

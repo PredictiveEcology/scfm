@@ -41,7 +41,7 @@ times <- list(start = 0, end = 20)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- c('.inputObjects', 'init')  #don't cache the init of driver/regime - false positives
+globCache <- c('.inputObjects')  #don't cache the init event - it is too prone to false positives
 
 parameters <- list(
   scfmLandcoverInit = list(
