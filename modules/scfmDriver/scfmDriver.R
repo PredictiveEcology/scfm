@@ -17,6 +17,9 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
+    defineParameter("bufferLCCYear", "numeric", 2010, NA, 2010,
+                    desc = paste("If relying on default buffered flammable map",
+                                 "the year of LCC to use for defining flammable classes")),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
@@ -31,6 +34,9 @@ defineModule(sim, list(
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bindrows(
+    expectsInput(objectName = "bufferedFlammableMap", "RasterLayer",
+                 desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
+                              "Defaults to LCC2005. Must be supplied by user flammableMap is also supplied")),
     expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
@@ -83,12 +89,6 @@ Init <- function(sim) {
   # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
   #  pass this one into the calibrateFireRegimePolys, avoiding many downloads (esp when
   #  in parallel)
-  bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
-  bufferedPoly <- fixErrors(bufferedPoly)
-  landscapeLCC <- Cache(prepInputsLCC, destinationPath = dataPath(sim), studyArea = bufferedPoly, useSAcrs = TRUE,
-                        omitArgs = "destinationPath")
-  if (fromDisk(landscapeLCC))
-    landscapeLCC[] <- landscapeLCC[]
 
   # Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
   seeIfItHasRun <- CacheDigest(list(pemisc::Map2,
@@ -103,7 +103,7 @@ Init <- function(sim) {
                                                     pMin = P(sim)$pMin,
                                                     pMax = P(sim)$pMax,
                                                     neighbours = P(sim)$neighbours,
-                                                    landscapeLCC = landscapeLCC
+                                                    flammableMap = sim$bufferedFlammableMap
                                     ),
                                     calibrateFireRegimePolys))
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
@@ -141,7 +141,7 @@ Init <- function(sim) {
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
                                               neighbours = P(sim)$neighbours,
-                                              landscapeLCC = landscapeLCC
+                                              flammableMap = sim$bufferedFlammableMap
                               ),
                               calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
@@ -156,7 +156,25 @@ Init <- function(sim) {
   if (any(!suppliedElsewhere("scfmRegimePars", sim),
           !suppliedElsewhere("landscapeAttr", sim))) {
     stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
+  }
 
+  if (!suppliedElsewhere("bufferedFlammableMap")) {
+    bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+    bufferedPoly <- fixErrors(bufferedPoly)
+    landscapeLCC <- Cache(prepInputsLCC,
+                          year = P(sim)$bufferLCCYear,
+                          destinationPath = dataPath(sim),
+                          res = res(sim$rasterToMatch),
+                          studyArea = bufferedPoly, useSAcrs = TRUE,
+                          omitArgs = "destinationPath")
+    if (P(sim)$bufferLCCYear == 2010){
+      nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
+    } else if (P(sim)$bufferLCCYear == 2005) {
+      nonFlamClasses <- c(0L, 25L, 30L, 33L, 36L, 37L, 38L, 39L)
+    } else {
+      stop("invalid bufferLCCYear")
+    }
+    sim$bufferedFlammableMap <- defineFlammable(landscapeLCC, nonFlammClasses = nonFlamClasses)
   }
 
   return(invisible(sim))

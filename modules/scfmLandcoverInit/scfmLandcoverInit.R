@@ -235,7 +235,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   if (!suppliedElsewhere("vegMap", sim)) {
     vegMapSupplied <- FALSE
     message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
-    sim$vegMap <- LandR::prepInputsLCC(year = 2005,
+    sim$vegMap <- LandR::prepInputsLCC(year = 2010,
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
                                 rasterToMatch = sim$rasterToMatch,
@@ -249,10 +249,11 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
       stop("vegMap supplied but flammableMap is not. Please provide both or neither")
     }
     message("flammableMap not supplied. veg map to create flammableMap")
-    flammableMap <- LandR::defineFlammable(sim$vegMap, filename2 = NULL)
-    flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
-    sim$flammableMap <-  mask(flammableMap, mask = sim$rasterToMatch)
-
+    flammableMap <- defineFlammable(sim$vegMap,
+                                    mask = sim$rasterToMatch,
+                                    nonFlammClasses = c(13, 16, 17, 18, 19)
+                                    filename2 = NULL)
+    sim$flammableMap <- setValues(raster(flammableMap), flammableMap[]) #this removes colour assignment
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
@@ -269,7 +270,6 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     #this is now necessary due to the gridded nature of ecoregion file
     sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOREGION)
     sim$fireRegimePolys$ECOREGION <- row.names(sim$fireRegimePolys)
-
   }
 
   return(invisible(sim))

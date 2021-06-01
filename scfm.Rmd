@@ -35,14 +35,13 @@ library(ggplot2)
 
 ```{r module usage example, eval = FALSE}
 
-
 #Parameters
 timeunit <- "year"
 times <- list(start = 0, end = 20)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- c('.inputObjects', 'init') 
+globCache <- c('.inputObjects', 'init')  #don't cache the init of driver/regime - false positives
 
 parameters <- list(
   scfmLandcoverInit = list(
@@ -59,11 +58,11 @@ parameters <- list(
     .plotInitialTime = times$start,
     .plotInterval = defaultPlotInterval),
   scfmRegime = list(
-    .useCache = globCache,
+    .useCache = ".inputObjects",
     fireCause=c("L")
   ),
   scfmDriver = list(
-    .useCache = globCache, 
+    .useCache = '.inputObjects',
     targetN = 1000 #increase targetN for more robust estimates, longer run-time
   )# default targetN = 4000, for reference. 
 ) 
@@ -88,12 +87,13 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
-rasterToMatch <- LandR::prepInputsLCC(studyArea = studyArea, destinationPath = paths$inputPath)
+rasterToMatch <- LandR::prepInputsLCC(year = 2010, studyArea = studyArea, useSAcrs = TRUE, destinationPath = paths$inputPath)
+rasterToMatch <- raster::aggregate(rasterToMatch, fact = 8) #for speed, this is close to 2005's 250m resolution
+
 #this is a silly workaround to a SpaDES recoveryMode issue when prepInputsLCC is called again in module
 rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
 
 
-#do not pass filename2 or it will cause headaches when vegMap is downloaded due to internal cache calls
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,

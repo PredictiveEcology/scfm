@@ -1,5 +1,5 @@
 #Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist, landscapeLCC = NULL) {
+genSimLand <- function(coreLand, buffDist, flammableMap = NULL) {
   tempDir <- tempdir()
   #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
   #TODO: Investigate why some polygons fail
@@ -12,23 +12,15 @@ genSimLand <- function(coreLand, buffDist, landscapeLCC = NULL) {
   polyLandscape$zone <- c("core", "buffer")
   polyLandscape$Value <- c(1, 0)
 
-  #Generate flammability raster -- either from an existing landscapeLCC or de novo/download
-  landscapeLCC <- if (is.null(landscapeLCC)) {
-    Cache(prepInputsLCC, destinationPath = tempDir, studyArea = polyLandscape,
-          useSAcrs = TRUE, omitArgs = "destinationPath", filename2 = NULL)
-  } else {
-    Cache(postProcess, landscapeLCC, studyArea = polyLandscape,
-          useSAcrs = TRUE, filename2 = NULL)
-  }
+  flammableMap <- Cache(postProcess, flammableMap, studyArea = polyLandscape,
+                        useSAcrs = TRUE, filename2 = NULL)
 
-
-  landscapeFlam <- defineFlammable(landscapeLCC)
   #Generate landscape Index raster
   polySF <- st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize(polySF, landscapeLCC, "Value")
+  landscapeIndex <- fasterize(polySF, flammableMap, "Value")
 
-  calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
-  names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "lcc", "flammableMap")
+  calibrationLandscape <- list(polyLandscape, landscapeIndex, flammableMap)
+  names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "flammableMap")
   return(calibrationLandscape)
 }
 
@@ -146,7 +138,7 @@ makeAndExecuteDesign <- function(...){
 
 calibrateFireRegimePolys <- function(polygonType, regime,
                                      targetN,  landAttr, cellSize, fireRegimePolys,
-                                     buffDist, pJmp, pMin, pMax, neighbours, landscapeLCC = NULL) {
+                                     buffDist, pJmp, pMin, pMax, neighbours, flammableMap = NULL) {
 
   maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
   if (is.na(maxBurnCells)) {
@@ -159,7 +151,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   if (is(fireRegimePolys, "quosure"))
     fireRegimePolys <- eval_tidy(fireRegimePolys)
   calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
-                          landscapeLCC = landscapeLCC)
+                          flammableMap = flammableMap)
 
   #Need a vector of igniteable cells
   #Item 1 = L, the flammable Map
