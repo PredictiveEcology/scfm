@@ -111,7 +111,7 @@ Init <- function(sim) {
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
-      MBper = rgeos::gArea(sim$fireRegimePolys)/(prod(res(landscapeLCC)))/1e3 * 2 + 4e2, # in MB
+      MBper = rgeos::gArea(sim$fireRegimePolys)/(prod(res(sim$landscapeLCC)))/1e3 * 2 + 4e2, # in MB
       maxNumClusters = length(sim$scfmRegimePars),
       outfile = "scfmLog",
       objects = c("genSimLand"), envir = environment(),
