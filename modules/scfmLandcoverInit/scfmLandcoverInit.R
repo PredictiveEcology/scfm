@@ -235,7 +235,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   vegMapSupplied <- TRUE
   if (!suppliedElsewhere("vegMap", sim)) {
     vegMapSupplied <- FALSE
-    message("vegMap not supplied. Using default LandCover of Canada 2005 V1_4a")
+    message("vegMap not supplied. Using default 2010 LandCover of Canada")
     sim$vegMap <- LandR::prepInputsLCC(year = 2010,
                                 destinationPath = dPath,
                                 studyArea = sim$studyArea,
