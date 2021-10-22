@@ -11,9 +11,9 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam (==1.2.3)", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"),
+  reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
+                  "PredictiveEcology/pemisc", "reproducible", "rgeos",
+                  "scam", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -124,6 +124,10 @@ Init <- function(sim) {
   } else {
     cl <- NULL
   }
+
+  if (!identical(res(sim$flammableMap), res(sim$bufferedFlammableMap))){
+    stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
+  }
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
@@ -164,9 +168,21 @@ Init <- function(sim) {
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
                           destinationPath = dataPath(sim),
-                          res = res(sim$rasterToMatch),
                           studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
+    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))){
+      #warning is about identical crs
+     landscapeLCC <- suppressWarnings(expr = eval(
+        #we want the resolution of rasterToMatch, but not the extent
+        Cache(projectRaster,
+              landscapeLCC,
+              method = 'ngb',
+              res = res(sim$rasterToMatch),
+              crs = crs(bufferedPoly),
+              userTags = c("scfmDriver", "projectBufferedLCC"))
+      ))
+    }
+    landscapeLCC <- setValues(landscapeLCC, as.integer(getValues(landscapeLCC)))
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
     } else if (P(sim)$bufferLCCYear == 2005) {
