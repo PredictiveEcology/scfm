@@ -14,7 +14,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmEscape.Rmd"),
   reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
-                  "SpaDES.tools", "PredictiveEcology/LandR@development"),
+                  "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),

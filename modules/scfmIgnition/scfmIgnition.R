@@ -12,7 +12,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmIgnition.Rmd"),
-  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR@development"),
+  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),

@@ -14,7 +14,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
   reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
-                  "SpaDES.tools", "PredictiveEcology/LandR@development"),
+                  "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pSpread", "numeric", 0.23, 0, 1,

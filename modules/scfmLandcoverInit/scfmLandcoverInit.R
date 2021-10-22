@@ -16,8 +16,8 @@ defineModule(sim,list(
     timeunit = "year",
     citation = list(),
     reqdPkgs = list("fasterize", "purrr", "raster", "sf", 'rgeos',
-                    "PredictiveEcology/LandR@development",
-                    "PredictiveEcology/reproducible@development"),
+                    "PredictiveEcology/LandR",
+                    "PredictiveEcology/reproducible"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
@@ -88,7 +88,7 @@ Init <- function(sim) {
       stop("You must supply P(sim)$sliverThreshold for fireRegimePolys with ")
     }
   }
-  sim$fireRegimePolys$trueArea <- round(gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
+  sim$fireRegimePolys$trueArea <- round(rgeos::gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
   if (is.na(P(sim)$sliverThreshold)) {
     sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4 * 1e4 #100km2
 
