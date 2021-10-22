@@ -36,9 +36,10 @@ studyArea <- prepInputs(url = 'https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/e
 
 studyArea <- spTransform(studyArea, crs('+proj=lcc +lat_0=0 +lon_0=-95 +lat_1=49 +lat_2=77 +x_0=0 +y_0=0 +ellps=GRS80 +units=m +no_defs'))
 
-rasterToMatch <- LandR::prepInputsLCC(destinationPath = 'inputs')
+rasterToMatch <- LandR::prepInputsStandAgeMap(destinationPath = 'inputs')
 rasterToMatch <- Cache(crop, rasterToMatch, studyArea, userTags = c("cropRTM"))
 rasterToMatch <- Cache(mask, rasterToMatch, studyArea, userTags = c("maskRTM"))
+vegMap <- prepInputsLCC(year = 2010, destinationPath = "inputs", rasterToMatch = rasterToMatch)
 
 fireRegimePolys <- studyArea
 ecozoneData <- as.data.table(fireRegimePolys@data)
@@ -53,13 +54,15 @@ fireRegimePolys$ZONE_NAME <- ecozoneData$ZONE_NAME
 fireRegimePolys$colour <- c("green", "red", "magenta", "blue", "grey", "purple", "pink", "light blue", "orange",
                             "yellow", "black", "white", "brown", "light yellow", "light green")
 fireRegimePolys$PolyID <- as.numeric(fireRegimePolys$ECOZONE)
-flammableMap <- Cache(defineFlammable, LandCoverClassifiedMap = rasterToMatch, userTags = c("flammableMap"))
+flammableMap <- defineFlammable(LandCoverClassifiedMap = vegMap,
+                                nonFlammClasses = c(13, 16, 17, 18, 19))
 
 #create runs
 modules <- list('scfmLandcoverInit', 'scfmRegime')
 
 L70to2000parameters <- list(
   scfmLandcoverInit = list(
+    .plotInitialTime = NA,
     removeSlivers = FALSE), #no need for slivers with this massive study area - the detect slivers will be very slow anyway
   scfmRegime = list(
     fireCause=c("L"),
@@ -69,7 +72,7 @@ L70to2000parameters <- list(
 objects <- list(fireRegimePolys = fireRegimePolys,
                 studyArea = studyArea,
                 flammableMap = flammableMap,
-                vegMap = rasterToMatch,
+                vegMap = vegMap,
                 rasterToMatch = rasterToMatch)
 
 L70To2000 <- Cache(simInitAndSpades, modules = modules,
