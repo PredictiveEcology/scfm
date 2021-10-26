@@ -13,7 +13,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "ageModule.Rmd"),
-  reqdPkgs = list("raster","RColorBrewer", "PredictiveEcology/LandR@development"),
+  reqdPkgs = list("raster","RColorBrewer",
+                  "PredictiveEcology/LandR@development (>= 0.0.4.9014)"),
   parameters = rbind(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
     defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),

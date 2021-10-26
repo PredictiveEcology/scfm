@@ -2,7 +2,7 @@ stopifnot(packageVersion("SpaDES") >= "0.99.0")
 
 defineModule(sim,list(
     name = "scfmLandcoverInit",
-    description = "Takes the LCC05 classification of 39 land cover classes, and reclassifies it to flammable and inflammable [1,0]",
+    description = "define fire regime areas and some basic attributes of each",
     keywords = c("fire", "LCC05", "land cover classification 2005", "BEACONs"),
     childModules = character(),
     authors = c(
@@ -15,9 +15,9 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("fasterize", "purrr", "raster", "sf", 'rgeos',
-                    "PredictiveEcology/LandR",
-                    "PredictiveEcology/reproducible"),
+    reqdPkgs = list("fasterize", "purrr", "raster", "sf", "rgeos",
+                    "PredictiveEcology/LandR@development (>= 0.0.4.9014)",
+                    "PredictiveEcology/reproducible (>= 1.2.7.9011)"),
     parameters = rbind(
       defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
       defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),

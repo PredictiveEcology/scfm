@@ -24,7 +24,6 @@ Marchal, Jean, Steve G Cumming, and Eliot J B McIntire. 2017. “Land Cover, Mor
 Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
 
 ```{r load-SpaDES, eval=TRUE}
-library(magrittr)
 library(raster)
 library(SpaDES)
 library(LandR)
@@ -87,23 +86,16 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
-rasterToMatch <- LandR::prepInputsLCC(year = 2010, studyArea = studyArea, useSAcrs = TRUE, destinationPath = paths$inputPath)
-rasterToMatch <- raster::aggregate(rasterToMatch, fact = 8) #for speed, this is close to 2005's 250m resolution
-
-#this is a silly workaround to a SpaDES recoveryMode issue when prepInputsLCC is called again in module
-rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
-
+rasterToMatch <- LandR::prepInputsStandAgeMap(studyArea = studyArea, 
+                                              destinationPath = paths$inputPath, 
+                                              fireURL = NULL)
+studyArea <- spTransform(studyArea, CRSobj = crs(rasterToMatch))
 
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
   rasterToMatch = rasterToMatch
 )
-
-#Run module
-#The calibration process may take hours (it's cached)
-options("reproducible.cachePath" = paths$cachePath) 
-options("reproducible.useMemoise" = FALSE)
 
 mySim <- simInit(times = times, params = parameters, modules = modules,
                  objects = objects, paths = paths)
