@@ -30,6 +30,7 @@ library(LandR)
 library(ggplot2)
 library(sp)
 library(raster)
+#library(data.table) #debugging this
 ```
 
 ## Usage example
