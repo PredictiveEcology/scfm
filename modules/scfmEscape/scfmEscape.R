@@ -51,7 +51,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
 
     },
     plot = {
-      escapeRaster <- raster(sim$vegMap)
+      escapeRaster <- raster(sim$rasterToMatch)
       values(escapeRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
       values(escapeRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
       Plot(escapeRaster, title = paste0("Annual fire escapes", time(sim)))
@@ -113,6 +113,7 @@ Escape <- function(sim) {
   ## TODO: This module has many dependencies that aren't sourced in .inputObjects
 
   if (!suppliedElsewhere("flammableMap", sim)) {
+    message("Please supply flammable map...")
     sim$flammableMap <- sim$rasterToMatch
     sim$flammableMap[] <- sim$flammableMap[]* 0
   }

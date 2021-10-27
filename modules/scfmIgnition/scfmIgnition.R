@@ -108,7 +108,7 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg){
     message ("you should run scfmIgnition with scfmLandcoverInit")
     flammableMap <- raster(nrow = 10, ncol = 10)
     vals <- sample(x = 0:1, size = 100, replace = TRUE)
-    sim$flammmableMap <- setValues(flammableMap, vals)
+    sim$flammableMap <- setValues(flammableMap, vals)
   }
   if (!suppliedElsewhere("landscapeAttr", sim)){
     stop("landscapeAttr is missing. Please run scfmLandcoverInit")
