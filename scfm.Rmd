@@ -24,15 +24,19 @@ Marchal, Jean, Steve G Cumming, and Eliot J B McIntire. 2017. “Land Cover, Mor
 Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
 
 ```{r load-SpaDES, eval=TRUE}
-library(raster)
-library(SpaDES)
+
+library(SpaDES.core)
 library(LandR)
 library(ggplot2)
+library(sp)
+library(raster)
 ```
 
 ## Usage example
 
 ```{r module usage example, eval = FALSE}
+
+options("Require.unloadNamespaces" = FALSE) #this is necessary while rgeos continutes to be used. 
 
 #Parameters
 timeunit <- "year"

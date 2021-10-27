@@ -15,7 +15,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("fasterize", "purrr", "raster", "sf", "rgeos",
+    reqdPkgs = list( "sf", "fasterize", "purrr", "raster",
                     "PredictiveEcology/LandR@development (>= 0.0.4.9014)",
                     "PredictiveEcology/reproducible (>= 1.2.7.9011)"),
     parameters = rbind(
