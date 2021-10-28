@@ -112,7 +112,6 @@ Init <- function(sim) {
                                     ),
                                     calibrateFireRegimePolys))
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
-
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
@@ -130,7 +129,7 @@ Init <- function(sim) {
     cl <- NULL
   }
 
-  if (!identical(res(sim$flammableMap), res(sim$bufferedFlammableMap))){
+  if (!identical(res(sim$flammableMap), res(sim$bufferedFlammableMap))) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
   }
   sim$scfmDriverPars <- Cache(pemisc::Map2,
@@ -175,7 +174,7 @@ Init <- function(sim) {
                           destinationPath = dataPath(sim),
                           studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
-    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))){
+    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {
       #warning is about identical crs
      landscapeLCC <- suppressWarnings(expr = eval(
         #we want the resolution of rasterToMatch, but not the extent
