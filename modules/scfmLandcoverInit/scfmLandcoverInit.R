@@ -2,8 +2,8 @@ stopifnot(packageVersion("SpaDES") >= "0.99.0")
 
 defineModule(sim,list(
     name = "scfmLandcoverInit",
-    description = "Takes the LCC05 classification of 39 land cover classes, and reclassifies it to flammable and inflammable [1,0]",
-    keywords = c("fire", "LCC05", "land cover classification 2005", "BEACONs"),
+    description = "Takes the LCC2010 classification of land cover classes, and reclassifies it to flammable and inflammable [1,0]",
+    keywords = c("fire", "LCC2010", "land cover classification 2010", "BEACONs"),
     childModules = character(),
     authors = c(
       person(c("Eliot", "J", "B"),"McIntire", email = "Eliot.McIntire@canada.ca", role = c("aut", "cre")),
@@ -15,7 +15,7 @@ defineModule(sim,list(
     documentation = list("README.txt", "scfmLandcoverInit.Rmd"),
     timeunit = "year",
     citation = list(),
-    reqdPkgs = list("fasterize", "purrr", "raster", "sf", 'rgeos',
+    reqdPkgs = list("fasterize", "purrr", "raster", "rgeos", "sf",
                     "PredictiveEcology/LandR",
                     "PredictiveEcology/reproducible"),
     parameters = rbind(
@@ -34,7 +34,7 @@ defineModule(sim,list(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "Landcover to build flammability map",
-                   sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
+                   sourceURL = NA), ## uses default url specified in LandR::prepInputsLCC()
       expectsInput(objectName = "flammableMap", objectClass = "RasterLayer",
                    desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
@@ -59,7 +59,6 @@ defineModule(sim,list(
 doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
   switch(eventType,
          init = {
-
            sim <- Init(sim)
            sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
            sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
@@ -79,6 +78,7 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
 
   return(invisible(sim))
 }
+
 Init <- function(sim) {
   message("checking sim$fireRegimePolys for sliver polygons...")
 
@@ -91,9 +91,8 @@ Init <- function(sim) {
   sim$fireRegimePolys$trueArea <- round(rgeos::gArea(sim$fireRegimePolys, byid = TRUE), digits = 0)
   if (is.na(P(sim)$sliverThreshold)) {
     sim@params[[currentModule(sim)]]$sliverThreshold <- 1e4 * 1e4 #100km2
-
   }
-  if (P(sim)$removeSlivers){
+  if (P(sim)$removeSlivers) {
     if (any(sim$fireRegimePolys$trueArea < P(sim)$sliverThreshold)) {
       message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
       sim$fireRegimePolys <- Cache(deSliver, sim$fireRegimePolys, threshold = P(sim)$sliverThreshold,
@@ -114,7 +113,6 @@ Init <- function(sim) {
   if (length(unique(sim$fireRegimePolys$PolyID)) != length(sim$fireRegimePolys)) {
     stop("mismatch between PolyID and fireRegimePolys. Must be 1 PolyID value per multipolygon object")
   }
-
 
   temp <- sf::st_as_sf(sim$fireRegimePolys)
   temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
@@ -237,12 +235,12 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     vegMapSupplied <- FALSE
     message("vegMap not supplied. Using default 2010 LandCover of Canada")
     sim$vegMap <- LandR::prepInputsLCC(year = 2010,
-                                destinationPath = dPath,
-                                studyArea = sim$studyArea,
-                                rasterToMatch = sim$rasterToMatch,
-                                filename2 = NULL,
-                                useCache = TRUE,
-                                userTags = c(cacheTags, "vegMap"))
+                                       destinationPath = dPath,
+                                       studyArea = sim$studyArea,
+                                       rasterToMatch = sim$rasterToMatch,
+                                       filename2 = NULL,
+                                       useCache = TRUE,
+                                       userTags = c(cacheTags, "vegMap"))
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {

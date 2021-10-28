@@ -1,11 +1,8 @@
-
-# Everything in this file gets sourced during simInit, and all functions and objects
-#  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "ageModule",
   description = "Creates and maintains a raster called ageMap",
   keywords = c("forest age", "modelling course", "Lab 5"),
-  authors = c(person(c("Steve", "G"), "Cumming", email="stevec@sbf.ulaval.ca", role=c("aut", "cre"))),
+  authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))),
   childModules = character(),
   version = list(LandR = "0.0.11.9000", ageModule = "0.9.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -16,7 +13,7 @@ defineModule(sim, list(
   reqdPkgs = list("raster","RColorBrewer", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
-    defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),
+    defineParameter("maxAge","numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
@@ -52,20 +49,15 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
     sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
     sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot", eventPriority = 7.5)
     sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save", eventPriority = 7.5)
-  } else if (eventType=="age") {
+  } else if (eventType == "age") {
     # do stuff for this event
     sim <- Age(sim)
 
     # schedule the next event
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval,
-                         "ageModule", "age")
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "ageModule", "age")
   } else if (eventType == "plot") {
-
-    Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
-    sim <- scheduleEvent(sim,
-                         time(sim) + P(sim)$.plotInterval,
-                         "ageModule", "plot")
-
+    Plot(sim$ageMap, legendRange = c(0, P(sim)$maxAge))
+    sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "ageModule", "plot")
   }  else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -73,13 +65,10 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-
-### template initilization
 Init <- function(sim) {
-
   # we will use our colour choices, not whatever may have come with the loaded map.
- setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
- #temporary until we buid the rest of the modules
+  setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
+
   return(invisible(sim))
 }
 
@@ -94,7 +83,6 @@ Save <- function(sim) {
 }
 
 Age <- function(sim) {
-
   newAges <- pmin(P(sim)$maxAge, getValues(sim$ageMap) + P(sim)$returnInterval)
   sim$ageMap <- setValues(sim$ageMap, newAges)
   if (!is.null(sim$rstCurrentBurn)) {
@@ -115,10 +103,12 @@ Age <- function(sim) {
   }
 
   if (!suppliedElsewhere("ageMap", sim)) {
-    sim$ageMap <- LandR::prepInputsStandAgeMap(studyArea = sim$studyArea,
-                                           rasterToMatch = sim$rasterToMatch,
-                                           destinationPath = dPath,
-                                           startTime  = start(sim))
+    sim$ageMap <- LandR::prepInputsStandAgeMap(
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      destinationPath = dPath,
+      startTime  = start(sim)
+    )
   }
   if (!suppliedElsewhere("rstCurrentBurn", sim)) {
     stop("Please supply rstCurrentBurn by running scfmSpread or another fire model")
