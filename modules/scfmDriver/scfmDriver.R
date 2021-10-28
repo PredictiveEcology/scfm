@@ -159,7 +159,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
   if (any(!suppliedElsewhere("scfmRegimePars", sim),
           !suppliedElsewhere("landscapeAttr", sim))) {

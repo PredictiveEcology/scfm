@@ -206,8 +206,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
 ### template initilization
 
 .inputObjects <- function(sim) {
-
-  dPath <- dataPath(sim) #where files will be downloaded
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("studyArea", sim)) {

@@ -93,7 +93,7 @@ Age <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
