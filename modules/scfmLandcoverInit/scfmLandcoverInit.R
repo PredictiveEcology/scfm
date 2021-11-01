@@ -104,13 +104,21 @@ Init <- function(sim) {
 
   message("checking sim$fireRegimePolys for sliver polygons...")
 
+  #this only needs to be done on the larger area, if it is provided
+  #doing so on larger and smaller has the potential to mismatch slivers between calibration/simulation
   if (!is.null(sim$fireRegimePolysLarge)) {
-    sim$fireRegimePolysLarge <- checkForIssues(sim$fireRegimePolysLarge,
+    sim$fireRegimePolysLarge <- checkForIssues(fireRegimePolys = sim$fireRegimePolysLarge,
                                                studyArea = sim$studyAreaLarge,
                                                rasterToMatch = sim$rasterToMatchLarge,
                                                flammableMap = sim$flammableMapLarge,
                                                sliverThresh = P(sim)$sliverThreshold,
                                                cacheTag = c("scfmLandcoverInit", "fireRegimePolysLarge"))
+
+    #now that slivers are removed, remake frp from the larger object
+    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge,
+                                       studyArea = sim$fireRegimePolys)
+    #remnant slivers will be whole in the larger object
+
     # This makes sim$landscapeAttr & sim$cellsByZone
     outs <- Cache(genFireMapAttr,
                   flammableMap = sim$flammableMapLarge,
@@ -119,16 +127,15 @@ Init <- function(sim) {
                   userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaLarge"))
 
     sim$landscapeAttrLarge <- outs$landscapeAttr
-    #i don't think we need to know cellsByZone of the larger area
+
+  } else {
+    sim$fireRegimePolys <- checkForIssues(fireRegimePolys = sim$fireRegimePolys,
+                                          studyArea = sim$studyArea,
+                                          rasterToMatch = sim$rasterToMatch,
+                                          flammableMap = sim$flammableMap,
+                                          sliverThresh = P(sim)$sliverThreshold,
+                                          cacheTag = c("scfmLandcoverInit", "fireRegimePolys"))
   }
-
-  sim$fireRegimePolys <- checkForIssues(sim$fireRegimePolys,
-                                             studyArea = sim$studyArea,
-                                             rasterToMatch = sim$rasterToMatch,
-                                             flammableMap = sim$flammableMap,
-                                             sliverThresh = P(sim)$sliverThreshold,
-                                             cacheTag = c("scfmLandcoverInit", "fireRegimePolys"))
-
   outs <- Cache(genFireMapAttr,
                 flammableMap = sim$flammableMap,
                 fireRegimePolys = sim$fireRegimePolys,
@@ -299,16 +306,16 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                   destinationPath = dPath,
                                   studyArea = sa,
                                   useSAcrs = TRUE,
-                                  # rasterToMatch = sim$rasterToMatch,
                                   filename2 = NULL,
                                   userTags = c(cacheTags, "fireRegimePolys"))
-    fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
+    # fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
+    # fireRegimePolys <- rgeos::gUnaryUnion(spgeom = fireRegimePolys, id = fireRegimePolys$ECOREGION)
     fireRegimePolys$PolyID <- fireRegimePolys$ECOREGION
+
     if (hasSAL) {
       sim$fireRegimePolysLarge <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,
-                                         studyArea = sim$studyArea,
-                                         rasterToMatch = sim$rasterToMatch)
+                                         studyArea = sim$studyArea)
     } else {
       sim$fireRegimePolys <- fireRegimePolys
     }
@@ -317,9 +324,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     # sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOREGION)
     # sim$fireRegimePolys$ECOREGION <- row.names(sim$fireRegimePolys)
   } else if (!hasFRP & hasFRPL) {
-    sim$fireRegimePolys <- postProcess(sim$fireRegimePolys,
-                                       studyArea = sim$studyArea,
-                                       userTags = c(cacheTags, "fireRegimePolys"))
+    stop("please supply both fireRegimePolys and fireRegimePolysLarge")
   }
 
   return(invisible(sim))

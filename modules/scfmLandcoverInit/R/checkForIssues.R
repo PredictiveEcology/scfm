@@ -2,7 +2,7 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
 
   #I think there is a better function
   #TODO: bug the group for the better function
-  compareCRS(rasterToMatch, flammableMap, studyArea, fireRegimePolys)
+  compareCRS(rasterToMatch, flammableMap, fireRegimePolys)
 
   if (is.null(fireRegimePolys$PolyID)){
     #this is done in .inputObjects but should cover when the object
@@ -21,10 +21,10 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
     fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh,
                                  userTags = cacheTag)
   }
-  #this is a problem if there is an upstream PROJ bug with gridded shapefiles...
-  if (length(unique(ireRegimePolys$PolyID)) != length(fireRegimePolys)) {
-    stop("mismatch between PolyID and fireRegimePolys. Must be 1 PolyID value per multipolygon object")
-  }
+  # #this is a problem if there is an upstream PROJ bug with gridded shapefiles...
+  # if (length(unique(fireRegimePolys$PolyID)) != length(fireRegimePolys)) {
+  #   stop("mismatch between PolyID and fireRegimePolys. Must be 1 PolyID value per multipolygon object")
+  # }
 
   return(fireRegimePolys)
 

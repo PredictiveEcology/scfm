@@ -29,6 +29,7 @@ library(raster)
 library(SpaDES)
 library(LandR)
 library(ggplot2)
+library(data.table)
 ```
 
 ## Usage example
@@ -87,17 +88,25 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
 
-rasterToMatch <- LandR::prepInputsLCC(year = 2010, studyArea = studyArea, useSAcrs = TRUE, destinationPath = paths$inputPath)
-rasterToMatch <- raster::aggregate(rasterToMatch, fact = 8) #for speed, this is close to 2005's 250m resolution
+studyAreaLarge <- buffer(studyArea, 50000)
 
-#this is a silly workaround to a SpaDES recoveryMode issue when prepInputsLCC is called again in module
-rasterToMatch <- setValues(raster(rasterToMatch), getValues(rasterToMatch))
 
+rasterToMatchLarge <- LandR::prepInputsStandAgeMap(studyArea = studyAreaLarge, 
+                                                   destinationPath = paths$inputPath,
+                                                   fireURL = NULL)
+rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
+
+#necessary for scfm - use ageMap crs to avoid reprojecting the flammableMap interanlly, or supply your own flammableMaps
+studyArea <- spTransform(studyArea, CRSobj = crs(studyArea))
+studyAreaLarge <- spTransform(studyAreaLarge, CRSobj = crs(studyAreaLarge))
+studyAreaLarge$name <- "SAL" #make SPDF
 
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
-  rasterToMatch = rasterToMatch
+  studyAreaLarge = studyAreaLarge,
+  rasterToMatch = rasterToMatch,
+  rasterToMatchLarge = rasterToMatchLarge
 )
 
 #Run module
@@ -105,7 +114,7 @@ objects <- list(
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
 
-mySim <- simInit(times = times, params = parameters, modules = modules,
+mySim <- simInit(times = times, params = parameters, modules = c("scfmLandcoverInit", "scfmRegime"),
                  objects = objects, paths = paths)
 
 dev()

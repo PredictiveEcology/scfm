@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("raster", "reproducible", "sp"),
+  reqdPkgs = list("raster", "reproducible", "sp", "PredictiveEcology/fireSenseUtils"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
@@ -40,9 +40,12 @@ defineModule(sim, list(
                  desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
                                'YEAR', and 'SIZE_HA', or pass the parameters to identify those"),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list",
                  desc = "list of landscape attributes for each polygon"),
+    expectsInput(objectName = "landscapeAttrLarge", objectClass = "list",
+                 desc = paste("list of landscape attributes for larger study area - if supplied, the module",
+                              "will generate fire regime parameters for the polygons in landscapeAttr",
+                              "using the attributes from landscapeAttrLarge.")),
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
@@ -50,7 +53,11 @@ defineModule(sim, list(
     expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons"),
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip")
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"),
+    expectsInput(objectName = "fireRegimePolysLarge", objectClass = "SpatialPolygonsDataFrame",
+                 desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
+                              "study area. Not required - but useful if the parameterization region is different",
+                              "from the simulation region."))
   ),
   outputObjects = bindrows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list",
@@ -76,6 +83,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
+  browser()
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
@@ -117,29 +125,60 @@ Init <- function(sim) {
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
-  # Assign polygon label to SpatialPoints of fires object
-  frpl <- sim$fireRegimePolys$PolyID
-  if (is.null(frpl)) {
-    stop("fireRegimePolys must have a numeric field called 'PolyID'")
+
+
+  if (!is.null(sim$fireRegimePolysLarge) & !is.null(sim$landscapeAttrLarge)) {
+    #sp over uses identical CRS
+    if (!identicalCRS(tmp, sim$fireRegimePolysLarge)) {
+      tmp <- spTransform(tmp, CRSobj = crs(sim$fireRegimePolysLarge))
+    }
+    browser()
+
+    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolysLarge)$PolyID #gives studyArea row name to point
+
+    if (any(is.na(tmp$PolyID))) {
+      tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
+    }
+    sim$fireRegimePoints <- tmp
+    #this function estimates the ignition probability and escape probability based on NFDB
+    scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
+                             FUN = calcZonalRegimePars,
+                             firePolys = sim$fireRegimePolysLarge,
+                             landscapeAttr = sim$landscapeAttrLarge,
+                             firePoints = sim$fireRegimePoints,
+                             epochLength = epochLength,
+                             maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                             fireSizeColumnName = P(sim)$fireSizeColumnName,
+                             targetBurnRate = P(sim)$targetBurnRate,
+                             targetMaxFireSize = P(sim)$targetMaxFireSize)
+
+    names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
+    #only keep the attribtues that are in study area
+    scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
+
+  } else {
+
+    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
+
+    if (any(is.na(tmp$PolyID))) {
+      tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
+    }
+    sim$fireRegimePoints <- tmp
+
+    #this function estimates the ignition probability and escape probability based on NFDB
+    scfmRegimePars <- lapply(names(sim$landscapeAttr),
+                             FUN = calcZonalRegimePars,
+                             firePolys = sim$fireRegimePolys,
+                             landscapeAttr = sim$landscapeAttr,
+                             firePoints = sim$fireRegimePoints,
+                             epochLength = epochLength,
+                             maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                             fireSizeColumnName = P(sim)$fireSizeColumnName,
+                             targetBurnRate = P(sim)$targetBurnRate,
+                             targetMaxFireSize = P(sim)$targetMaxFireSize)
+
+    names(scfmRegimePars) <- names(sim$landscapeAttr)
   }
-
-  tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
-
-  if (any(is.na(tmp$PolyID))) {
-    tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
-  }
-  sim$fireRegimePoints <- tmp
-
-  #this function estimates the ignition probability and escape probability based on NFDB
-  scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                           firePolys = sim$fireRegimePolys, landscapeAttr = sim$landscapeAttr,
-                           firePoints = sim$fireRegimePoints, epochLength = epochLength,
-                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName,
-                           targetBurnRate = P(sim)$targetBurnRate,
-                           targetMaxFireSize = P(sim)$targetMaxFireSize)
-
-  names(scfmRegimePars) <- names(sim$landscapeAttr)
 
   nullIdx <- sapply(scfmRegimePars, is.null)
   if (any(nullIdx)){
@@ -149,7 +188,6 @@ Init <- function(sim) {
 
   return(invisible(sim))
 }
-
 
 .inputObjects <- function(sim) {
   dPath <- dataPath(sim)
@@ -169,13 +207,20 @@ Init <- function(sim) {
   ## this module has many dependencies that aren't sourced in .inputObjects
   ## this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
-    sim$firePoints <- getFirePoints_NFDB(url = extractURL("firePoints", sim),
-                                        studyArea = sim$studyArea, rasterToMatch = sim$rasterToMatch,
-                                        NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
-                                                                   create = TRUE))
+    if (!is.null(sim$firePolysLarge)) {
+      SA <- sim$firePolysRegimeLarge
+      RTM <- sim$rasterToMatchLarge
+      } else {
+      SA <- sim$fireRegimePolys
+      RTM <- sim$rasterToMatch
+      }
+
+    #do not use fireSenseUtils - it removes the cause column...
+    sim$firePoints <- getFirePoints_NFDB(studyArea = SA,
+                                         rasterToMatch = RTM,
+                                         NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
+                                                                    create = TRUE))
   }
-  if (!identicalCRS(sim$firePoints, sim$fireRegimePolys)) {
-    sim$firePoints <- spTransform(sim$firePoints, crs(sim$fireRegimePolys))
-  }
+
   return(invisible(sim))
 }
