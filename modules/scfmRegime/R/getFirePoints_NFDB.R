@@ -6,7 +6,7 @@
 #' @param redownloadIn time in years that we tolerate the data to be "old", and require redownload.
 #'                     I.e. 0.5 would mean "redownload data older than 6 months". Default 2.
 #' @param NFDB_pointPath file path to save the download data. Must be provided.
-getFirePoints_NFDB <- function(url = NULL,
+getFirePoints_NFDB_scfm <- function(url = NULL,
                                studyArea = NULL, rasterToMatch = NULL, redownloadIn = 2,
                                NFDB_pointPath = NULL) {
 

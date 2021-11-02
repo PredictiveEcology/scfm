@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("raster", "reproducible", "sp", "PredictiveEcology/fireSenseUtils"),
+  reqdPkgs = list("raster", "reproducible", "sp"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
@@ -83,7 +83,6 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-  browser()
   tmp <- sim$firePoints
   if (length(sim$firePoints) == 0) {
     stop("there are no fires in your studyArea. Consider expanding the study Area")
@@ -132,7 +131,6 @@ Init <- function(sim) {
     if (!identicalCRS(tmp, sim$fireRegimePolysLarge)) {
       tmp <- spTransform(tmp, CRSobj = crs(sim$fireRegimePolysLarge))
     }
-    browser()
 
     tmp$PolyID <- sp::over(tmp, sim$fireRegimePolysLarge)$PolyID #gives studyArea row name to point
 
@@ -202,7 +200,7 @@ Init <- function(sim) {
                                       rasterToMatch = sim$rasterToMatch,
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
-    sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$REGION_)
+    sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
   }
   ## this module has many dependencies that aren't sourced in .inputObjects
   ## this workaround prevents checksums updating due to daily name change of NFDB files
@@ -216,7 +214,7 @@ Init <- function(sim) {
       }
 
     #do not use fireSenseUtils - it removes the cause column...
-    sim$firePoints <- getFirePoints_NFDB(studyArea = SA,
+    sim$firePoints <- getFirePoints_NFDB_scfm(studyArea = SA,
                                          rasterToMatch = RTM,
                                          NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
                                                                     create = TRUE))

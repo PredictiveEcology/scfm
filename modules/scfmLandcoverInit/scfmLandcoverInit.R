@@ -42,7 +42,9 @@ defineModule(sim,list(
                    desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
       expectsInput(objectName = "flammableMapLarge", objectClass = "RasterLayer",
                    desc = paste("binary flammability map - defaults to using LandR::prepInputsLCC.",
-                                "Only neeeded if studyAreaLarge is passed")),
+                                "This is only necessary if passing studyAreaLarge OR running scfmDriver.",
+                                "It should match the extent of studyAreaLarge, and if running scfmDriver,",
+                                "it should extend by >= scfmDriver's P(sim)$buffDist.")),
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                    desc = "template raster for raster GIS operations. Must be supplied by user"),
       expectsInput(objectName = "rasterToMatchLarge", objectClass = "RasterLayer",
@@ -308,10 +310,14 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
                                   useSAcrs = TRUE,
                                   filename2 = NULL,
                                   userTags = c(cacheTags, "fireRegimePolys"))
-    # fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
-    # fireRegimePolys <- rgeos::gUnaryUnion(spgeom = fireRegimePolys, id = fireRegimePolys$ECOREGION)
-    fireRegimePolys$PolyID <- fireRegimePolys$ECOREGION
+    fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
 
+    #this should preserve ecoregions in row-names -
+    #TODO: fix scfm so that this isn't necessary
+    fireRegimePolys <- rgeos::gUnaryUnion(spgeom = fireRegimePolys, id = fireRegimePolys$ECOREGION)
+    fireRegimePolys$PolyID <- as.numeric(row.names(fireRegimePolys))
+    #keep ECOREGION so it is explicit
+    fireRegimePolys$ECOREGION <- fireRegimePolys$PolyID
     if (hasSAL) {
       sim$fireRegimePolysLarge <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,

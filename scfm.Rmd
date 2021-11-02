@@ -90,15 +90,13 @@ studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center,
 
 studyAreaLarge <- buffer(studyArea, 50000)
 
+rasterToMatchLarge <- raster(extent(studyAreaLarge), res = c(250, 250))
+crs(rasterToMatchLarge) <- crs(studyAreaLarge)
+rasterToMatchLarge[] <- 1
+rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
 
-rasterToMatchLarge <- LandR::prepInputsStandAgeMap(studyArea = studyAreaLarge, 
-                                                   destinationPath = paths$inputPath,
-                                                   fireURL = NULL)
 rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
 
-#necessary for scfm - use ageMap crs to avoid reprojecting the flammableMap interanlly, or supply your own flammableMaps
-studyArea <- spTransform(studyArea, CRSobj = crs(studyArea))
-studyAreaLarge <- spTransform(studyAreaLarge, CRSobj = crs(studyAreaLarge))
 studyAreaLarge$name <- "SAL" #make SPDF
 
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
