@@ -152,16 +152,18 @@ comparePredictions <- function(polyList, simList) {
     #This is a long way of saying, sum of fires/ (flammable landscape * fire epoch )
     #hist_mfs will be NaN if there were no fires larger than one pixel
     pSpread <- driver$pSpread 
+    pIg <- regime$ignitionRate
     burnSum <- sim$burnSummary[sim$burnSummary$polyID == x,]
     burnSum$N <- as.numeric(burnSum$N)
     burnSum$areaBurned <- as.numeric(burnSum$areaBurned)
     burnSum <- burnSum[burnSum$N > 1]
     mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times(sim)$end - times(sim)$start)) * 100
-    
+    meanBurn <- ifelse(nrow(burnSum) == 0, yes = 0, no = mean(burnSum$areaBurned))
     pred <- data.frame("PolyId" = x, #Polygon ID
                        "histMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
-                       "modMeanSize" = mean(burnSum$areaBurned), #The modeled mean size of fires
+                       "modMeanSize" = meanBurn, #The modeled mean size of fires
                        "pSpread" = pSpread, # The spread probability estimated from the SCAM model
+                       "pIgnition" = pIg, #the ignition probability of a single pixel
                        "hist_MAAB" = hist_MAAB,#The empirical mean annual area burned (from NFDB 1970-2000)
                        "mod_MAAB" = mod_MAAB) #The modelled mean annual area burned
     return(pred)
