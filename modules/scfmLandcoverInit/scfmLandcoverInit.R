@@ -118,7 +118,7 @@ Init <- function(sim) {
 
     #now that slivers are removed, remake frp from the larger object
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge,
-                                       studyArea = sim$fireRegimePolys)
+                                       studyArea = sim$studyArea)
     #remnant slivers will be whole in the larger object
 
     # This makes sim$landscapeAttr & sim$cellsByZone
