@@ -325,12 +325,6 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     } else {
       sim$fireRegimePolys <- fireRegimePolys
     }
-
-    # #this is now necessary due to the gridded nature of ecoregion file - postProcess bug
-    # sim$fireRegimePolys <- rgeos::gUnaryUnion(spgeom = sim$fireRegimePolys, id = sim$fireRegimePolys$ECOREGION)
-    # sim$fireRegimePolys$ECOREGION <- row.names(sim$fireRegimePolys)
-  } else if (!hasFRP & hasFRPL) {
-    stop("please supply both fireRegimePolys and fireRegimePolysLarge")
   }
 
   return(invisible(sim))
