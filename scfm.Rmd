@@ -112,13 +112,12 @@ objects <- list(
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
 
-mySim <- simInit(times = times, params = parameters, modules = c("scfmLandcoverInit", "scfmRegime"),
-                 objects = objects, paths = paths)
-
-dev()
-clearPlot()
-
-outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
+outSim <- simInitAndSpades(times = times, 
+                          params = parameters, 
+                          modules = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
+                                      "scfmIgnition", "scfmEscape", "scfmSpread"),
+                          objects = objects, 
+                          paths = paths)
 ```
 
 ```{r module evaluate module output, eval = FALSE}
