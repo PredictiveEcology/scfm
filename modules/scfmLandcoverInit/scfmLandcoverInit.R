@@ -148,11 +148,9 @@ Init <- function(sim) {
   sim$cellsByZone <- outs$cellsByZone
   ##############
   #ONLY FOR SA
-  temp <- sf::st_as_sf(sim$fireRegimePolys)
-  temp$PolyID <- as.numeric(temp$PolyID) #fasterize needs numeric; row names must stay char
 
   #fireRegimeRas is handy for post-simulation analyses
-  fireRegimeRas <- fasterize::fasterize(sf = temp, raster = sim$rasterToMatch, field = "PolyID")
+  fireRegimeRas <- fasterize::fasterize(sf = sim$fireRegimePolys, raster = sim$rasterToMatch, field = "PolyID")
 
   #doing this prevents fireRegimeRas from inheriting colormaps
   sim$fireRegimeRas <- raster(fireRegimeRas)
@@ -307,17 +305,14 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                   destinationPath = dPath,
                                   studyArea = sa,
+                                  fun = st_read,
                                   useSAcrs = TRUE,
                                   filename2 = NULL,
                                   userTags = c(cacheTags, "fireRegimePolys"))
-    fireRegimePolys <- spTransform(fireRegimePolys, CRSobj = crs(sim$rasterToMatch))
+    fireRegimePolys <- st_transform(fireRegimePolys, crs = crs(sim$rasterToMatch))
 
     #this should preserve ecoregions in row-names -
-    #TODO: fix scfm so that this isn't necessary
-    fireRegimePolys <- rgeos::gUnaryUnion(spgeom = fireRegimePolys, id = fireRegimePolys$ECOREGION)
-    fireRegimePolys$PolyID <- as.numeric(row.names(fireRegimePolys))
-    #keep ECOREGION so it is explicit
-    fireRegimePolys$ECOREGION <- fireRegimePolys$PolyID
+    fireRegimePolys$PolyID <- fireRegimePolys$ECOREGION
     if (hasSAL) {
       sim$fireRegimePolysLarge <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,

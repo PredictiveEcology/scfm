@@ -10,21 +10,12 @@
 #' merged to their nearest valid neighbour.
 #'
 #' @export
-#' @importFrom sf st_area st_cast st_nearest_feature as_Spatial st_union st_as_sf
-#' @importFrom raster bind
-#' @importFrom rgeos gBuffer
+#' @import sf #you basically need the whole package at thsi point
 #' @examples
 #'deSliver(x = intersectedPolygons, threshold = 500)
 
 deSliver <- function(x, threshold) {
-  backToSf <- FALSE
-  if (class(x)[1] == "sf") {
-    backToSf <- TRUE
-    x$tempArea <- as.numeric(st_area(x))
-  } else {
-    x<- st_as_sf(x)
-    x$tempArea <- as.numeric(st_area(x))
-  }
+  x$tempArea <- as.numeric(st_area(x))
 
   #determine slivers by area
   xSlivers <- x[x$tempArea < threshold, ]
@@ -51,14 +42,11 @@ deSliver <- function(x, threshold) {
         st_union(.)
       yMerge <- ns[i, ]
       #convert slivers back to multipolygon
-      out <- sf::st_union(x = xMerge, y = yMerge) %>%
-        as_Spatial(.)
-      yMergeSpd <- sf::as_Spatial(yMerge)
-      out <- SpatialPolygonsDataFrame(Sr = out,
-                                      data = yMergeSpd@data,
-                                      match.ID = FALSE)
+      out <- sf::st_union(x = xMerge, y = yMerge)
 
-      return(out)
+      #update the geometry
+      yMerge$geometry <- out
+      return(yMerge)
     }
   )
   otherPolys <- xNotSlivers[!(1:nrow(xNotSlivers) %in% nearestFeature),]
@@ -66,29 +54,27 @@ deSliver <- function(x, threshold) {
 
     #these polygons must be tracked and merged. They may be nrow(0) if every feature was modified in some way
     if (nrow(otherPolys) != 0) {
-      otherPolys <- list(as_Spatial(otherPolys))
-      bothGroups <- append(x = mergeSlivers, values = otherPolys)
-      m <- bind(bothGroups)
+      mergeSlivers <- do.call(rbind(mergeSlivers))
+      m <- rbind(otherPolys, mergeSlivers)
     } else {
-      m <- bind(mergeSlivers)
+      m <- rbind(mergeSlivers)
     }
   } else { #lapply over length 1 is special
     if (nrow(otherPolys) != 0) {
-      otherPolys <- as_Spatial(otherPolys)
       mergeSlivers <- mergeSlivers[[1]]
-      m <- bind(mergeSlivers, otherPolys)
+      m <- rbind(mergeSlivers, otherPolys)
     } else {
       m <- mergeSlivers[[1]]
     }
   }
+  #the geometry will be sfc
+  m <- st_cast(m, to = "MULTIPOLYGON")
   #Remove the temporary column
   m$tempArea <- NULL
 
   #remove self-intersecting geometries
-  m <- gBuffer(spgeom = m, byid = TRUE, width = 0)
-
-  if (backToSf) {
-    m <- st_as_sf(m)
+  if (any(!st_is_valid(m))){
+    m <- gBuffer(spgeom = m, byid = TRUE, width = 0)
   }
 
   return(m)

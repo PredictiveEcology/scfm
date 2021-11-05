@@ -13,10 +13,9 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
     stop("scfm requires projected coordinate systems - lat/long too prone to error")
   }
    #TODO: fix all this rgeos business
-  fireRegimePolys$trueArea <- round(rgeos::gArea(fireRegimePolys, byid = TRUE), digits = 0)
+  fireRegimePolys$trueArea <- round(sf::st_area(fireRegimePolys), digits = 0)
 
-
-  if (any(fireRegimePolys$trueArea < sliverThresh)) {
+  if (any(as.numeric(fireRegimePolys$trueArea) < sliverThresh)) {
     message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
     fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh,
                                  userTags = cacheTag)

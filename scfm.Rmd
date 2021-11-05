@@ -117,6 +117,10 @@ rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
 
 studyAreaLarge$name <- "SAL" #make SPDF
 
+studyArea <- st_as_sf(studyArea)
+studyAreaLarge <- st_as_sf(studyAreaLarge)
+# rasterToMatchLarge <- terra::rast(rasterToMatchLarge)
+# rastertoMatch <- terra::rast(rasterToMatch)
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
