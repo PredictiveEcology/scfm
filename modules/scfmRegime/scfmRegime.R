@@ -84,13 +84,11 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
 
   tmp <- sim$firePoints
-  if (length(sim$firePoints) == 0) {
-    stop("there are no fires in your studyArea. Consider expanding the study Area")
-  }
   #extract and validate fireCause spec
 
   fc <- P(sim)$fireCause
 
+  #review that sf can be used like this.
   #should verify CAUSE is a column in the table...
   if (!P(sim)$fireCauseColumnName %in% names(tmp))
     stop(paste0("The column ", P(sim)$fireCauseColumnName, " does not exist",
@@ -124,15 +122,14 @@ Init <- function(sim) {
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
-
-
   if (!is.null(sim$fireRegimePolysLarge) & !is.null(sim$landscapeAttrLarge)) {
     #sp over uses identical CRS
-    if (!identicalCRS(tmp, sim$fireRegimePolysLarge)) {
-      tmp <- spTransform(tmp, CRSobj = crs(sim$fireRegimePolysLarge))
+
+    if (st_crs(tmp) != st_crs(sim$fireRegimePolysLarge)) {
+      tmp <- st_transform(tmp, crs = st_crs(sim$fireRegimePolysLarge))
     }
 
-    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolysLarge)$PolyID #gives studyArea row name to point
+    tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) #gives studyArea row name to point
 
     if (any(is.na(tmp$PolyID))) {
       tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
@@ -213,11 +210,12 @@ Init <- function(sim) {
       RTM <- sim$rasterToMatch
       }
 
-    #do not use fireSenseUtils - it removes the cause column...
+    #do not use fireSenseUtils - it removes the cause column...among other issues
+    #this function came first - fireSenseUtils copied the name!
     sim$firePoints <- getFirePoints_NFDB_scfm(studyArea = SA,
-                                         rasterToMatch = RTM,
-                                         NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
-                                                                    create = TRUE))
+                                              rasterToMatch = RTM,
+                                              NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
+                                                                         create = TRUE))
   }
 
   return(invisible(sim))

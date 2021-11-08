@@ -103,7 +103,6 @@ doEvent.scfmLandcoverInit = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
 
-
   message("checking sim$fireRegimePolys for sliver polygons...")
 
   #this only needs to be done on the larger area, if it is provided
@@ -120,6 +119,9 @@ Init <- function(sim) {
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge,
                                        studyArea = sim$studyArea)
     #remnant slivers will be whole in the larger object
+    if (class(sim$fireRegimePolys$geometry)[1] == "sfc_GEOMETRY") {
+      sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
+    }
 
     # This makes sim$landscapeAttr & sim$cellsByZone
     outs <- Cache(genFireMapAttr,
