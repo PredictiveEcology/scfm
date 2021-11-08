@@ -1,23 +1,23 @@
 #Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist, flammableMap = NULL) {
-  tempDir <- tempdir()
-  #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
-  #TODO: Investigate why some polygons fail
-  bfireRegimePoly <- buffer(coreLand, buffDist)
-  if (!gIsValid(bfireRegimePoly, byid = FALSE)) {
-    bfireRegimePoly <- gBuffer(bfireRegimePoly, width = 0)
+
+  coreLand$fooField <- 1
+
+  bfireRegimePoly <- st_buffer(coreLand, buffDist)
+  bfireRegimePoly$fooField <- 0
+  if (!all(st_is_valid(bfireRegimePoly))) {
+    bfireRegimePoly <- st_buffer(bfireRegimePoly, width = 0)
   }
-  bfireRegimePoly <-  gDifference(bfireRegimePoly, spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- rbind.SpatialPolygons(coreLand, bfireRegimePoly, makeUniqueIDs = TRUE) #
-  polyLandscape$zone <- c("core", "buffer")
-  polyLandscape$Value <- c(1, 0)
+  #union doe not work, neither does default st_join
+  polyLandscape <- rbind(coreLand, bfireRegimePoly)
+  polyLandscape <- st_difference(polyLandscape)
+  polyLandscape <- st_cast(polyLandscape, "MULTIPOLYGON")
 
   flammableMap <- Cache(postProcess, flammableMap, studyArea = polyLandscape,
                         useSAcrs = TRUE, filename2 = NULL)
 
   #Generate landscape Index raster
-  polySF <- st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize(polySF, flammableMap, "Value")
+  landscapeIndex <- fasterize(polyLandscape, raster(flammableMap), "fooField")
 
   calibrationLandscape <- list(polyLandscape, landscapeIndex, flammableMap)
   names(calibrationLandscape) <- c("fireRegimePoly", "landscapeIndex", "flammableMap")
