@@ -12,8 +12,8 @@ defineModule(sim, list(
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
+                  "PredictiveEcology/pemisc", "reproducible",
+                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
