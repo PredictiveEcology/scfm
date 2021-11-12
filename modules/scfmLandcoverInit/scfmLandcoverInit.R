@@ -1,5 +1,3 @@
-stopifnot(packageVersion("SpaDES") >= "0.99.0")
-
 defineModule(sim,list(
     name = "scfmLandcoverInit",
     description = "Takes the LCC2010 classification of land cover classes, and reclassifies it to flammable and inflammable [1,0]",
