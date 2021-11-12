@@ -2,7 +2,7 @@ stopifnot(packageVersion("SpaDES") >= "0.99.0")
 
 defineModule(sim,list(
     name = "scfmLandcoverInit",
-    description = "Takes the LCC05 classification of 39 land cover classes, and reclassifies it to flammable and inflammable [1,0]",
+    description = "Takes the LCC05 classification of 39 land cover classes, and reclassifies it to flammable and non-flammable [1,0]",
     keywords = c("fire", "LCC05", "land cover classification 2005", "BEACONs"),
     childModules = character(),
     authors = c(
