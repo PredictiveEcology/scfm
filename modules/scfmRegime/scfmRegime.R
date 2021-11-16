@@ -188,7 +188,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {

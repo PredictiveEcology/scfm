@@ -1,5 +1,3 @@
-stopifnot(packageVersion("SpaDES") >= "0.99.0")
-
 defineModule(sim,list(
     name = "scfmLandcoverInit",
     description = paste("Generates some relevant statistics for each fire regime over a studyArea.",
@@ -233,8 +231,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
 ### template initilization
 
 .inputObjects <- function(sim) {
-
-  dPath <- dataPath(sim) #where files will be downloaded
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   #object check for SA/FRP/FRPL/SAL - better to be strict with stops
