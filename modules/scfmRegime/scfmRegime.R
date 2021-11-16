@@ -185,7 +185,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
@@ -202,8 +202,8 @@ Init <- function(sim) {
   ## this module has many dependencies that aren't sourced in .inputObjects
   ## this workaround prevents checksums updating due to daily name change of NFDB files
   if (!suppliedElsewhere("firePoints", sim)) {
-    if (!is.null(sim$firePolysLarge)) {
-      SA <- sim$firePolysRegimeLarge
+    if (!is.null(sim$fireRegimePolysLarge)) {
+      SA <- sim$fireRegimePolysLarge
       RTM <- sim$rasterToMatchLarge
       } else {
       SA <- sim$fireRegimePolys
@@ -213,7 +213,6 @@ Init <- function(sim) {
     #do not use fireSenseUtils - it removes the cause column...among other issues
     #this function came first - fireSenseUtils copied the name!
     sim$firePoints <- getFirePoints_NFDB_scfm(studyArea = SA,
-                                              rasterToMatch = RTM,
                                               NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
                                                                          create = TRUE))
   }

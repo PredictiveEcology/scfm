@@ -48,6 +48,7 @@ library(SpaDES)
 library(LandR)
 library(ggplot2)
 library(data.table)
+library(sf)
 ```
 
 ## Usage example
@@ -56,7 +57,7 @@ library(data.table)
 
 #Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 20)
+times <- list(start = 0, end = 50)
 defaultPlotInterval <- 5
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
