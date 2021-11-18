@@ -79,8 +79,9 @@ Init <- function(sim) {
 
 ### template for your event1
 Ignite <- function(sim) {
+  #TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$scfmDriverPars),
+  ignitions <- lapply(unique(names(sim$scfmDriverPars)),
                       FUN = calcIgnitions,
                       landscapeAttr = sim$landscapeAttr,
                       pIg = sim$pIg)

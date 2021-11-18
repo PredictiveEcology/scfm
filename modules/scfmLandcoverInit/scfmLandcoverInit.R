@@ -178,7 +178,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     valsByPoly <- raster::extract(neighMap, fireRegimePolys, cellnumbers = TRUE)
     valsByPoly <- lapply(valsByPoly, na.omit)
     names(valsByPoly) <- fireRegimePolys$PolyID
-    uniqueZoneNames <- fireRegimePolys$PolyID #get unique zones.
+    uniqueZoneNames <- unique(fireRegimePolys$PolyID) #get unique zones.
     valsByZone <- lapply(uniqueZoneNames, function(ecoName) {
       aa <- valsByPoly[names(valsByPoly) == ecoName]
       if (is.list(aa))

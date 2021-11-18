@@ -57,8 +57,8 @@ library(sf)
 
 #Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 50)
-defaultPlotInterval <- 5
+times <- list(start = 1, end = 250)
+defaultPlotInterval <- 50
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
 globCache <- c('.inputObjects')  #don't cache the init event - it is too prone to false positives
@@ -83,7 +83,7 @@ parameters <- list(
   ),
   scfmDriver = list(
     .useCache = '.inputObjects',
-    targetN = 1000 #increase targetN for more robust estimates, longer run-time
+    targetN = 4000 #increase targetN for more robust estimates, longer run-time
   )# default targetN = 4000, for reference. 
 ) 
 
@@ -105,7 +105,7 @@ paths <- list(
 center <- SpatialPoints(coords = data.frame(x = c(-1209980), 
             y = c(7586895)), proj4string = CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
-studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 20000, center = center, seed = 1001)
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = center, seed = 1001)
 
 studyAreaLarge <- buffer(studyArea, 50000)
 
@@ -113,7 +113,6 @@ rasterToMatchLarge <- raster(extent(studyAreaLarge), res = c(250, 250))
 crs(rasterToMatchLarge) <- crs(studyAreaLarge)
 rasterToMatchLarge[] <- 1
 rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
-
 rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
 
 studyAreaLarge$name <- "SAL" #make SPDF
@@ -145,32 +144,46 @@ outSim <- simInitAndSpades(times = times,
 
 ```{r module evaluate module output, eval = FALSE}
 #for comparing parameters of interest
-clearPlot()
+require(gridExtra)
+
 comparePredictions <- function(polyList, simList) {
   out <- lapply(polyList, FUN = function(x, sim = simList) {
     regime <- sim$scfmRegimePars[[x]]
+    simLength <- times(sim)$end - times(sim)$start + 1
     driver <- sim$scfmDriverPars[[x]]
     landscapeAttr <- sim$landscapeAttr[[x]]
     fireRegimePoints <- sim$fireRegimePoints[sim$fireRegimePoints$PolyID == as.numeric(x),]
-    hist_MAAB <- sum(fireRegimePoints$SIZE_HA[fireRegimePoints$SIZE_HA > landscapeAttr$cellSize])/
-      (landscapeAttr$burnyArea*(sim@params$scfmRegime$fireEpoch[2] - sim@params$scfmRegime$fireEpoch[1] + 1)) * 100
+
     #This is a long way of saying, sum of fires/ (flammable landscape * fire epoch )
     #hist_mfs will be NaN if there were no fires larger than one pixel
+    
+    
     pSpread <- driver$pSpread 
     pIg <- regime$ignitionRate
     burnSum <- sim$burnSummary[sim$burnSummary$polyID == x,]
     burnSum$N <- as.numeric(burnSum$N)
+    targetIgnitions <- regime$ignitionRate * landscapeAttr$burnyArea
+    achievedIgnitions <- nrow(burnSum)/simLength
+    
+    
     burnSum$areaBurned <- as.numeric(burnSum$areaBurned)
     burnSum <- burnSum[burnSum$N > 1]
-    mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times(sim)$end - times(sim)$start)) * 100
+    
+    targetFRI  <- 1/regime$empiricalBurnRate
+    #the length of simulation over the proportion that actually burned
+    achievedFRI <- simLength/(sum(burnSum$areaBurned)/landscapeAttr$burnyArea)
+    
+    #starting in year 1 and ending in year 10 means you have 10 years, so 
     meanBurn <- ifelse(nrow(burnSum) == 0, yes = 0, no = mean(burnSum$areaBurned))
     pred <- data.frame("PolyId" = x, #Polygon ID
                        "histMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
                        "modMeanSize" = meanBurn, #The modeled mean size of fires
+                       "achievedFRI" = achievedFRI,
+                       "targetFRI" = targetFRI,
+                       "targetIgnitions" = targetIgnitions,
+                       "achievedIgnitions" = achievedIgnitions,
                        "pSpread" = pSpread, # The spread probability estimated from the SCAM model
-                       "pIgnition" = pIg, #the ignition probability of a single pixel
-                       "hist_MAAB" = hist_MAAB,#The empirical mean annual area burned (from NFDB 1970-2000)
-                       "mod_MAAB" = mod_MAAB) #The modelled mean annual area burned
+                       "pIgnition" = pIg) #the ignition probability of a single pixel
     return(pred)
   })
   return(out)
@@ -179,23 +192,53 @@ comparePredictions <- function(polyList, simList) {
 df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
   rbindlist(.)
 #Some useful plots
-breaks = c(0.20, 0.21, 0.22, 0.23, 0.24, 0.25)
-ggplot(df, aes(x = histMeanSize, y = modMeanSize, color = pSpread)) +
+diagnosticPlot1 <- ggplot(df, aes(x = histMeanSize, y = modMeanSize)) +
   geom_point(aes(histMeanSize, modMeanSize)) + 
-  scale_color_gradient(low = "yellow", high = "red")+
-  labs(y = "modeled mean fire size size", x = "historical mean size fire size") +
+  labs(y = "modeled mean fire ize", x = "historical mean fire size") +
   theme_minimal() + 
-  geom_text(aes(label = PolyId), hjust = 0, vjust = 0) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(limits = c(0, NA)) + 
+  geom_text(aes(label = PolyId), vjust = "inward", hjust = "inward") + 
   geom_abline(slope = 1)
 
+# removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
+# MAAB can still be calculated manually if a user desires
 
-ggplot(df, aes(x = hist_MAAB, y = mod_MAAB, col = pSpread)) +
-  geom_point(aes(hist_MAAB, mod_MAAB)) +
-  labs(y = "model mean annual area burned (%)", x = "empirical mean annual area burned (%)") +
-  scale_color_gradient(low = "yellow", high = "red")+
+#remove the infinite FRI caused by no simulated fires
+#simulated FRI will likely be off where targetFRI is < 1/4 of the simulated time
+#targetFRI temporarily hard-coded - 
+diagnosticPlot2 <- ggplot(df[!is.infinite(achievedFRI) & 
+                               targetFRI < c(times$end - times$start) * 4], aes(x = targetFRI, y = achievedFRI)) +
+  geom_point() +
+  labs(y = "simulation FRI (years)", x = "estimated FRI (years)") +
+  theme_minimal() +  
+  geom_abline(slope = 1) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(limits = c(0, NA)) + 
+  geom_text(aes(label = PolyId, , vjust = "inward", hjust = "inward"))
+
+diagnosticPlot3 <- ggplot(df, aes(x = targetIgnitions, y = achievedIgnitions)) +
+  geom_point() +
+  labs(y = "simulation annual ignitions", x = "estimated annual ignitions") +
   theme_minimal() +  #+ 
-  geom_abline(slope = 1)
-  # xlim(c(0, 8000)) + 
-  # ylim(c(0, 12000)) # + 
+  geom_abline(slope = 1) + 
+  scale_y_continuous(limits = c(0, NA)) +
+  scale_x_continuous(limits = c(0, NA)) + 
+  geom_text(aes(label = PolyId, vjust = "inward", hjust = "inward"))
+
+fireRegimePolys <- outSim$fireRegimePolys 
+fireRegimePolys$PolyID <- as.factor(fireRegimePolys$PolyID) #for ggplot
+fps <- ggplot(fireRegimePolys) + 
+  geom_sf(aes(fill = PolyID)) + 
+  scale_fill_discrete() + 
+  theme_minimal()
+
+
+clearPlot()
+grid.arrange(fps,  diagnosticPlot1,  diagnosticPlot2,  diagnosticPlot3, 
+             nrow = 2, ncol = 2)
+
+
+
 ```
 
