@@ -122,13 +122,11 @@ Init <- function(sim) {
     }
 
     # This makes sim$landscapeAttr & sim$cellsByZone
-    outs <- Cache(genFireMapAttr,
+    sim$landscapeAttrLarge <- Cache(genFireMapAttr,
                   flammableMap = sim$flammableMapLarge,
                   fireRegimePolys = sim$fireRegimePolysLarge,
                   neighbours = P(sim)$neighbours,
                   userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaLarge"))
-
-    sim$landscapeAttrLarge <- outs$landscapeAttr
 
   } else {
     sim$fireRegimePolys <- checkForIssues(fireRegimePolys = sim$fireRegimePolys,
@@ -138,14 +136,12 @@ Init <- function(sim) {
                                           sliverThresh = P(sim)$sliverThreshold,
                                           cacheTag = c("scfmLandcoverInit", "fireRegimePolys"))
   }
-  outs <- Cache(genFireMapAttr,
+  sim$landscapeAttr <- Cache(genFireMapAttr,
                 flammableMap = sim$flammableMap,
                 fireRegimePolys = sim$fireRegimePolys,
                 neighbours = P(sim)$neighbours,
                 userTags = c(currentModule(sim), "genFireMapAttr", "studyArea"))
 
-  sim$landscapeAttr <- outs$landscapeAttr
-  sim$cellsByZone <- outs$cellsByZone
   ##############
   #ONLY FOR SA
 
@@ -213,19 +209,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
 
   landscapeAttr <- makeLandscapeAttr(flammableMap, w, fireRegimePolys)
 
-  cellsByZoneFn <- function(flammableMap, landscapeAttr) {
-
-    cellsByZone <- data.frame(cell = 1:ncell(flammableMap), zone = NA_character_, stringsAsFactors = FALSE)
-
-    for (x in names(landscapeAttr)) {
-      cellsByZone[landscapeAttr[[x]]$cellsByZone, "zone"] <- x
-      }
-    return(cellsByZone)
-  }
-
-  cellsByZone <- cellsByZoneFn(flammableMap, landscapeAttr)
-
-  return(invisible(list(landscapeAttr = landscapeAttr, cellsByZone = cellsByZone)))
+  return(invisible(landscapeAttr))
 }
 
 ### template initilization

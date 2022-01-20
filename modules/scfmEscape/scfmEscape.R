@@ -95,7 +95,8 @@ Escape <- function(sim) {
     # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
 
     maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
-    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
+    cellsByZone <- as.character(sim$fireRegimeRas[sim$ignitionLoci])
+    maxSizes <- maxSizes[cellsByZone]
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
                                              start = sim$ignitionLoci,
                                              iterations = 1,
