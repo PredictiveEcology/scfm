@@ -80,8 +80,11 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  sim$burnMap <- sim$flammableMap
-  sim$burnMap[!is.na(sim$burnMap)] <- 0
+
+  #better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
+  sim$burnMap <- raster(sim$fireRegimeRas)
+  sim$burnMap[!is.na(sim$flammableMap[])] <- 0
+  sim$burnMap[sim$flammableMap[] == 0] <- NA
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)
@@ -127,7 +130,9 @@ Burnemup <- function(sim) {
                                       asRaster = FALSE)
 
   sim$rstCurrentBurn <- raster(sim$fireRegimeRas) #must wrap with 'raster' to get around file-backed problems
-  sim$rstCurrentBurn[!is.na(sim$flammableMap)] <- 0 #reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] == 1] <- 0 #reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] == 0] <- NA #might have to ignore warnings.
+
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 

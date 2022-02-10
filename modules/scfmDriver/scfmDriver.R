@@ -12,8 +12,8 @@ defineModule(sim, list(
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
+                  "PredictiveEcology/pemisc", "reproducible",
+                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
@@ -34,7 +34,7 @@ defineModule(sim, list(
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "bufferedFlammableMap", "RasterLayer",
+    expectsInput(objectName = "flammableMapLarge", "RasterLayer",
                  desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
                               "Defaults to LCC2010. Must be supplied by user flammableMap is also supplied")),
     expectsInput(objectName = "cloudFolderID", "character",
@@ -108,7 +108,7 @@ Init <- function(sim) {
                                                     pMin = P(sim)$pMin,
                                                     pMax = P(sim)$pMax,
                                                     neighbours = P(sim)$neighbours,
-                                                    flammableMap = sim$bufferedFlammableMap
+                                                    flammableMap = sim$flammableMapLarge
                                     ),
                                     calibrateFireRegimePolys))
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
@@ -129,7 +129,7 @@ Init <- function(sim) {
     cl <- NULL
   }
 
-  if (!identical(res(sim$flammableMap), res(sim$bufferedFlammableMap))) {
+  if (!identical(res(sim$flammableMap), res(sim$flammableMapLarge))) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
   }
   sim$scfmDriverPars <- Cache(pemisc::Map2,
@@ -149,7 +149,7 @@ Init <- function(sim) {
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
                                               neighbours = P(sim)$neighbours,
-                                              flammableMap = sim$bufferedFlammableMap
+                                              flammableMap = sim$flammableMapLarge
                               ),
                               calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
@@ -166,7 +166,7 @@ Init <- function(sim) {
     stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
   }
 
-  if (!suppliedElsewhere("bufferedFlammableMap")) {
+  if (!suppliedElsewhere("flammableMapLarge")) {
     bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
@@ -192,9 +192,9 @@ Init <- function(sim) {
     } else if (P(sim)$bufferLCCYear == 2005) {
       nonFlamClasses <- c(0L, 25L, 30L, 33L, 36L, 37L, 38L, 39L)
     } else {
-      stop("invalid bufferLCCYear - please supply bufferedFlammableMap")
+      stop("invalid bufferLCCYear - please supply flammableMapLarge")
     }
-    sim$bufferedFlammableMap <- defineFlammable(landscapeLCC, nonFlammClasses = nonFlamClasses)
+    sim$flammableMapLarge <- defineFlammable(landscapeLCC, nonFlammClasses = nonFlamClasses)
   }
 
   return(invisible(sim))

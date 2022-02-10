@@ -6,9 +6,11 @@
 #' @param redownloadIn time in years that we tolerate the data to be "old", and require redownload.
 #'                     I.e. 0.5 would mean "redownload data older than 6 months". Default 2.
 #' @param NFDB_pointPath file path to save the download data. Must be provided.
-getFirePoints_NFDB <- function(url = NULL,
-                               studyArea = NULL, rasterToMatch = NULL, redownloadIn = 2,
-                               NFDB_pointPath = NULL) {
+getFirePoints_NFDB_scfm <- function(url = NULL,
+                                    studyArea = NULL,
+                                    rasterToMatch = NULL,
+                                    redownloadIn = 2,
+                                    NFDB_pointPath = NULL) {
 
   if (is.null(NFDB_pointPath)) stop("NFDB_pointPath cannot be null. Specify a file path.")
 
@@ -22,27 +24,31 @@ getFirePoints_NFDB <- function(url = NULL,
   if (any(whIsOK)) {
     filesToCheck <- tools::file_path_sans_ext(unlist(lapply(check[whRowIsShp[whIsOK], "expectedFile"], as.character)))
     dateOfFile <- substr(x = filesToCheck, start = nchar(filesToCheck) - 8 +
-             1, nchar(filesToCheck))
+                           1, nchar(filesToCheck))
     if (any((as.Date(dateOfFile, format = "%Y%m%d") + dyear(redownloadIn)) > Sys.Date())) {
       needNewDownload <- FALSE
     }
   }
   if (needNewDownload) {
     print("downloading NFDB")
-    firePoints <- Cache(prepInputs, url = url, studyArea = studyArea, fun = "sf::read_sf",
-                        destination = NFDB_pointPath, useCache = "overwrite",
-                        useSAcrs = TRUE, omitArgs = c("NFDB_pointPath", "overwrite"))
-    firePoints <- sf::as_Spatial(firePoints)
+    firePoints <- Cache(prepInputs, url = url,
+                        studyArea = studyArea,
+                        fun = "sf::read_sf",
+                        destination = NFDB_pointPath,
+                        useCache = "overwrite",
+                        useSAcrs = TRUE,
+                        omitArgs = c("NFDB_pointPath", "overwrite"))
   } else {
     NFDBs <- grep(list.files(NFDB_pointPath), pattern = "^NFDB", value = TRUE)
     shps <- grep(list.files(NFDB_pointPath), pattern = ".shp$", value = TRUE)
     aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
     firePoints <- sf::read_sf(file.path(NFDB_pointPath, aFile))
-    firePoints <- Cache(postProcess, x = firePoints,
-                            studyArea = studyArea, filename2 = NULL,
-                            rasterToMatch = rasterToMatch,
-                            userTags = c("cacheTags", "NFDB"))
-    firePoints <- sf::as_Spatial(firePoints)
+    firePoints <- Cache(postProcess,
+                        x = firePoints,
+                        studyArea = studyArea,
+                        filename2 = NULL,
+                        rasterToMatch = rasterToMatch,
+                        userTags = c("cacheTags", "NFDB"))
   }
   return(firePoints)
 }
