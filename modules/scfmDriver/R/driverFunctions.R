@@ -1,6 +1,5 @@
 #Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist, flammableMap = NULL) {
-
   coreLand$fooField <- 1
 
   bfireRegimePoly <- st_buffer(coreLand, buffDist)
@@ -24,15 +23,10 @@ genSimLand <- function(coreLand, buffDist, flammableMap = NULL) {
   return(calibrationLandscape)
 }
 
-
-
-#make design
-#dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
-
-#this version of makeDesign is the simplest possible...
-
+# dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
+## this version of makeDesign is the simplest possible...
 makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
-  #TODO: Fix makeDesign to work if polygons have no fires
+  ## TODO: Fix makeDesign to work if polygons have no fires
   sampleSize <- round(targetN / pEscape)
   cellSample <- sample(indices, sampleSize, replace = TRUE)
   pVec <- runif(sampleSize)^q
@@ -49,8 +43,7 @@ makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
 }
 
 executeDesign <- function(L, dT, maxCells) {
-  # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
-
+  ## extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
   iter <- 0
   f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
     iter <<- iter + 1
@@ -75,14 +68,14 @@ executeDesign <- function(L, dT, maxCells) {
     p <- x[3]
 
     nbrs <- as.vector(SpaDES.tools::adj(x = L, i, pairs = FALSE, directions = 8))
-    #nbrs < nbrs[which(L[nbrs] == 1)] #or this?
+    ## nbrs < nbrs[which(L[nbrs] == 1)] #or this?
     nbrs <- nbrs[L[nbrs] == 1] #only flammable neighbours please. also, verify NAs excluded.
-    #nbrs is a vector of flammable neighbours.
+    ## nbrs is a vector of flammable neighbours.
     nn <- length(nbrs)
     res <- c(nn, 0, 1)
     if (nn == 0)
       return(res) #really defaults
-    #P is still flammableMap.
+    ## P is still flammableMap.
 
     ProbRas[nbrs] <- p0
     #Now it is 1, 0, p0, and NA
@@ -120,9 +113,8 @@ executeDesign <- function(L, dT, maxCells) {
   return(x)
 }
 
-#This is a wrapper on makeDesign and executeDesign
-makeAndExecuteDesign <- function(...){
-
+## This is a wrapper on makeDesign and executeDesign
+makeAndExecuteDesign <- function(...) {
   dots <- list(...)
   designTable <- makeDesign(indices = dots$indices, targetN = dots$targetN,
                             pmin = dots$pmin, pmax = dots$pmax,
@@ -135,28 +127,26 @@ makeAndExecuteDesign <- function(...){
   return(cD)
 }
 
-
 calibrateFireRegimePolys <- function(polygonType, regime,
                                      targetN,  landAttr, cellSize, fireRegimePolys,
                                      buffDist, pJmp, pMin, pMax, neighbours, flammableMap = NULL) {
-
-  maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
+  maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) ## will return NA if emfs is NA
   if (is.na(maxBurnCells)) {
     warning("maxBurnCells cannot be NA... there is a problem with scfmRegime")
     maxBurnCells = 1
   }
-  landAttr <- landAttr[[polygonType]] #landAttr may not be equal length as regime due to invalid polygons
+  landAttr <- landAttr[[polygonType]] ## landAttr may not be equal length as regime due to invalid polygons
   message("generating buffered landscapes...")
-  #this function returns too much data to be worth caching (4 rasters per poly)
+  ## this function returns too much data to be worth caching (4 rasters per poly)
   if (is(fireRegimePolys, "quosure"))
     fireRegimePolys <- eval_tidy(fireRegimePolys)
-  calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,], buffDist = buffDist,
-                          flammableMap = flammableMap)
+  calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,],
+                          buffDist = buffDist, flammableMap = flammableMap)
 
-  #Need a vector of igniteable cells
-  #Item 1 = L, the flammable Map
-  #Item 2 = B (aka the landscape Index) this denotes buffer
-  #Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
+  ## Need a vector of igniteable cells
+  ## Item 1 = L, the flammable Map
+  ## Item 2 = B (aka the landscape Index) this denotes buffer
+  ## Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
   index <- 1:ncell(calibLand$flammableMap)
   index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
   index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
@@ -192,7 +182,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   xBar <- regime$xBar / cellSize
 
   if (xBar > 0) {
-    #now for the inverse step.
+    ## now for the inverse step.
     Res <- try(stats::uniroot(unirootFunction,
                               calibModel, xBar, # "..."
                               interval = c(min(cD$p), max(cD$p)),
@@ -200,7 +190,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
                               tol = 0.00001
     ), silent = TRUE)
     if (class(Res) == "try-error") {
-      #TODO: should pick the closest value (of min and max) if error is value not of opposite sign
+      ## TODO: should pick the closest value (of min and max) if error is value not of opposite sign
       pJmp <- min(cD$p)
       message("the loess model may underestimate the spread probability for polygon ", polygonType)
     } else {
@@ -210,7 +200,7 @@ calibrateFireRegimePolys <- function(polygonType, regime,
     calibModel <- "No Model"
     Res <- "No Uniroot result"
   }
-  #check convergence, and out of bounds errors etc
+  ## check convergence, and out of bounds errors etc
   w <- landAttr$nNbrs
   w <- w / sum(w)
   hatPE <- regime$pEscape
@@ -228,18 +218,18 @@ calibrateFireRegimePolys <- function(polygonType, regime,
                     w = w,
                     hatPE = hatPE)
     p0 <- res[["minimum"]]
-    #It is almost obvious that the true minimum must occurr within the interval specified in the
-    #call to optimise, but I have not proved it, nor am I certain that the function being minimised is
-    #monotone.
+    ## It is almost obvious that the true minimum must occur within the interval specified in the
+    ## call to optimise, but I have not proved it, nor am I certain that the function being minimised is
+    ## monotone.
   }
-  #don't forget to scale by number of years, as well, if your timestep is ever != 1yr
+  ## don't forget to scale by number of years, as well, if your timestep is ever != 1yr
   rate <- regime$ignitionRate * cellSize
-  #fireRegimeModel and this module must agree on an annual time step. How to test / enforce?
+  ## fireRegimeModel and this module must agree on an annual time step. How to test / enforce?
   pIgnition <- rate
-  #approximate Poisson arrivals as a Bernoulli process at cell level.
-  #for Poisson rate << 1, the expected values are the same, partially accounting
-  #for multiple arrivals within years. Formerly, I used a poorer approximation
-  #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
+  ## approximate Poisson arrivals as a Bernoulli process at cell level.
+  ## for Poisson rate << 1, the expected values are the same, partially accounting
+  ## for multiple arrivals within years. Formerly, I used a poorer approximation
+  ## where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
   driverResult <- list(
     pSpread = pJmp,
     p0 = p0,
@@ -250,7 +240,6 @@ calibrateFireRegimePolys <- function(polygonType, regime,
     uniroot.Res = Res
   )
   return(driverResult)
-
 }
 
 unirootFunction <- function(x, cM, xBar) {
