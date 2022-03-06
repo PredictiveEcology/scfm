@@ -52,7 +52,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
             polygonID
           )
         )
-        maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
+        maxFireSize <- xMax * maxSizeFactor  #just to be safe, re-specify here
       } else {
         maxFireSize <- exp(That) * cellSize
         if (!(maxFireSize > xMax)) {
@@ -77,20 +77,19 @@ calcZonalRegimePars <- function(polygonID, firePolys,
   #need to add a name or code for basic verification by Driver module, and time field
   #to allow for dynamic regeneration of disturbanceDriver pars.
   #browser()
-  if (maxFireSize < 1){
+  if (maxFireSize < 1) {
     warning("this can't happen")
     maxFireSize = cellSize
   }
 
   empiricalBurnRate <- sum(tmpA[[fireSizeColumnName]]) / (epochLength * landAttr$burnyArea)
 
-
   if (is.na(targetBurnRate) | is.null(targetBurnRate)) {
     ratio <- 1
   }
 
-  if (!is.na(targetBurnRate)| is.null(targetBurnRate)) {
-    ratio <-  targetBurnRate/empiricalBurnRate
+  if (!is.na(targetBurnRate) | is.null(targetBurnRate)) {
+    ratio <-  targetBurnRate / empiricalBurnRate
     if (ratio >= 1) {
       newFireValues <- ratioPartition2(targetBurnRate = targetBurnRate,
                                        empiricalBurnRate = empiricalBurnRate,
@@ -98,33 +97,27 @@ calcZonalRegimePars <- function(polygonID, firePolys,
                                        xBar = xBar,
                                        rate = rate)
       rate <- newFireValues$rate
-      pEscape = newFireValues$pEscape
-      xBar = newFireValues$xBar
-    }
-    else{
+      pEscape <- newFireValues$pEscape
+      xBar <- newFireValues$xBar
+    } else {
       warning("ratio cannot be < 1. Please make sure this does not happen")
     }
   }
 
-  #override maximum fire size if user supplied
-  if (!is.na(targetMaxFireSize)| is.null(targetMaxFireSize)) {
-
+  ## override maximum fire size if user supplied
+  if (!is.na(targetMaxFireSize) | is.null(targetMaxFireSize)) {
     maxFireSize <- targetMaxFireSize
     xMax <- targetMaxFireSize
-   #TODO: add check that max is larger than mean, else stop
+    ## TODO: add check that max is larger than mean, else stop
   }
 
-  #max fire size is returned twice - I think this is a backwards compatibility decision
+  ## max fire size is returned twice - I think this is a backwards compatibility decision
   return(list(ignitionRate = rate,
               pEscape = pEscape,
-              xBar = xBar,
-              #mean fire size
-              lxBar = lxBar,
-              #mean log(fire size)
-              xMax = xMax,
-              #maximum observed size
-              emfs_ha = maxFireSize,#Estimated Maximum Fire Size in ha
+              xBar = xBar,           ## mean fire size
+              lxBar = lxBar,         ## mean log(fire size)
+              xMax = xMax,           ## maximum observed size
+              emfs_ha = maxFireSize, ## Estimated Maximum Fire Size in ha
               empiricalBurnRate = empiricalBurnRate
-  )
-  )
+  ))
 }

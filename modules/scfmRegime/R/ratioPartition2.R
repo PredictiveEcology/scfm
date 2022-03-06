@@ -1,8 +1,8 @@
-ratioPartition2 <- function (targetBurnRate, #
-                             empiricalBurnRate, #rate estimated by the model
-                             pEscape, #escape probability
-                             xBar, # mean fire size
-                             rate) { # iginition rate
+ratioPartition2 <- function(targetBurnRate, #
+                            empiricalBurnRate, #rate estimated by the model
+                            pEscape, #escape probability
+                            xBar, # mean fire size
+                            rate) { # iginition rate
 
   ratio <-  targetBurnRate / empiricalBurnRate
 

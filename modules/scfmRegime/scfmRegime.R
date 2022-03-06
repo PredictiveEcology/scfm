@@ -176,7 +176,7 @@ Init <- function(sim) {
   }
 
   nullIdx <- sapply(scfmRegimePars, is.null)
-  if (any(nullIdx)){
+  if (any(nullIdx)) {
     scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
   }
   sim$scfmRegimePars <- scfmRegimePars
