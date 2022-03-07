@@ -1,7 +1,5 @@
 checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableMap, sliverThresh, cacheTag) {
-
-  #I think there is a better function
-  #TODO: bug the group for the better function
+  ## TODO: bug the group for the better function
   compareCRS(rasterToMatch, flammableMap, fireRegimePolys)
 
   if (is.null(fireRegimePolys$PolyID)){
@@ -12,7 +10,7 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
   if (sf::st_is_longlat(fireRegimePolys)) {
     stop("scfm requires projected coordinate systems - lat/long too prone to error")
   }
-   #TODO: fix all this rgeos business
+  ## TODO: fix all this rgeos business
   fireRegimePolys$trueArea <- round(sf::st_area(fireRegimePolys), digits = 0)
 
   if (any(as.numeric(fireRegimePolys$trueArea) < sliverThresh)) {
