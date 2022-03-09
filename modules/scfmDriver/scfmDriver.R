@@ -111,6 +111,7 @@ Init <- function(sim) {
                                                     flammableMap = sim$flammableMapLarge
                                     ),
                                     calibrateFireRegimePolys))
+
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
@@ -120,7 +121,9 @@ Init <- function(sim) {
       outfile = "scfmLog",
       objects = c("genSimLand"), envir = environment(),
       libraries = c("rlang", "raster", "rgeos", "reproducible",
-                    "LandR", "sf", "fasterize", "data.table"))
+                    "LandR", "sf", "fasterize", "data.table")
+    )
+
     on.exit({
       if (!is.null(cl))
         parallel::stopCluster(cl)
@@ -132,6 +135,8 @@ Init <- function(sim) {
   if (!identical(res(sim$flammableMap), res(sim$flammableMapLarge))) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
   }
+
+  message("Running calibrateFireRegimePolys()...")
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
@@ -180,13 +185,15 @@ Init <- function(sim) {
         #we want the resolution of rasterToMatch, but not the extent
         Cache(projectRaster,
               landscapeLCC,
-              method = 'ngb',
+              method = "ngb",
               res = res(sim$rasterToMatch),
               crs = crs(bufferedPoly),
               userTags = c("scfmDriver", "projectBufferedLCC"))
       ))
     }
+
     landscapeLCC <- setValues(landscapeLCC, as.integer(getValues(landscapeLCC)))
+
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
     } else if (P(sim)$bufferLCCYear == 2005) {

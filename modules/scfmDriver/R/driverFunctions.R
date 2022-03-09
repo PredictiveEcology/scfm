@@ -1,12 +1,17 @@
 #Buffers polygon, generates index raster
 genSimLand <- function(coreLand, buffDist, flammableMap = NULL) {
+  stopifnot(!is.null(buffDist))
+
   coreLand$fooField <- 1
 
   bfireRegimePoly <- st_buffer(coreLand, buffDist)
   bfireRegimePoly$fooField <- 0
+
   if (!all(st_is_valid(bfireRegimePoly))) {
     bfireRegimePoly <- st_buffer(bfireRegimePoly, width = 0)
   }
+
+  message("creating polyLandscape...")
   #union doe not work, neither does default st_join
   polyLandscape <- rbind(coreLand, bfireRegimePoly)
   polyLandscape <- st_difference(polyLandscape)
@@ -45,7 +50,10 @@ makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
 executeDesign <- function(L, dT, maxCells) {
   ## extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
   iter <- 0
-  f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
+  probRas <- raster(L)
+  probRas[] <- L[]
+
+  .executeDesignInternal <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
     iter <<- iter + 1
     currentTime <- Sys.time()
     diffTime <- currentTime - startTime
@@ -100,11 +108,8 @@ executeDesign <- function(L, dT, maxCells) {
     return(res)
   }
 
-  probRas <- raster(L)
-  probRas[] <- L[]
-
   startTime <- Sys.time()
-  res <- Cache(apply, dT, 1, f, L, ProbRas = probRas) # Parallelizing isn't efficient here. ~TM 15Feb19
+  res <- Cache(apply, dT, 1, .executeDesignInternal, L, ProbRas = probRas) # Parallelizing isn't efficient here. ~TM 15Feb19
   res <- data.frame("nNeighbours" = res[1,], "initSpreadEvents" = res[2,], "finalSize" = res[3,])
 
   #cbind dT and res, then select the columns we need
@@ -138,8 +143,11 @@ calibrateFireRegimePolys <- function(polygonType, regime,
   landAttr <- landAttr[[polygonType]] ## landAttr may not be equal length as regime due to invalid polygons
   message("generating buffered landscapes...")
   ## this function returns too much data to be worth caching (4 rasters per poly)
-  if (is(fireRegimePolys, "quosure"))
+  if (is(fireRegimePolys, "quosure")) {
     fireRegimePolys <- eval_tidy(fireRegimePolys)
+  }
+
+  message("running genSimLand() ...")
   calibLand <- genSimLand(fireRegimePolys[fireRegimePolys$PolyID == polygonType,],
                           buffDist = buffDist, flammableMap = flammableMap)
 
@@ -156,7 +164,8 @@ calibrateFireRegimePolys <- function(polygonType, regime,
 
   message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
 
-  #these functions have been wrapped to allow for simpler caching
+  ## NOTE: these functions have been wrapped to allow for simpler caching
+  message("running makeAndExecuteDesign()...")
   cD <- Cache(makeAndExecuteDesign,
               indices = index,
               targetN = targetN,
