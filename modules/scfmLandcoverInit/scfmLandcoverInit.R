@@ -73,7 +73,7 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame", ## TODO: actually expects sf; fails with spdf
+      objectName = "fireRegimePolys", objectClass = "sf",
       desc = paste(
         "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
         "Must have numeric field 'PolyID' or it will be created for individual polygons"
@@ -81,7 +81,7 @@ defineModule(sim, list(
       sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
     ),
     expectsInput(
-      objectName = "fireRegimePolysLarge", objectClass = "SpatialPolygonsDataFrame", ## TODO: actually expects sf; fails with spdf
+      objectName = "fireRegimePolysLarge", objectClass = "sf",
       desc = paste(
         "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
         "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
@@ -150,11 +150,19 @@ doEvent.scfmLandcoverInit <- function(sim, eventTime, eventType, debug = FALSE) 
 }
 
 Init <- function(sim) {
+  if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
+    sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
+  }
+
   message("checking sim$fireRegimePolys for sliver polygons...")
 
   # this only needs to be done on the larger area, if it is provided
   # doing so on larger and smaller has the potential to mismatch slivers between calibration/simulation
   if (!is.null(sim$fireRegimePolysLarge)) {
+    if (is(sim$fireRegimePolysLarge, "SpatialPolygonsDataFrame")) {
+      sim$fireRegimePolysLarge <- sf::st_as_sf(sim$fireRegimePolysLarge)
+    }
+
     sim$fireRegimePolysLarge <- checkForIssues(
       fireRegimePolys = sim$fireRegimePolysLarge,
       studyArea = sim$studyAreaLarge,

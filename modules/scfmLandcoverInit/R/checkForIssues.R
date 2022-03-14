@@ -2,7 +2,7 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
   ## TODO: bug the group for the better function
   compareCRS(rasterToMatch, flammableMap, fireRegimePolys)
 
-  if (is.null(fireRegimePolys$PolyID)){
+  if (is.null(fireRegimePolys$PolyID)) {
     #this is done in .inputObjects but should cover when the object
     stop("please supply fireRegimePolys with a PolyID")
   }
@@ -24,5 +24,4 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
   # }
 
   return(fireRegimePolys)
-
 }
