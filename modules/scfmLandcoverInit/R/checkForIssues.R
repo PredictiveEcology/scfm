@@ -15,8 +15,7 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
 
   if (any(as.numeric(fireRegimePolys$trueArea) < sliverThresh)) {
     message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
-    fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh,
-                                 userTags = cacheTag)
+    fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh, userTags = cacheTag)
   }
   # #this is a problem if there is an upstream PROJ bug with gridded shapefiles...
   # if (length(unique(fireRegimePolys$PolyID)) != length(fireRegimePolys)) {

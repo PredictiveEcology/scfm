@@ -40,7 +40,7 @@ defineModule(sim, list(
     expectsInput(objectName = "cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput(objectName = "fireRegimePolys", "list",
+    expectsInput(objectName = "fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons")),
     expectsInput(objectName = "rasterToMatch", "RasterLayer",
@@ -89,6 +89,10 @@ escapeProbDelta <- function(p0, w, hatPE) {
 }
 
 Init <- function(sim) {
+  if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
+    sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
+  }
+
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
@@ -116,9 +120,9 @@ Init <- function(sim) {
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
-      MBper = rgeos::gArea(sim$fireRegimePolys)/(prod(res(sim$landscapeLCC)))/1e3 * 2 + 4e2, # in MB
+      MBper = sf::st_area(sim$fireRegimePolys)/(prod(res(sim$landscapeLCC)))/1e3 * 2 + 4e2, # in MB
       maxNumClusters = length(sim$scfmRegimePars),
-      outfile = "scfmLog",
+      outfile = file.path(outputPath(sim), "scfm.log"),
       objects = c("genSimLand"), envir = environment(),
       libraries = c("rlang", "raster", "rgeos", "reproducible",
                     "LandR", "sf", "fasterize", "data.table")
