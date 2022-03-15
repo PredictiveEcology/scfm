@@ -1,12 +1,7 @@
-
-# Everything in this file gets sourced during simInit, and all functions and objects
-# are put into the simList. To use objects, use sim$xxx, and are thus globally available
-# to all modules. Functions can be used without sim$ as they are namespaced, like functions
-# in R packages. If exact location is required, functions will be: sim$<moduleName>$FunctionName
 defineModule(sim, list(
   name = "group_scfm",
-  description = NA, #"parent module for scfm family of modules",
-  keywords = NA, # c("fire burn hot"),
+  description = "parent module for scfm family of modules",
+  keywords = "fire",
   authors = c(
     person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))
   ),

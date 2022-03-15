@@ -67,10 +67,6 @@ defineModule(sim, list(
   )
 ))
 
-
-## event types
-#   - type `init` is required for initiliazation
-
 doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
     sim <- Init(sim)
@@ -82,14 +78,13 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   tmp <- sim$firePoints
-  #extract and validate fireCause spec
+  ## extract and validate fireCause spec
 
   fc <- P(sim)$fireCause
 
-  #review that sf can be used like this.
-  #should verify CAUSE is a column in the table...
+  ## review that sf can be used like this.
+  ## should verify CAUSE is a column in the table...
   if (!P(sim)$fireCauseColumnName %in% names(tmp))
     stop(paste0("The column ", P(sim)$fireCauseColumnName, " does not exist",
                 " in the fire database used. Please pass the correct column name ",
@@ -123,19 +118,17 @@ Init <- function(sim) {
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
   if (!is.null(sim$fireRegimePolysLarge) & !is.null(sim$landscapeAttrLarge)) {
-    #sp over uses identical CRS
-
     if (st_crs(tmp) != st_crs(sim$fireRegimePolysLarge)) {
       tmp <- st_transform(tmp, crs = st_crs(sim$fireRegimePolysLarge))
     }
 
-    tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) #gives studyArea row name to point
+    tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) ## gives studyArea row name to point
 
     if (any(is.na(tmp$PolyID))) {
-      tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
+      tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
     }
     sim$fireRegimePoints <- tmp
-    #this function estimates the ignition probability and escape probability based on NFDB
+    ## this function estimates the ignition probability and escape probability based on NFDB
     scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
                              FUN = calcZonalRegimePars,
                              firePolys = sim$fireRegimePolysLarge,
@@ -148,15 +141,13 @@ Init <- function(sim) {
                              targetMaxFireSize = P(sim)$targetMaxFireSize)
 
     names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
-    #only keep the attribtues that are in study area
+    ## only keep the attribtues that are in study area
     scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
-
   } else {
-
-    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID #gives studyArea row name to point
+    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID ## gives studyArea row name to point
 
     if (any(is.na(tmp$PolyID))) {
-      tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
+      tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
     }
     sim$fireRegimePoints <- tmp
 
@@ -186,7 +177,7 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
-  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada.")
@@ -197,7 +188,7 @@ Init <- function(sim) {
                                       rasterToMatch = sim$rasterToMatch,
                                       fun = "sf::st_read",
                                       overwrite = TRUE,
-                                      userTags = c("cacheTags", "fireRegimePolys"))
+                                      userTags = c(cacheTags, "fireRegimePolys"))
     sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
   }
   ## this module has many dependencies that aren't sourced in .inputObjects
@@ -213,9 +204,10 @@ Init <- function(sim) {
 
     #do not use fireSenseUtils - it removes the cause column...among other issues
     #this function came first - fireSenseUtils copied the name!
-    sim$firePoints <- getFirePoints_NFDB_scfm(studyArea = SA,
-                                              NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
-                                                                         create = TRUE))
+    sim$firePoints <- getFirePoints_NFDB_scfm(
+      studyArea = SA,
+      NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
+    )
   }
 
   return(invisible(sim))
