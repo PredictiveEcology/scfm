@@ -10,7 +10,6 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
   if (sf::st_is_longlat(fireRegimePolys)) {
     stop("scfm requires projected coordinate systems - lat/long too prone to error")
   }
-  ## TODO: fix all this rgeos business
   fireRegimePolys$trueArea <- round(sf::st_area(fireRegimePolys), digits = 0)
 
   if (any(as.numeric(fireRegimePolys$trueArea) < sliverThresh)) {

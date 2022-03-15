@@ -124,7 +124,7 @@ Init <- function(sim) {
       maxNumClusters = length(sim$scfmRegimePars),
       outfile = file.path(outputPath(sim), "scfm.log"),
       objects = c("genSimLand"), envir = environment(),
-      libraries = c("rlang", "raster", "rgeos", "reproducible",
+      libraries = c("rlang", "raster", "reproducible",
                     "LandR", "sf", "fasterize", "data.table")
     )
 
