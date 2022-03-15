@@ -213,9 +213,10 @@ Init <- function(sim) {
 
     #do not use fireSenseUtils - it removes the cause column...among other issues
     #this function came first - fireSenseUtils copied the name!
-    sim$firePoints <- getFirePoints_NFDB_scfm(studyArea = SA,
-                                              NFDB_pointPath = checkPath(file.path(dataPath(sim), "NFDB_point"),
-                                                                         create = TRUE))
+    sim$firePoints <- getFirePoints_NFDB_scfm(
+      studyArea = SA,
+      NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
+    )
   }
 
   return(invisible(sim))
