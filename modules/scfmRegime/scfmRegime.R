@@ -197,7 +197,7 @@ Init <- function(sim) {
                                       rasterToMatch = sim$rasterToMatch,
                                       fun = "sf::st_read",
                                       overwrite = TRUE,
-                                      userTags = c("cacheTags", "fireRegimePolys"))
+                                      userTags = c(cacheTags, "fireRegimePolys"))
     sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
   }
   ## this module has many dependencies that aren't sourced in .inputObjects
