@@ -13,5 +13,4 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "group_scfm.Rmd")
-  )
-)
+))

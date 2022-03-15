@@ -10,13 +10,11 @@ checkForIssues <- function(fireRegimePolys, studyArea, rasterToMatch, flammableM
   if (sf::st_is_longlat(fireRegimePolys)) {
     stop("scfm requires projected coordinate systems - lat/long too prone to error")
   }
-  ## TODO: fix all this rgeos business
   fireRegimePolys$trueArea <- round(sf::st_area(fireRegimePolys), digits = 0)
 
   if (any(as.numeric(fireRegimePolys$trueArea) < sliverThresh)) {
     message("sliver polygon(s) detected. Merging to their nearest valid neighbour")
-    fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh,
-                                 userTags = cacheTag)
+    fireRegimePolys <- Cache(deSliver, fireRegimePolys, threshold = sliverThresh, userTags = cacheTag)
   }
   # #this is a problem if there is an upstream PROJ bug with gridded shapefiles...
   # if (length(unique(fireRegimePolys$PolyID)) != length(fireRegimePolys)) {

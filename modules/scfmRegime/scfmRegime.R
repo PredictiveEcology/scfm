@@ -50,11 +50,11 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
                  desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea"),
-    expectsInput(objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput(objectName = "fireRegimePolys", objectClass = "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons"),
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"),
-    expectsInput(objectName = "fireRegimePolysLarge", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput(objectName = "fireRegimePolysLarge", objectClass = "sf",
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
                               "from the simulation region."))
@@ -94,7 +94,7 @@ Init <- function(sim) {
     stop(paste0("The column ", P(sim)$fireCauseColumnName, " does not exist",
                 " in the fire database used. Please pass the correct column name ",
                 "for the fire cause."))
-  if (is.factor(tmp[[P(sim)$fireCauseColumnName]])){
+  if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
     causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])}
   else {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
@@ -189,12 +189,13 @@ Init <- function(sim) {
   cacheTags = c(currentModule(sim), "function:.inputObjects")
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
-    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
+    message("fireRegimePolys not supplied. Using default ecoregions of Canada.")
 
     sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
                                       destinationPath = dPath,
                                       studyArea = sim$studyArea,
                                       rasterToMatch = sim$rasterToMatch,
+                                      fun = "sf::st_read",
                                       overwrite = TRUE,
                                       userTags = c("cacheTags", "fireRegimePolys"))
     sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
@@ -205,10 +206,10 @@ Init <- function(sim) {
     if (!is.null(sim$fireRegimePolysLarge)) {
       SA <- sim$fireRegimePolysLarge
       RTM <- sim$rasterToMatchLarge
-      } else {
+    } else {
       SA <- sim$fireRegimePolys
       RTM <- sim$rasterToMatch
-      }
+    }
 
     #do not use fireSenseUtils - it removes the cause column...among other issues
     #this function came first - fireSenseUtils copied the name!
