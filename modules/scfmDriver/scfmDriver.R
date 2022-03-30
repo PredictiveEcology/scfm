@@ -34,24 +34,24 @@ defineModule(sim, list(
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "flammableMapLarge", "RasterLayer",
-                 desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
-                              "Defaults to LCC2010. Must be supplied by user flammableMap is also supplied")),
-    expectsInput(objectName = "cloudFolderID", "character",
+    expectsInput("cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput(objectName = "fireRegimePolys", "sf",
+    expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons")),
-    expectsInput(objectName = "rasterToMatch", "RasterLayer",
+    expectsInput("flammableMapLarge", "RasterLayer",
+                 desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
+                              "Defaults to LCC2010. Must be supplied by user flammableMap is also supplied")),
+    expectsInput("rasterToMatch", "RasterLayer",
                  desc = "template raster for raster GIS operations. Must be supplied by user"),
-    expectsInput(objectName = "scfmRegimePars", objectClass = "list",
+    expectsInput("scfmRegimePars", "list",
                  desc = "list of fire regime parameters for each polygon"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list",
+    expectsInput("landscapeAttr", "list",
                  desc = "contains landscape attributes for each polygon")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "scfmDriverPars", objectClass = "list",
+    createsOutput("scfmDriverPars", "list",
                   desc = "burn parameters for each polygon in fireRegimePolys")
   )
 ))
@@ -120,7 +120,7 @@ Init <- function(sim) {
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallel,
       # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
-      MBper = sf::st_area(sim$fireRegimePolys)/(prod(res(sim$landscapeLCC)))/1e3 * 2 + 4e2, # in MB
+      MBper = sf::st_area(sim$fireRegimePolys)/(prod(res(sim$rasterToMatch)))/1e3 * 2 + 4e2, # in MB
       maxNumClusters = length(sim$scfmRegimePars),
       outfile = file.path(outputPath(sim), "scfm.log"),
       objects = c("genSimLand"), envir = environment(),

@@ -25,7 +25,7 @@ deSliver <- function(x, threshold) {
   }
 
   #Split slivers from multipolygon, or nearest feature may be incorrect
-  xSlivers <- suppressWarnings(st_cast(xSlivers, 'POLYGON'))
+  xSlivers <- suppressWarnings(st_cast(xSlivers, "POLYGON"))
 
   #Find nearest non-sliver
   nearestFeature <- st_nearest_feature(xSlivers, xNotSlivers)
@@ -54,7 +54,7 @@ deSliver <- function(x, threshold) {
 
     #these polygons must be tracked and merged. They may be nrow(0) if every feature was modified in some way
     if (nrow(otherPolys) != 0) {
-      mergeSlivers <- do.call(rbind(mergeSlivers))
+      mergeSlivers <- do.call(rbind, mergeSlivers)
       m <- rbind(otherPolys, mergeSlivers)
     } else {
       m <- rbind(mergeSlivers)
@@ -73,7 +73,7 @@ deSliver <- function(x, threshold) {
   m$tempArea <- NULL
 
   #remove self-intersecting geometries
-  if (any(!st_is_valid(m))){
+  if (any(!st_is_valid(m))) {
     m <- gBuffer(spgeom = m, byid = TRUE, width = 0)
   }
 

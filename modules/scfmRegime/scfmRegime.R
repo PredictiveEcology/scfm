@@ -90,8 +90,8 @@ Init <- function(sim) {
                 " in the fire database used. Please pass the correct column name ",
                 "for the fire cause."))
   if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
-    causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])}
-  else {
+    causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])
+  } else {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
   if (any(!(fc %in% causeSet))) {
@@ -144,7 +144,7 @@ Init <- function(sim) {
     ## only keep the attribtues that are in study area
     scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
   } else {
-    tmp$PolyID <- sp::over(tmp, sim$fireRegimePolys)$PolyID ## gives studyArea row name to point
+    tmp$PolyID <- sp::over(as_Spatial(tmp), as_Spatial(sim$fireRegimePolys))$PolyID ## gives studyArea row name to point
 
     if (any(is.na(tmp$PolyID))) {
       tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points

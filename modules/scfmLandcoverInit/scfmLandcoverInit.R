@@ -327,12 +327,14 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
       rasterToMatch = sim$rasterToMatchLarge,
       userTags = c("prepInputsLCC", "studyAreaLarge")
     )
+    vegMap[] <- asInteger(vegMap[])
     sim$flammableMapLarge <- defineFlammable(vegMap,
       mask = sim$rasterToMatchLarge,
-      nonFlammClasses = c(13, 16, 17, 18, 19),
+      nonFlammClasses = c(13L, 16L:19L),
       filename2 = NULL
     )
   }
+
   if (!suppliedElsewhere("flammableMap", sim)) {
     if (hasSAL) {
       sim$flammableMap <- postProcess(sim$flammableMapLarge,
@@ -347,6 +349,7 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
         rasterToMatch = sim$rasterToMatch,
         userTags = c("prepInputsLCC", "studyArea")
       )
+      vegMap[] <- asInteger(vegMap[])
       sim$flammableMap <- defineFlammable(vegMap,
         mask = sim$rasterToMatch,
         nonFlammClasses = c(13, 16:19)
