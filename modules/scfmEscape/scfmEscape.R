@@ -34,7 +34,7 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
-    createsOutput(objectName = "p0", objectClass = "data.table", desc = "")
+    createsOutput(objectName = "p0", objectClass = "raster", desc = "")
   )
 ))
 
