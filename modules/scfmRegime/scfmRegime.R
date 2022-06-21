@@ -18,7 +18,7 @@ defineModule(sim, list(
                     desc = "subset of `c('H', 'H-PB', 'L', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
+    defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
                     desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
