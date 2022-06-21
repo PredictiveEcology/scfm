@@ -43,12 +43,17 @@ getFirePoints_NFDB_scfm <- function(url = NULL,
     shps <- grep(list.files(NFDB_pointPath), pattern = ".shp$", value = TRUE)
     aFile <- NFDBs[NFDBs %in% shps][1] #in case there are multiple files
     firePoints <- sf::read_sf(file.path(NFDB_pointPath, aFile))
+
+    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
+    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
     firePoints <- Cache(postProcess,
                         x = firePoints,
                         studyArea = studyArea,
                         filename2 = NULL,
                         rasterToMatch = rasterToMatch,
                         userTags = c("cacheTags", "NFDB"))
+    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
   }
+
   return(firePoints)
 }

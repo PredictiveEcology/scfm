@@ -14,9 +14,10 @@ defineModule(sim, list(
   reqdPkgs = list("raster", "reproducible"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
+    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
+                    desc = "subset of `c('H', 'H-PB', 'L', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
-                    desc = "Name of the column that has fire cause, consistent with P(sim)$fireCause"),
+                    desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period"),
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
                     desc = "Name of the column that has fire size"),
@@ -85,15 +86,16 @@ Init <- function(sim) {
 
   ## review that sf can be used like this.
   ## should verify CAUSE is a column in the table...
-  if (!P(sim)$fireCauseColumnName %in% names(tmp))
-    stop(paste0("The column ", P(sim)$fireCauseColumnName, " does not exist",
-                " in the fire database used. Please pass the correct column name ",
-                "for the fire cause."))
+  if (!P(sim)$fireCauseColumnName %in% names(tmp)) {
+    stop("The column ", P(sim)$fireCauseColumnName, " does not exist in the fire database used. ",
+         "Please pass the correct column name for the fire cause.")
+  }
   if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
     causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])
   } else {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
+
   if (any(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
     warning(paste0("This firecause is not present: ", notPresent,
@@ -103,7 +105,8 @@ Init <- function(sim) {
                    paste(causeSet, collapse = ", ")), immediate. = TRUE)
     fc <- causeSet
   }
-  tmp <- subset(tmp,  get(P(sim)$fireCauseColumnName) %in% fc)
+
+  tmp <- subset(tmp, get(P(sim)$fireCauseColumnName) %in% fc)
 
   #extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
