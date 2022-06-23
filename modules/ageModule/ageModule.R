@@ -20,24 +20,21 @@ defineModule(sim, list(
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer",
+    expectsInput("ageMap", "RasterLayer",
                  desc = "stand age map in study area, default is Canada national stand age map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar"),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
+    expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = "study area template",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+    expectsInput("rasterToMatch", "RasterLayer",
                  desc = "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+    expectsInput("rstCurrentBurn", "RasterLayer",
                  desc = "annual burn map created by `scfmSpread`.")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
+    createsOutput("ageMap", "RasterLayer", desc = "map of vegetation age")
   )
 ))
-
-## event types
-#   - type `init` is required for initiliazation
 
 doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
@@ -68,8 +65,15 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  compareRaster(sim$rasterToMatch, sim$rstCurrentBurn,
-                extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
+  ## TODO: remove this workaround -- why isn't this 'being 'sticking' when done in .inputObjects??
+  if (!compareRaster(sim$rasterToMatch, sim$ageMap, stopiffalse = FALSE,
+                     extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)) {
+    ## ensure ageMap matches rasterToMatch
+    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
+    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
+    sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
+    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
+  }
 
   ## we will use our colour choices, not whatever may have come with the loaded map.
   setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
@@ -90,12 +94,14 @@ Save <- function(sim) {
 Age <- function(sim) {
   newAges <- pmin(P(sim)$maxAge, getValues(sim$ageMap) + P(sim)$returnInterval)
   sim$ageMap <- setValues(sim$ageMap, newAges)
+
   if (!is.null(sim$rstCurrentBurn)) {
     compareRaster(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn,
                   extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
     burn <- getValues(sim$rstCurrentBurn)
     sim$ageMap[!is.na(burn) & burn == 1] <- 0
   }
+
   return(invisible(sim))
 }
 
