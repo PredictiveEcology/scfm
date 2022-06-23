@@ -123,9 +123,8 @@ Init <- function(sim) {
   return(invisible(sim))
 }
 
+## name 'Burnemup' is a homage to Walters and Hillborne
 Burnemup <- function(sim) {
-  ## name is a homage to Walters and Hillborne
-
   # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
   # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
   #we prevent multiple ignitions, which shouldn't happen anyway.
@@ -133,6 +132,9 @@ Burnemup <- function(sim) {
   threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
   on.exit({setDTthreads(threadsDT)}, add = TRUE)
+
+  compareRaster(sim$rasterToMatch, sim$fireRegimeRas, sim$flammableMap,
+                extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
 
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,

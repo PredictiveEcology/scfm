@@ -123,11 +123,7 @@ Age <- function(sim) {
     ## ensure ageMap matches rasterToMatch
     useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
     options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-    sim$ageMap <- postProcess(
-      sim$ageMap,
-      rasterToMatch = sim$rasterToMatch,
-      startTime  = start(sim)
-    )
+    sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
     options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
   }
 
