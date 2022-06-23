@@ -30,7 +30,7 @@ defineModule(sim, list(
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     desc = "should a cloud cache be used for heavy operations"),
     defineParameter(".useParallel", class = "logical",
-                    default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
+                    default = getOption("pemisc.useParallel", FALSE), min = NA, max = NA,
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
   inputObjects = bindrows(
