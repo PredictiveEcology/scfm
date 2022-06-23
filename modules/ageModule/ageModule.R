@@ -26,8 +26,10 @@ defineModule(sim, list(
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
                  desc = "study area template",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user"),
-    expectsInput(objectName = 'rstCurrentBurn', objectClass = "RasterLayer", desc = "annual burn map created by scfmSpread")
+    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+                 desc = "template raster for raster GIS operations. Must be supplied by user."),
+    expectsInput(objectName = "rstCurrentBurn", objectClass = "RasterLayer",
+                 desc = "annual burn map created by `scfmSpread`.")
   ),
   outputObjects = bindrows(
     createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
@@ -66,7 +68,10 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  # we will use our colour choices, not whatever may have come with the loaded map.
+  compareRaster(sim$rasterToMatch, sim$rstCurrentBurn,
+                extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
+
+  ## we will use our colour choices, not whatever may have come with the loaded map.
   setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
 
   return(invisible(sim))
@@ -110,8 +115,23 @@ Age <- function(sim) {
       startTime  = start(sim)
     )
   }
+
+  if (!compareRaster(sim$rasterToMatch, sim$ageMap, stopiffalse = FALSE,
+                     extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)) {
+    ## ensure ageMap matches rasterToMatch
+    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
+    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
+    sim$ageMap <- postProcess(
+      sim$ageMap,
+      rasterToMatch = sim$rasterToMatch,
+      startTime  = start(sim)
+    )
+    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
+  }
+
   if (!suppliedElsewhere("rstCurrentBurn", sim)) {
     stop("Please supply rstCurrentBurn by running scfmSpread or another fire model")
   }
+
   return(invisible(sim))
 }

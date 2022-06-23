@@ -173,11 +173,13 @@ Init <- function(sim) {
     )
 
     # now that slivers are removed, remake frp from the larger object
-    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge,
-      studyArea = sim$studyArea
-    )
+    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
+    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
+    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
+    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
+
     # remnant slivers will be whole in the larger object
-    if (class(sim$fireRegimePolys$geometry)[1] == "sfc_GEOMETRY") {
+    if (is(sim$fireRegimePolys$geometry, "sfc_GEOMETRY")) {
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
@@ -209,7 +211,7 @@ Init <- function(sim) {
   # ONLY FOR SA
 
   # fireRegimeRas is handy for post-simulation analyses
-  fireRegimeRas <- fasterize::fasterize(sf = sim$fireRegimePolys, raster = sim$rasterToMatch, field = "PolyID")
+  fireRegimeRas <- fasterize::fasterize(sim$fireRegimePolys, sim$rasterToMatch, field = "PolyID")
 
   # doing this prevents fireRegimeRas from inheriting colormaps
   sim$fireRegimeRas <- raster(fireRegimeRas)
@@ -294,9 +296,9 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
   # supply objects
   if (!hasSA & !hasSAL) {
     message("study area not supplied. Using random polygon in Alberta")
-    # TODO: remove LandR once this is confirmed working
     studyArea <- LandR::randomStudyArea(size = 15000000000, seed = 23654)
     sim$studyArea <- studyArea
+    sim$studyAreaLarge <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
@@ -315,8 +317,20 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     )
   }
 
-  if (hasSAL & is.null(sim$rasterToMatchLarge)) {
-    stop("please supply rasterToMatchLarge")
+  if (hasSAL & !suppliedElsewhere(sim$rasterToMatchLarge, sim)) {
+    message(paste(
+      "rasterToMatch not supplied. generating from LCC2010 using studyArea CRS",
+      " - It is strongly recommended to supply a rasterToMatch"
+    ))
+    sim$rasterToMatchLarge <- LandR::prepInputsLCC(
+      year = 2010,
+      destinationPath = dPath,
+      studyArea = sim$studyAreaLarge,
+      useSAcrs = TRUE,
+      filename2 = NULL,
+      overwrite = TRUE,
+      userTags = c(cacheTags, "rasterToMatchLarge")
+    )
   }
 
   if (!suppliedElsewhere("flammableMapLarge") & hasSAL) {
@@ -330,17 +344,16 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMapLarge <- defineFlammable(vegMap,
       mask = sim$rasterToMatchLarge,
-      nonFlammClasses = c(13L, 16L:19L),
-      filename2 = NULL
+      nonFlammClasses = c(13L, 16L:19L)
     )
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
     if (hasSAL) {
-      sim$flammableMap <- postProcess(sim$flammableMapLarge,
-        rasterToMatch = sim$rasterToMatch,
-        studyArea = sim$studyArea
-      )
+      useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
+      options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
+      sim$flammableMap <- postProcess(sim$flammableMapLarge, rasterToMatch = sim$rasterToMatch)
+      options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
       vegMap <- prepInputsLCC(
         year = 2010,
@@ -352,12 +365,12 @@ genFireMapAttr <- function(flammableMap, fireRegimePolys, neighbours) {
       vegMap[] <- asInteger(vegMap[])
       sim$flammableMap <- defineFlammable(vegMap,
         mask = sim$rasterToMatch,
-        nonFlammClasses = c(13, 16:19)
+        nonFlammClasses = c(13L, 16L:19L)
       )
     }
   }
 
-  # this is TRUE unless fireRegimePolysLarge is supplied, in which case we drop that object
+  ## this is TRUE unless fireRegimePolysLarge is supplied, in which case we drop that object
   if (!hasFRP & !hasFRPL) {
     sa <- if (hasSAL) {
       sim$studyAreaLarge

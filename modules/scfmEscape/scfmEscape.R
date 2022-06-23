@@ -16,25 +16,24 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
                   "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
-    #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
+    defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, "simulation time of first escape"),
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
-    defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
+                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = "Pixel IDs where ignition occurs"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
+    expectsInput("flammableMap", "RasterLayer", desc = "binary map of landscape flammability"),
+    expectsInput("ignitionLoci", "numeric", desc = "Pixel IDs where ignition occurs"),
+    expectsInput("rasterToMatch", "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user"),
+    expectsInput("scfmDriverPars", "list", desc = "fire modules' parameters")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = ""),
-    createsOutput(objectName = "p0", objectClass = "raster", desc = "")
+    createsOutput("spreadState", "data.table", desc = ""),
+    createsOutput("p0", "raster", desc = "")
   )
 ))
 
@@ -109,14 +108,23 @@ Escape <- function(sim) {
   return(invisible(sim))
 }
 
-#same model as scfmIgnition to enable standalone execution
+## same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
-  ## TODO: This module has many dependencies that aren't sourced in .inputObjects
+  ## TODO: This module has other dependencies that aren't created: scfmDriverPars and ignitionLoci
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    message("Please supply flammable map...")
-    sim$flammableMap <- sim$rasterToMatch
-    sim$flammableMap[] <- sim$flammableMap[]* 0
+    vegMap <- prepInputsLCC(
+      year = 2010,
+      destinationPath = dPath,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      userTags = c("prepInputsLCC", "studyArea")
+    )
+    vegMap[] <- asInteger(vegMap[])
+    sim$flammableMap <- defineFlammable(vegMap,
+                                        mask = sim$rasterToMatch,
+                                        nonFlammClasses = c(13L, 16L:19L)
+    )
   }
   return(invisible(sim))
 }

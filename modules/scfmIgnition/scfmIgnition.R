@@ -103,28 +103,29 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg){
   return(cells)
 }
 
-
 .inputObjects <- function(sim) {
-  if (!suppliedElsewhere('flammableMap', sim)) {
-    message ("you should run scfmIgnition with scfmLandcoverInit")
-    flammableMap <- raster(nrow = 10, ncol = 10)
-    vals <- sample(x = 0:1, size = 100, replace = TRUE)
-    sim$flammableMap <- setValues(flammableMap, vals)
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    message("you should run scfmIgnition with scfmLandcoverInit")
+    vegMap <- prepInputsLCC(
+      year = 2010,
+      destinationPath = dPath,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      userTags = c("prepInputsLCC", "studyArea")
+    )
+    vegMap[] <- asInteger(vegMap[])
+    sim$flammableMap <- defineFlammable(vegMap,
+                                        mask = sim$rasterToMatch,
+                                        nonFlammClasses = c(13L, 16L:19L)
+    )
   }
-  if (!suppliedElsewhere("landscapeAttr", sim)){
-    stop("landscapeAttr is missing. Please run scfmLandcoverInit")
-    #placeholder
-    sim$landscapeAttr <- list("1" = list(cellsByZone = 1))
+
+  if (!suppliedElsewhere("landscapeAttr", sim)) {
+    stop("landscapeAttr is missing. Please run scfmLandcoverInit.")
   }
 
   if (!suppliedElsewhere("scfmDriverPars", sim)) {
-    stop("scfmDriverPars is missing. Please run scfmDriver")
-    sim$scfmDriverPars <- list("1" = list(pSpread = 0.23,
-                                          p0 = 0.01,
-                                          naieveP0 = 0.01,
-                                          pIgnition = 0.01,
-                                          maxBurncells = 10,
-                                          uniroot.res = 0.23))
+    stop("scfmDriverPars is missing. Please run scfmDriver.")
   }
 
   return(sim)
