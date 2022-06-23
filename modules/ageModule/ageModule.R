@@ -91,6 +91,8 @@ Age <- function(sim) {
   newAges <- pmin(P(sim)$maxAge, getValues(sim$ageMap) + P(sim)$returnInterval)
   sim$ageMap <- setValues(sim$ageMap, newAges)
   if (!is.null(sim$rstCurrentBurn)) {
+    compareRaster(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn,
+                  extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
     burn <- getValues(sim$rstCurrentBurn)
     sim$ageMap[!is.na(burn) & burn == 1] <- 0
   }
