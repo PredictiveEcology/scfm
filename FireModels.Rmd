@@ -5,23 +5,26 @@ date: "February 23 2017"
 output: html_document
 ---
 
-
-
 In this lab we integrate a landscape fire mode, data input from real landscapes as seen in Lab 1, with new modules that estimate the fire model parameters from the empirical data, with some tuning to the characteristics of the actual landscape.  
 
-The fire model is simple extension of that we saw in Lab 5. It is based on the same percolation spread process as before, implemented using SpaDES::spread(). Fire is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread. The model was first described by Cumming et al. (1998) and more accessibly in Armstrong and Cumming (2003).
+The fire model is simple extension of that we saw in Lab 5. It is based on the same percolation spread process as before, implemented using `SpaDES::spread()`.
+Fire is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread.
+The model was first described by Cumming et al. (1998) and more accessibly in Armstrong and Cumming (2003).
 
-There is considerable evidence that fire suppression by initial attack directly effects the size distribution of fires by limiting the proportion of ognitions that exceed a few ha in size (Cumming 2005; Arienti et al. 2006. Typical simulation runs use cell sizes appropriate to this phenomena: < 10ha or as high as 25ha (Leroux et al. 2007). We simulate this by breaking out the first stage of the spread process as separate call to spread. Fires start from the ignition loci returned by scfmIgnition. The three modules are
+There is considerable evidence that fire suppression by initial attack directly effects the size distribution of fires by limiting the proportion of ignitions that exceed a few ha in size (Cumming 2005; Arienti et al. 2006).
+Typical simulation runs use cell sizes appropriate to this phenomena: < 10ha or as high as 25ha (Leroux et al. 2007).
+We simulate this by breaking out the first stage of the spread process as separate call to spread.
+Fires start from the ignition loci returned by `scfmIgnition`.
 
-* scfmIgnition
-* scfmEscape
-* scfmSpread
+The three modules are:
 
+* `scfmIgnition`;
+* `scfmEscape`;
+* `scfmSpread`.
    
-More details are needed here as to why we have three modules rather than use the two-stage capabilities build into spread(). 
+More details are needed here as to why we have three modules rather than use the two-stage capabilities build into `spread()`.
    
-   
-The following code illustrates the agemodule integrated with the three stabe burn process. The three m
+The following code illustrates the `ageModule` integrated with the three stabe burn process.
    
 ```{r scfmModule}
 library(SpaDES)
