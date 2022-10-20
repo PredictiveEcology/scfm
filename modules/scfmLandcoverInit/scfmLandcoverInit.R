@@ -26,18 +26,18 @@ defineModule(sim, list(
     "PredictiveEcology/reproducible"
   ),
   parameters = rbind(
-    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
-    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
-    defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
-    defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
-    defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
     defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
     defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
       desc = paste(
         "fire regime polygons with area less than this number will be merged",
         "with their closest non-sliver neighbour using sf::st_nearest_feature."
       )
-    )
+    ),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
+    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
+    defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
+    defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
+    defineParameter(".useCache", "logical", TRUE, NA, NA, desc = "Use cache")
   ),
   inputObjects = bindrows(
     expectsInput(
