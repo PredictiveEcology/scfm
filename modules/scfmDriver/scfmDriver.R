@@ -3,7 +3,7 @@ defineModule(sim, list(
   description = "generate parameters for the generic percolation model",
   keywords = c("fire"),
   authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
-              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+              person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -12,47 +12,53 @@ defineModule(sim, list(
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
   reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc", "reproducible",
-                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"), #scam  (==1.2.3)
+                  "PredictiveEcology/pemisc@development", "reproducible",
+                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"),
   parameters = rbind(
-    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
-    defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
+    defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
+                    "Buffer width for fire landscape calibration"),
     defineParameter("bufferLCCYear", "numeric", 2010, NA, 2010,
-                    desc = paste("If relying on default buffered flammable map",
-                                 "the year of LCC to use for defining flammable classes")),
+                    paste("If relying on default buffered flammable map",
+                          "the year of LCC to use for defining flammable classes.")),
+    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
+    defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 1, NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
+                    "Used by Plots function, which can be optionally used here"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES"),
+                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
-                    desc = "should a cloud cache be used for heavy operations"),
-    defineParameter(".useParallel", class = "logical",
-                    default = getOption("pemisc.useParallel", FALSE), min = NA, max = NA,
-                    desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
+                    "should a cloud cache be used for heavy operations"),
+    defineParameter(".useParallelFireRegimePolys", "logical", getOption("pemisc.useParallel", FALSE), NA, NA,
+                    "should driver use parallel? Alternatively accepts a numeric argument, i.e., how many cores.")
   ),
   inputObjects = bindrows(
     expectsInput("cloudFolderID", "character",
-                 paste("URL for Google-drive-backed cloud cache. ",
-                       "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
+                 paste("URL for Google-drive-backed cloud cache.",
+                       "Note: turn `cloudCache` on or off with `options('reproducible.useCloud')`.")),
     expectsInput("fireRegimePolys", "sf",
-                 desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
-                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
+                 paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
+                       "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
     expectsInput("flammableMapLarge", "RasterLayer",
-                 desc = paste("a flammable map of study area after buffering by P(sim)$buffDist.",
-                              "Defaults to LCC2010. Must be supplied by user flammableMap is also supplied")),
-    expectsInput("rasterToMatch", "RasterLayer",
-                 desc = "template raster for raster GIS operations. Must be supplied by user"),
-    expectsInput("scfmRegimePars", "list",
-                 desc = "list of fire regime parameters for each polygon"),
+                 paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
+                       "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
     expectsInput("landscapeAttr", "list",
-                 desc = "contains landscape attributes for each polygon")
+                 "contains landscape attributes for each polygon."),
+    expectsInput("rasterToMatch", "RasterLayer",
+                 "template raster for raster GIS operations. Must be supplied by user."),
+    expectsInput("scfmRegimePars", "list",
+                 "list of fire regime parameters for each polygon.")
   ),
   outputObjects = bindrows(
     createsOutput("scfmDriverPars", "list",
-                  desc = "burn parameters for each polygon in fireRegimePolys")
+                  "burn parameters for each polygon in `fireRegimePolys`")
   )
 ))
 
@@ -118,8 +124,8 @@ Init <- function(sim) {
 
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
     cl <- pemisc::makeOptimalCluster(
-      useParallel = P(sim)$.useParallel,
-      # Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
+      useParallel = P(sim)$.useParallelFireRegimePolys,
+      ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
       MBper = sf::st_area(sim$fireRegimePolys)/(prod(res(sim$rasterToMatch)))/1e3 * 2 + 4e2, # in MB
       maxNumClusters = length(sim$scfmRegimePars),
       outfile = file.path(outputPath(sim), "scfm.log"),

@@ -4,7 +4,9 @@ defineModule(sim, list(
   name = "scfmIgnition",
   description = "start a random number of fires",
   keywords = c("fire scfm ignition"),
-  authors = c(person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
+  ),
   childModules = character(),
   version = numeric_version("1.1.0.9002"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -14,21 +16,24 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmIgnition.Rmd"),
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
-    #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
-    defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
+    ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
+    defineParameter("pIgnition", "numeric", 0.001, 0, 1,
+                    "per cell and time ignition probability"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA,
+                    "simulation time of first ignition"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA,
+                    "interval between main events"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
+                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "list of fire regime polygon attributes")
+    expectsInput("flammableMap", "RasterLayer", desc = "map of flammability"),
+    expectsInput("landscapeAttr", "list", desc = "list of fire regime polygon attributes"),
+    expectsInput("scfmDriverPars", "list", desc = "fire modules' parameters")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "vector of ignition locations"),
-    createsOutput(objectName = "pIg", objectClass = "numeric", desc = "ignition probability raster")
+    createsOutput("ignitionLoci", "numeric", desc = "vector of ignition locations"),
+    createsOutput("pIg", "numeric", desc = "ignition probability raster")
   )
 ))
 
@@ -41,7 +46,6 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
     init = {
       sim <- Init(sim)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite", eventPriority = 7.5)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot", eventPriority = 7.5)
     },
     ignite = {
       sim <- Ignite(sim)
@@ -54,7 +58,6 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   #if either of these is a map, it needs to have NAs in the right place
   #and be conformant with flammableMap
   if ("scfmDriverPars" %in% ls(sim)) {

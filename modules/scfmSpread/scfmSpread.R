@@ -27,7 +27,7 @@ defineModule(sim, list(
                     desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA,
                     desc = "Simulation time at which to initiate burning"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA,
+    defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
                     desc = "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA,
                     desc = "This describes the simulation time at which the first plot event should occur"),
@@ -63,7 +63,10 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- Init(sim)
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = .last())
+
+      if ("screen" %in% P(sim)$.plots) {
+        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = .last())
+      }
     },
     burn = {
       if (!is.null(sim$spreadState)) {

@@ -2,7 +2,9 @@ defineModule(sim, list(
   name = "ageModule",
   description = "Creates and maintains a raster called ageMap",
   keywords = c("forest age", "modelling course", "Lab 5"),
-  authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
+  ),
   childModules = character(),
   version = list(LandR = "0.0.11.9000", ageModule = "0.9.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -16,8 +18,10 @@ defineModule(sim, list(
     defineParameter("maxAge","numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
+                    "Used by Plots function, which can be optionally used here")
   ),
   inputObjects = bindrows(
     expectsInput("ageMap", "RasterLayer",
@@ -46,7 +50,11 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 
     # schedule future event(s)
     sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
-    sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot", eventPriority = 7.5)
+
+    if ("screen" %in% P(sim)$.plots) {
+      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot", eventPriority = 7.5)
+    }
+
     sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save", eventPriority = 7.5)
   } else if (eventType == "age") {
     # do stuff for this event

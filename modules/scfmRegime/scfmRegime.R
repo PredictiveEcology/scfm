@@ -3,7 +3,7 @@ defineModule(sim, list(
   description = "estimates fire regime parameters for BEACONs a la Steve's method",
   keywords = c("fire regime", "BEACONs"),
   authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+              person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -37,33 +37,33 @@ defineModule(sim, list(
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
+    expectsInput("firePoints", "SpatialPointsDataFrame",
                  desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
                                'YEAR', and 'SIZE_HA', or pass the parameters to identify those"),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list",
+    expectsInput("landscapeAttr", "list",
                  desc = "list of landscape attributes for each polygon"),
-    expectsInput(objectName = "landscapeAttrLarge", objectClass = "list",
+    expectsInput("landscapeAttrLarge", "list",
                  desc = paste("list of landscape attributes for larger study area - if supplied, the module",
                               "will generate fire regime parameters for the polygons in landscapeAttr",
                               "using the attributes from landscapeAttrLarge.")),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+    expectsInput("studyArea", "SpatialPolygonsDataFrame", desc = "",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer",
+    expectsInput("rasterToMatch", "RasterLayer",
                  desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea"),
-    expectsInput(objectName = "fireRegimePolys", objectClass = "sf",
+    expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons"),
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"),
-    expectsInput(objectName = "fireRegimePolysLarge", objectClass = "sf",
+    expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
                               "from the simulation region."))
   ),
   outputObjects = bindrows(
-   createsOutput(objectName = "scfmRegimePars", objectClass = "list",
+   createsOutput("scfmRegimePars", "list",
                  desc =  "list of fire regime parameters for each polygon"),
-   createsOutput(objectName = "fireRegimePoints", objectClass = "SpatialPointsDataFrame",
+   createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
                  desc = "Fire locations. Points outside studyArea are removed")
   )
 ))
@@ -74,7 +74,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
   } else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-    }
+  }
   return(invisible(sim))
 }
 

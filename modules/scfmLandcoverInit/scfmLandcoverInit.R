@@ -2,17 +2,17 @@ defineModule(sim, list(
   name = "scfmLandcoverInit",
   description = paste(
     "Generates some relevant statistics for each fire regime over a studyArea.",
-    "if scfm is being parameterized over a larger area (studyAreaLarge), then the",
+    "if scfm is being parameterized over a larger area (`studyAreaLarge`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
-    "studyArea, studyAreaLarge, rasterToMatch, rasterToMatchLarge.",
+    "`studyArea`, `studyAreaLarge`, `rasterToMatch`, `rasterToMatchLarge.`",
     "The extent should differ between objects and their 'large' counterparts."
   ),
   keywords = c("fire", "LCC2010", "land cover classification 2010", "BEACONs"),
   childModules = character(),
   authors = c(
-    person(c("Eliot", "J", "B"), "McIntire", email = "Eliot.McIntire@canada.ca", role = c("aut", "cre")),
+    person(c("Eliot", "J", "B"), "McIntire", email = "Eliot.McIntire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-    person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))
   ),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
@@ -22,38 +22,38 @@ defineModule(sim, list(
   citation = list(),
   reqdPkgs = list(
     "fasterize", "purrr", "raster", "sf",
-    "PredictiveEcology/LandR",
-    "PredictiveEcology/reproducible"
+    "PredictiveEcology/LandR@development",
+    "PredictiveEcology/reproducible@development"
   ),
   parameters = rbind(
-    defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours"),
+    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
-      desc = paste(
-        "fire regime polygons with area less than this number will be merged",
-        "with their closest non-sliver neighbour using sf::st_nearest_feature."
-      )
-    ),
-    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, desc = "Initial time for plotting"),
-    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, desc = "Interval between plotting"),
-    defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, desc = "Initial time for saving"),
-    defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, desc = "Interval between save events"),
-    defineParameter(".useCache", "logical", TRUE, NA, NA, desc = "Use cache")
+                    paste("fire regime polygons with area less than this number will be merged",
+                          "with their closest non-sliver neighbour using sf::st_nearest_feature.")),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
+    defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
+    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
+                    "Used by Plots function, which can be optionally used here"),
+    defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, "Initial time for saving"),
+    defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, "Interval between save events"),
+    defineParameter(".useCache", "logical", TRUE, NA, NA, "Use cache")
   ),
   inputObjects = bindrows(
     expectsInput(
-      objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+      "studyArea", "SpatialPolygonsDataFrame",
+      desc = "", ## TODO
       sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"
     ),
     expectsInput(
-      objectName = "studyAreaLarge", objectClass = "SpatialPolygonsDataFrame",
+      "studyAreaLarge", "SpatialPolygonsDataFrame",
       desc = "optional larger study area used for parameterization but not simulation"
     ),
     expectsInput(
-      objectName = "flammableMap", objectClass = "RasterLayer",
+      "flammableMap", "RasterLayer",
       desc = "binary flammability map - defaults to using LandR::prepInputsLCC"
     ),
     expectsInput(
-      objectName = "flammableMapLarge", objectClass = "RasterLayer",
+      "flammableMapLarge", "RasterLayer",
       desc = paste(
         "binary flammability map - defaults to using LandR::prepInputsLCC.",
         "This is only necessary if passing studyAreaLarge OR running scfmDriver.",
@@ -62,18 +62,18 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      objectName = "rasterToMatch", objectClass = "RasterLayer",
+      "rasterToMatch", "RasterLayer",
       desc = "template raster for raster GIS operations. Must be supplied by user"
     ),
     expectsInput(
-      objectName = "rasterToMatchLarge", objectClass = "RasterLayer",
+      "rasterToMatchLarge", "RasterLayer",
       desc = paste(
-        "template raster for raster GIS operations. Only necessary if SAL is passed.",
-        "Must be supplied by user"
+        "Template raster for raster GIS operations. Only necessary if SAL is passed.",
+        "Must be supplied by user."
       )
     ),
     expectsInput(
-      objectName = "fireRegimePolys", objectClass = "sf",
+      "fireRegimePolys", "sf",
       desc = paste(
         "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
         "Must have numeric field 'PolyID' or it will be created for individual polygons"
@@ -81,7 +81,7 @@ defineModule(sim, list(
       sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
     ),
     expectsInput(
-      objectName = "fireRegimePolysLarge", objectClass = "sf",
+      "fireRegimePolysLarge", "sf",
       desc = paste(
         "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
         "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
@@ -91,12 +91,14 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     createsOutput(
-      objectName = "cellsByZone", objectClass = "data.frame",
+      "cellsByZone", "data.frame",
       desc = "explains which raster cells are in which polygon"
     ),
-    createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
     createsOutput(
-      objectName = "landscapeAttrLarge", objectClass = "list",
+      "landscapeAttr", "list",
+      desc = "list of polygon attributes inc. area"),
+    createsOutput(
+      "landscapeAttrLarge", "list",
       desc = paste(
         "if SAL is passed, this object will supersede landscapeAttr in scfmRegmie, so that",
         "estimates of mean fire size, max fire size, ignition prob, and escape prob",
@@ -104,21 +106,21 @@ defineModule(sim, list(
       )
     ),
     createsOutput(
-      objectName = "fireRegimePolys", objectClass = "SpatialPolygonsDataFrame",
+      "fireRegimePolys", "SpatialPolygonsDataFrame",
       desc = paste(
         "areas to calibrate individual fire regime parameters. If supplied, it must",
         "have a field called PolyID that defines unique regimes. Defaults to ecozones"
       )
     ),
     createsOutput(
-      objectName = "fireRegimePolysLarge", objectClass = "SpatialPolygonsDataFrame",
+      "fireRegimePolysLarge", "SpatialPolygonsDataFrame",
       desc = paste(
         "areas to calibrate individual fire regime parameters if studyAreaLarge is passed.",
         "If supplied, it MUST have a field PolyID used to define unique fire regimes"
       )
     ),
     createsOutput(
-      objectName = "fireRegimeRas", objectClass = "RasterLayer",
+      "fireRegimeRas", "RasterLayer",
       desc = "Rasterized version of fireRegimePolys with values representing polygon ID"
     )
   )
@@ -128,12 +130,18 @@ doEvent.scfmLandcoverInit <- function(sim, eventTime, eventType, debug = FALSE) 
   switch(eventType,
     init = {
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
+
+      if ("screen" %in% P(sim)$.plots) {
+        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
+      }
+
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
     },
     plot = {
-      Plot(sim$fireRegimeRas, title = c("fire regimes"), new = TRUE)
-      Plot(sim$flammableMap, legend = FALSE)
+      if (time(sim) > start(sim)) {
+        Plot(sim$fireRegimeRas, title = c("fire regimes"), new = TRUE)
+        Plot(sim$flammableMap, legend = FALSE)
+      }
       # schedule future event(s)
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
     },
