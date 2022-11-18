@@ -2,7 +2,9 @@
 title: "scfm"
 author: "Ian Eddy"
 date: "December 18, 2018"
-output: pdf_document
+output:
+  pdf_document:
+    latex_engine: xelatex
 ---
 
 ```{r setup, include=FALSE}
@@ -40,8 +42,8 @@ The current implementation does not account for differences in vegetation type w
 The more experimental `fireSense` model (Marchal, Cumming, and McIntire 2017), recently implemented in SpaDES, could be used in future updates to explicitly account for climate and vegetation impacts on fires (in prep).
 
 ## Technical overview
-The calibration modules of scfm are flexible and capable of accommodating various levels of a priori user knowledge regarding fire parameters. They can also account for calibration areas that are distinct from simulation areas (provided the simulation area is a wholly contained by the calibration area).The minimum needed objects are a study area polygon ('studyArea') and a template raster that will determine the spatial resolution at which fire is simulated ('rasterToMatch'). However, if the simulation borders are determined by some factor other than fire ecology (e.g. administrative boundaries), each fire regime area may not possess sufficient historical fire data to produce accurate parameterization*. Two alternative approaches are outlined below. Users are recommended to identify the scenario that best fits their use case, and supply the corresponding objects, rather than supplying default objects arbitrarily. 
 
+The calibration modules of scfm are flexible and capable of accommodating various levels of a priori user knowledge regarding fire parameters. They can also account for calibration areas that are distinct from simulation areas (provided the simulation area is a wholly contained by the calibration area).The minimum needed objects are a study area polygon ('studyArea') and a template raster that will determine the spatial resolution at which fire is simulated ('rasterToMatch'). However, if the simulation borders are determined by some factor other than fire ecology (e.g. administrative boundaries), each fire regime area may not possess sufficient historical fire data to produce accurate parameterization*. Two alternative approaches are outlined below. Users are recommended to identify the scenario that best fits their use case, and supply the corresponding objects, rather than supplying default objects arbitrarily. 
 
 Scenario 1: no prior knowledge of fire regimes
 In this scenario, some or all of the fire regime polygons ('fireRegimePolys') may be too geographically limited to include  historical fire data sufficient for calibration. The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization ('studyAreaLarge'). In this case, scfmLandcoverInit will calculate fire regime attributes for the larger area* ('landscapeAttrLarge'), scfmRegime will estimate fire regime parameters using the larger region, but scfmDriver will calibrate spread probability for the smaller region only. This ensures the simulated fires achieve the correct mean fire size. 
@@ -59,22 +61,22 @@ Technical notes:
 
 ## References
 
-- Armstrong, Glen W, and Steven G Cumming. 2003. “Estimating the Cost of Land Base Changes Due to Wildfire Using Shadow Prices.” Forest Science 49 (5): 719–30. https://doi.org/10.1093/forestscience/49.5.719.
-- Cumming, Steve G, D Demarchi, and C Walters. 1998. “A Grid-Based Spatial Model of Forest Dynamics Applied to the Boreal Mixedwood Region.” Working Paper 1998–8. Sustainable Forest Management Network. https://doi.org/10.7939/R35N33.
-- Latifovic, R.; Pouliot, D.; Olthof, I. Circa 2010 Land Cover of Canada: Local Optimization Methodology and Product Development. Remote Sens. 2017, 9, 1098. https://doi.org/10.3390/rs9111098
-- Marchal, Jean, Steve G Cumming, and Eliot J B McIntire. 2017. “Land Cover, More than Monthly Fire Weather, Drives Fire-Size Distribution in Southern Québec Forests: Implications for Fire Risk Management.” PLoS ONE 12 (6): 1–17. https://doi.org/10.1371/journal.pone.0179294.
-Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
+- Armstrong, G W, and S G Cumming. 2003. "Estimating the Cost of Land Base Changes Due to Wildfire Using Shadow Prices." Forest Science 49 (5): 719–30. <https://doi.org/10.1093/forestscience/49.5.719>.
+- Cumming, S G, D Demarchi, and C Walters. 1998. "A Grid-Based Spatial Model of Forest Dynamics Applied to the Boreal Mixedwood Region." Working Paper 1998–8. Sustainable Forest Management Network. <https://doi.org/10.7939/R35N33>.
+- Latifovic, R, Pouliot, D, Olthof, I. "Circa 2010 Land Cover of Canada: Local Optimization Methodology and Product Development." Remote Sens. 2017, 9, 1098. <https://doi.org/10.3390/rs9111098>.
+- Marchal, J, S G Cumming, and E J B McIntire. 2017. "Land Cover, More than Monthly Fire Weather, Drives Fire-Size Distribution in Southern Québec Forests: Implications for Fire Risk Management." PLoS ONE 12 (6): 1–17. <https://doi.org/10.1371/journal.pone.0179294>.
+- Pya, N, and S N Wood. 2015. "Shape constrained additive models." Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
+
+\newpage
 
 ## Usage example
 
 ```{r load-SpaDES, eval=TRUE}
-library(magrittr)
-library(raster)
-library(SpaDES)
-library(LandR)
-library(ggplot2)
-library(data.table)
-library(sf)
+library(Require)
+
+Require(c("data.table", "ggplot2",
+          "PredictiveEcology/LandR@development",
+          "magrittr", "raster", "SpaDES.core", "sf"))
 ```
 
 ```{r module usage example, eval = FALSE}
@@ -111,10 +113,13 @@ parameters <- list(
 ) 
 
 
-modules <- list('scfmLandcoverInit', 'scfmRegime', 'scfmDriver',
-                'scfmIgnition', 'scfmEscape', 'scfmSpread')
-#replace modules with "group_scfm" to include ageModule 
-#ageModule isn't necessary to run and download of ageMap takes time
+modules <- list(
+  "scfmLandcoverInit", "scfmRegime", "scfmDriver",
+  "scfmIgnition", "scfmEscape",
+  "scfmSpread", "scfmSummary"
+)
+## NOTE: replace modules with "group_scfm" to include ageModule;
+##       ageModule isn't necessary to run and download of `ageMap` takes time
 
 #Paths
 paths <- list(
@@ -158,109 +163,30 @@ options("reproducible.cachePath" = paths$cachePath)
 options("reproducible.useMemoise" = FALSE)
 
 outSim <- simInitAndSpades(times = times, 
-                          params = parameters, 
-                          modules = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
-                                      "scfmIgnition", "scfmEscape", "scfmSpread"),
-                          objects = objects, 
-                          paths = paths)
+                           params = parameters, 
+                           modules = modules,
+                           objects = objects, 
+                           paths = paths)
 ```
 
 ```{r module evaluate module output, eval = FALSE}
-#for comparing parameters of interest
-require(gridExtra)
+## TODO: add these plots as outputs in new scfmSummary module
 
-comparePredictions <- function(polyList, simList) {
-  out <- lapply(polyList, FUN = function(x, sim = simList) {
-    regime <- sim$scfmRegimePars[[x]]
-    simLength <- times(sim)$end - times(sim)$start + 1
-    driver <- sim$scfmDriverPars[[x]]
-    landscapeAttr <- sim$landscapeAttr[[x]]
-    fireRegimePoints <- sim$fireRegimePoints[sim$fireRegimePoints$PolyID == as.numeric(x),]
-
-    #This is a long way of saying, sum of fires/ (flammable landscape * fire epoch )
-    #hist_mfs will be NaN if there were no fires larger than one pixel
-    
-    
-    pSpread <- driver$pSpread 
-    pIg <- regime$ignitionRate
-    burnSum <- sim$burnSummary[sim$burnSummary$polyID == x,]
-    burnSum$N <- as.numeric(burnSum$N)
-    targetIgnitions <- regime$ignitionRate * landscapeAttr$burnyArea
-    achievedIgnitions <- nrow(burnSum)/simLength
-    
-    
-    burnSum$areaBurned <- as.numeric(burnSum$areaBurned)
-    burnSum <- burnSum[burnSum$N > 1]
-    
-    targetFRI  <- 1/regime$empiricalBurnRate
-    #the length of simulation over the proportion that actually burned
-    achievedFRI <- simLength/(sum(burnSum$areaBurned)/landscapeAttr$burnyArea)
-    
-    #starting in year 1 and ending in year 10 means you have 10 years, so 
-    meanBurn <- ifelse(nrow(burnSum) == 0, yes = 0, no = mean(burnSum$areaBurned))
-    pred <- data.frame("PolyId" = x, #Polygon ID
-                       "histMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
-                       "modMeanSize" = meanBurn, #The modeled mean size of fires
-                       "achievedFRI" = achievedFRI,
-                       "targetFRI" = targetFRI,
-                       "targetIgnitions" = targetIgnitions,
-                       "achievedIgnitions" = achievedIgnitions,
-                       "pSpread" = pSpread, # The spread probability estimated from the SCAM model
-                       "pIgnition" = pIg) #the ignition probability of a single pixel
-    return(pred)
-  })
-  return(out)
-}
-
-df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
-  rbindlist(.)
-#Some useful plots
-diagnosticPlot1 <- ggplot(df, aes(x = histMeanSize, y = modMeanSize)) +
-  geom_point(aes(histMeanSize, modMeanSize)) + 
-  labs(y = "modeled mean fire ize", x = "historical mean fire size") +
-  theme_minimal() + 
-  scale_y_continuous(limits = c(0, NA)) +
-  scale_x_continuous(limits = c(0, NA)) + 
-  geom_text(aes(label = PolyId), vjust = "inward", hjust = "inward") + 
-  geom_abline(slope = 1)
+dt <- scfmutils::comparePredictions_summaryDT(outSim)
+  
+## Some useful plots
+gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
 
 # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
 # MAAB can still be calculated manually if a user desires
 
-#remove the infinite FRI caused by no simulated fires
-#simulated FRI will likely be off where targetFRI is < 1/4 of the simulated time
-#targetFRI temporarily hard-coded - 
-diagnosticPlot2 <- ggplot(df[!is.infinite(achievedFRI) & 
-                               targetFRI < c(times$end - times$start) * 4], aes(x = targetFRI, y = achievedFRI)) +
-  geom_point() +
-  labs(y = "simulation FRI (years)", x = "estimated FRI (years)") +
-  theme_minimal() +  
-  geom_abline(slope = 1) + 
-  scale_y_continuous(limits = c(0, NA)) +
-  scale_x_continuous(limits = c(0, NA)) + 
-  geom_text(aes(label = PolyId, , vjust = "inward", hjust = "inward"))
+gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt)
 
-diagnosticPlot3 <- ggplot(df, aes(x = targetIgnitions, y = achievedIgnitions)) +
-  geom_point() +
-  labs(y = "simulation annual ignitions", x = "estimated annual ignitions") +
-  theme_minimal() +  #+ 
-  geom_abline(slope = 1) + 
-  scale_y_continuous(limits = c(0, NA)) +
-  scale_x_continuous(limits = c(0, NA)) + 
-  geom_text(aes(label = PolyId, vjust = "inward", hjust = "inward"))
+gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
 
-fireRegimePolys <- outSim$fireRegimePolys 
-fireRegimePolys$PolyID <- as.factor(fireRegimePolys$PolyID) #for ggplot
-fps <- ggplot(fireRegimePolys) + 
-  geom_sf(aes(fill = PolyID)) + 
-  scale_fill_discrete() + 
-  theme_minimal()
-
+gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
 
 clearPlot()
-grid.arrange(fps,  diagnosticPlot1,  diagnosticPlot2,  diagnosticPlot3, 
-             nrow = 2, ncol = 2)
-
-
-
+gridExtra::grid.arrange(fps,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
 ```
+
