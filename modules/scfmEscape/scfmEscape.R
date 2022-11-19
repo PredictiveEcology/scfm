@@ -2,19 +2,25 @@
 #  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmEscape",
-  description = "This Escapes fire(s) from an initial set of loci returned by an ignition module, and readies the results for use by scfmSpread",
-  keywords = c("fire Escape BEACONs"),
-  authors = c(person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person(c("Ian", "MS"), "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
+  description = paste("'Escapes' fire(s) from an initial set of loci returned by an ignition module,",
+                      "and prepares the results for use by `scfmSpread`."),
+  keywords = c("fire escape", "BEACONs"),
+  authors = c(
+    person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+    person("Ian MS", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
+  ),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
-                  "SpaDES.tools", "PredictiveEcology/LandR"),
+  documentation = list("README.md", "scfmEscape.Rmd"),
+  reqdPkgs = list("data.table", "raster",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
