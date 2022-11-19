@@ -18,7 +18,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils",
+                  "PredictiveEcology/scfmutils (>= 0.0.0.9002)",
                   "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
@@ -110,10 +110,9 @@ Init <- function(sim) {
                                                     neighbours = P(sim)$neighbours,
                                                     flammableMap = sim$flammableMapLarge
                                     ),
-                                    calibrateFireRegimePolys))
+                                    scfmutils::calibrateFireRegimePolys))
 
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
-    browser()
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallelFireRegimePolys,
       ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
@@ -156,7 +155,7 @@ Init <- function(sim) {
                                               neighbours = P(sim)$neighbours,
                                               flammableMap = sim$flammableMapLarge
                               ),
-                              calibrateFireRegimePolys,
+                              scfmutils::calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
