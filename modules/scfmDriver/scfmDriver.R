@@ -128,7 +128,7 @@ Init <- function(sim) {
       ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
       MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
       maxNumClusters = length(sim$scfmRegimePars),
-      outfile = file.path(outputPath(sim), "scfm.log"),
+      outfile = file.path(outputPath(sim), "log", "scfm.log"),
       objects = c("genSimLand"), envir = environment(),
       libraries = c("rlang", "raster", "reproducible",
                     "LandR", "sf", "fasterize", "data.table")
