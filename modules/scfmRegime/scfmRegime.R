@@ -11,7 +11,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("raster", "reproducible"),
+  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.0.9001)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
@@ -19,6 +19,9 @@ defineModule(sim, list(
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
     defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
+    defineParameter("fireRegimePolysType", "character", "ECOREGION", NA, NA,
+                    paste("Polygon type to use for scfm `fireRegimePolys`:",
+                          "see `?scfmutils::prepInputsFireRegimePolys` for allowed types.")),
     defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
                     desc = "Name of the column that has fire size"),
     defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
@@ -185,17 +188,19 @@ Init <- function(sim) {
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
     message("fireRegimePolys not supplied. Using default ecoregions of Canada.")
 
-    sim$fireRegimePolys <- prepInputs(url = extractURL("fireRegimePolys", sim),
-                                      destinationPath = dPath,
-                                      studyArea = sim$studyArea,
-                                      rasterToMatch = sim$rasterToMatch,
-                                      fun = "sf::st_read",
-                                      overwrite = TRUE,
-                                      userTags = c(cacheTags, "fireRegimePolys"))
-    sim$fireRegimePolys$PolyID <- as.numeric(sim$fireRegimePolys$ECOREGION)
+    sim$fireRegimePolys <- Cache(
+      scfmutils::prepInputsFireRegimePolys,
+      url = extractURL("fireRegimePolys", sim),
+      destinationPath = dPath,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      type = P(sim)$fireRegimePolysType,
+      userTags = c(cacheTags, "fireRegimePolys")
+    )
   }
-  ## this module has many dependencies that aren't sourced in .inputObjects
-  ## this workaround prevents checksums updating due to daily name change of NFDB files
+
+  ## TODO: this module has many dependencies that aren't sourced in .inputObjects
+
   if (!suppliedElsewhere("firePoints", sim)) {
     if (!is.null(sim$fireRegimePolysLarge)) {
       SA <- sim$fireRegimePolysLarge
@@ -205,8 +210,7 @@ Init <- function(sim) {
       RTM <- sim$rasterToMatch
     }
 
-    #do not use fireSenseUtils - it removes the cause column...among other issues
-    #this function came first - fireSenseUtils copied the name!
+    ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
     sim$firePoints <- getFirePoints_NFDB_scfm(
       studyArea = SA,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
