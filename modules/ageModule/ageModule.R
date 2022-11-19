@@ -15,7 +15,7 @@ defineModule(sim, list(
   reqdPkgs = list("raster", "RColorBrewer", "PredictiveEcology/LandR@development"),
   parameters = rbind(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
-    defineParameter("maxAge","numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
+    defineParameter("maxAge", "numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
