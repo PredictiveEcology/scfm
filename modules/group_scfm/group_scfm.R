@@ -3,7 +3,9 @@ defineModule(sim, list(
   description = "parent module for scfm family of modules",
   keywords = "fire",
   authors = c(
-    person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))
+    person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = "aut"),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = "aut"),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = c("ageModule", "scfmDriver", "scfmEscape", "scfmIgnition", "scfmLandcoverInit",
                    "scfmRegime", "scfmSpread"),
