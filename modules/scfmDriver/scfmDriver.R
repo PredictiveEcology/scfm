@@ -2,18 +2,24 @@ defineModule(sim, list(
   name = "scfmDriver",
   description = "generate parameters for the generic percolation model",
   keywords = c("fire"),
-  authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
-              person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
+  ),
   childModules = character(),
-  version = numeric_version("0.1.0"),
+  version = numeric_version("0.1.1"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc@development", "reproducible",
-                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"),
+  reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/pemisc@development",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/scfmutils",
+                  "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
                     "Buffer width for fire landscape calibration"),
@@ -78,22 +84,6 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-# 1 - (1-p0)**N = pEscape
-# 1 - pEscape = (1-p0)**N
-# (1 - pEscape)**1/N = 1 - p0
-# p0 = 1 - (1 - pEscape)**1/N
-
-hatP0 <- function(pEscape, n = 8) {
-  1 - (1 - pEscape) ** (1 / n)
-}
-
-#a real clever boots would minimise the abs log odds ratio.
-#be my guest.
-
-escapeProbDelta <- function(p0, w, hatPE) {
-  abs(sum(w*(1 - (1 - p0) ** (0:8))) - hatPE)
-}
-
 Init <- function(sim) {
   if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
     sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
@@ -123,15 +113,15 @@ Init <- function(sim) {
                                     calibrateFireRegimePolys))
 
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
+    browser()
     cl <- pemisc::makeOptimalCluster(
       useParallel = P(sim)$.useParallelFireRegimePolys,
       ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
       MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
       maxNumClusters = length(sim$scfmRegimePars),
-      outfile = file.path(outputPath(sim), "scfm.log"),
-      objects = c("genSimLand"), envir = environment(),
-      libraries = c("rlang", "raster", "reproducible",
-                    "LandR", "sf", "fasterize", "data.table")
+      outfile = file.path(outputPath(sim), "log", "scfm.log"),
+      objects = c(), envir = environment(),
+      libraries = c("scfmutils")
     )
 
     on.exit({
