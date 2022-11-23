@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmIgnition.Rmd"),
+  documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
@@ -108,6 +108,12 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
 }
 
 .inputObjects <- function(sim) {
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  mod$dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
+
+  # ! ----- EDIT BELOW ----- ! #
+
   if (!suppliedElsewhere("flammableMap", sim)) {
     message("you should run scfmIgnition with scfmLandcoverInit")
     vegMap <- prepInputsLCC(
@@ -132,5 +138,6 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
     stop("scfmDriverPars is missing. Please run scfmDriver.")
   }
 
-  return(sim)
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
 }

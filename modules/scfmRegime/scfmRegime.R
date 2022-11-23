@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
-  documentation = list("README.txt", "scfmRegime.Rmd"),
+  documentation = list("README.md", "scfmRegime.Rmd"), ## same file
   reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.0.9006)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
@@ -47,16 +47,6 @@ defineModule(sim, list(
                  desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
                                'YEAR', and 'SIZE_HA', or pass the parameters to identify those"),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
-    expectsInput("landscapeAttr", "list",
-                 desc = "list of landscape attributes for each polygon"),
-    expectsInput("landscapeAttrLarge", "list",
-                 desc = paste("list of landscape attributes for larger study area - if supplied, the module",
-                              "will generate fire regime parameters for the polygons in landscapeAttr",
-                              "using the attributes from landscapeAttrLarge.")),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame", desc = "",
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput("rasterToMatch", "RasterLayer",
-                 desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea"),
     expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons"),
@@ -64,7 +54,27 @@ defineModule(sim, list(
     expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
-                              "from the simulation region."))
+                              "from the simulation region.")),
+    expectsInput("landscapeAttr", "list",
+                 desc = "list of landscape attributes for each polygon"),
+    expectsInput("landscapeAttrLarge", "list",
+                 desc = paste("list of landscape attributes for larger study area - if supplied, the module",
+                              "will generate fire regime parameters for the polygons in landscapeAttr",
+                              "using the attributes from landscapeAttrLarge.")),
+    expectsInput("rasterToMatch", "RasterLayer",
+                 desc = paste("template raster for raster GIS operations.",
+                              "Must be supplied by user with same CRS as `studyArea`.")),
+    expectsInput("rasterToMatchLarge", "RasterLayer",
+                 desc = paste("large template raster for raster GIS operations.",
+                              "Must be supplied by user with same CRS as `studyAreaLarge`.")),
+    expectsInput("studyArea", "SpatialPolygonsDataFrame",
+                 desc = "Polygon to use as the simulation study area.",
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
+    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
+                 desc = paste("Polygon to use as the parametrisation study area.",
+                              "Note that `studyAreaLarge` is only used for parameter estimation, and",
+                              "can be larger than the actual study area used for simulations."),
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bindrows(
    createsOutput("scfmRegimePars", "list",
@@ -126,54 +136,31 @@ Init <- function(sim) {
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
-  if (!is.null(sim$fireRegimePolysLarge) & !is.null(sim$landscapeAttrLarge)) {
-    if (st_crs(tmp) != st_crs(sim$fireRegimePolysLarge)) {
-      tmp <- st_transform(tmp, crs = st_crs(sim$fireRegimePolysLarge))
-    }
-
-    tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) ## gives studyArea row name to point
-
-    if (any(is.na(tmp$PolyID))) {
-      tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
-    }
-    sim$fireRegimePoints <- tmp
-    ## this function estimates the ignition probability and escape probability based on NFDB
-    scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
-                             FUN = calcZonalRegimePars,
-                             firePolys = sim$fireRegimePolysLarge,
-                             landscapeAttr = sim$landscapeAttrLarge,
-                             firePoints = sim$fireRegimePoints,
-                             epochLength = epochLength,
-                             maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                             fireSizeColumnName = P(sim)$fireSizeColumnName,
-                             targetBurnRate = P(sim)$targetBurnRate,
-                             targetMaxFireSize = P(sim)$targetMaxFireSize)
-
-    names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
-    ## only keep the attribtues that are in study area
-    scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
-  } else {
-    tmp$PolyID <- sp::over(as_Spatial(tmp), as_Spatial(sim$fireRegimePolys))$PolyID ## gives studyArea row name to point
-
-    if (any(is.na(tmp$PolyID))) {
-      tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
-    }
-    sim$fireRegimePoints <- tmp
-
-    #this function estimates the ignition probability and escape probability based on NFDB
-    scfmRegimePars <- lapply(names(sim$landscapeAttr),
-                             FUN = calcZonalRegimePars,
-                             firePolys = sim$fireRegimePolys,
-                             landscapeAttr = sim$landscapeAttr,
-                             firePoints = sim$fireRegimePoints,
-                             epochLength = epochLength,
-                             maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                             fireSizeColumnName = P(sim)$fireSizeColumnName,
-                             targetBurnRate = P(sim)$targetBurnRate,
-                             targetMaxFireSize = P(sim)$targetMaxFireSize)
-
-    names(scfmRegimePars) <- names(sim$landscapeAttr)
+  if (sf::st_crs(tmp) != sf::st_crs(sim$fireRegimePolysLarge)) {
+    tmp <- sf::st_transform(tmp, crs = sf::st_crs(sim$fireRegimePolysLarge))
   }
+
+  tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) ## gives studyArea colnames to points
+
+  if (any(is.na(tmp$PolyID))) {
+    tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
+  }
+  sim$fireRegimePoints <- tmp
+  ## this function estimates the ignition probability and escape probability based on NFDB
+  scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
+                           FUN = calcZonalRegimePars,
+                           firePolys = sim$fireRegimePolysLarge,
+                           landscapeAttr = sim$landscapeAttrLarge,
+                           firePoints = sim$fireRegimePoints,
+                           epochLength = epochLength,
+                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                           fireSizeColumnName = P(sim)$fireSizeColumnName,
+                           targetBurnRate = P(sim)$targetBurnRate,
+                           targetMaxFireSize = P(sim)$targetMaxFireSize)
+
+  names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
+  ## only keep the attribtues that are in study area
+  scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
 
   nullIdx <- sapply(scfmRegimePars, is.null)
   if (any(nullIdx)) {
@@ -188,8 +175,16 @@ Init <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
+  if (!suppliedElsewhere("studyAreaLarge", sim)) {
+    sim$studyAreaLarge <- sim$studyArea
+  }
+
+  if (!suppliedElsewhere("rasterToMatchLarge", sim)) {
+    sim$rasterToMatchLarge <- rasterToMatch
+  }
+
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
-    message("fireRegimePolys not supplied. Using default ecoregions of Canada.")
+    message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
     sim$fireRegimePolys <- Cache(
       scfmutils::prepInputsFireRegimePolys,
@@ -202,20 +197,24 @@ Init <- function(sim) {
     )
   }
 
-  ## TODO: this module has many dependencies that aren't sourced in .inputObjects
+  if (!suppliedElsewhere("fireRegimePolysLarge", sim)) {
+    message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
+
+    sim$fireRegimePolys <- Cache(
+      scfmutils::prepInputsFireRegimePolys,
+      url = extractURL("fireRegimePolys", sim),
+      destinationPath = dPath,
+      studyArea = sim$studyAreaLarge,
+      rasterToMatch = sim$rasterToMatchLarge,
+      type = P(sim)$fireRegimePolysType,
+      userTags = c(cacheTags, "fireRegimePolys")
+    )
+  }
 
   if (!suppliedElsewhere("firePoints", sim)) {
-    if (!is.null(sim$fireRegimePolysLarge)) {
-      SA <- sim$fireRegimePolysLarge
-      RTM <- sim$rasterToMatchLarge
-    } else {
-      SA <- sim$fireRegimePolys
-      RTM <- sim$rasterToMatch
-    }
-
     ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
     sim$firePoints <- getFirePoints_NFDB_scfm(
-      studyArea = SA,
+      studyArea = sim$fireRegimePolysLarge,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
   }
