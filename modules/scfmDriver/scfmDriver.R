@@ -131,8 +131,8 @@ Init <- function(sim) {
     cl <- NULL
   }
 
-  if (!identical(res(sim$flammableMap), res(sim$flammableMapLarge))) {
-    stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
+  if (!compareRaster(sim$flammableMap, sim$flammableMapLarge, extent = FALSE, rowcol = FALSE, res = TRUE)) {
+    stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
   message("Running calibrateFireRegimePolys()...")

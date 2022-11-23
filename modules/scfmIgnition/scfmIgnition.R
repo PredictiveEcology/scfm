@@ -58,12 +58,13 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  #if either of these is a map, it needs to have NAs in the right place
-  #and be conformant with flammableMap
+  ## if either of these is a map, it needs to have NAs in the right place
+  ##   and be conformant with flammableMap
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pIg <- raster(sim$flammableMap)
-      for (x in names(sim$scfmDriverPars)) {
+      #for (x in names(sim$scfmDriverPars)) { ## TODO: not all x in landscapeAttr
+      for (x in intersect(names(sim$scfmDriverPars), names(sim$landscapeAttr))) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
       pIg[] <- pIg[] * (sim$flammableMap[])
@@ -82,21 +83,21 @@ Init <- function(sim) {
 
 ### template for your event1
 Ignite <- function(sim) {
-  #TODO: this calcIgnitions could be simpler
+  ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
   ignitions <- lapply(unique(names(sim$scfmDriverPars)),
                       FUN = calcIgnitions,
                       landscapeAttr = sim$landscapeAttr,
                       pIg = sim$pIg)
 
-  #resample generates a random permutation of the elements of ignitions
-  #so that we don't always sequence in map index order. EJM pointed this out.
+  ## resample generates a random permutation of the elements of ignitions
+  ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
 
   return(invisible(sim))
 }
 
-calcIgnitions <- function(polygonType, landscapeAttr, pIg){
+calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
   cells <- landscapeAttr[[polygonType]]$cellsByZone
   if (is(pIg, "Raster")) {
     cells <- cells[which(runif(length(cells)) < pIg[cells])]
