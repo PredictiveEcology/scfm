@@ -3,12 +3,17 @@ title: "scfm"
 author: "Ian Eddy"
 date: "December 18, 2018"
 output:
-  pdf_document:
+  pdf_document: 
     latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = FALSE
+)
 ```
 
 ## Overview
@@ -43,21 +48,35 @@ The more experimental `fireSense` model (Marchal, Cumming, and McIntire 2017), r
 
 ## Technical overview
 
-The calibration modules of scfm are flexible and capable of accommodating various levels of a priori user knowledge regarding fire parameters. They can also account for calibration areas that are distinct from simulation areas (provided the simulation area is a wholly contained by the calibration area).The minimum needed objects are a study area polygon ('studyArea') and a template raster that will determine the spatial resolution at which fire is simulated ('rasterToMatch'). However, if the simulation borders are determined by some factor other than fire ecology (e.g. administrative boundaries), each fire regime area may not possess sufficient historical fire data to produce accurate parameterization*. Two alternative approaches are outlined below. Users are recommended to identify the scenario that best fits their use case, and supply the corresponding objects, rather than supplying default objects arbitrarily. 
+The calibration modules of scfm are flexible and capable of accommodating various levels of *a priori* user knowledge regarding fire parameters.
+They can also account for calibration areas that are distinct from simulation areas (provided the simulation area is a wholly contained by the calibration area).
+The minimum needed objects are a study area polygon (`studyArea`) and a template raster that will determine the spatial resolution at which fire is simulated (`rasterToMatch`).
+However, if the simulation borders are determined by some factor other than fire ecology (e.g. administrative boundaries), each fire regime area may not possess sufficient historical fire data to produce accurate parameterization.
+Two alternative approaches are outlined below.
+Users are recommended to identify the scenario that best fits their use case, and supply the corresponding objects, rather than supplying default objects arbitrarily. 
 
 Scenario 1: no prior knowledge of fire regimes
-In this scenario, some or all of the fire regime polygons ('fireRegimePolys') may be too geographically limited to include  historical fire data sufficient for calibration. The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization ('studyAreaLarge'). In this case, scfmLandcoverInit will calculate fire regime attributes for the larger area* ('landscapeAttrLarge'), scfmRegime will estimate fire regime parameters using the larger region, but scfmDriver will calibrate spread probability for the smaller region only. This ensures the simulated fires achieve the correct mean fire size. 
-Additional objects needed: studyAreaLarge, rasterToMatchLarge. If flammableMap or fireRegimePolys is supplied, the large counterpart should also be supplied ('flammableMapLarge', 'fireRegimePolysLarge', respectively). 
+In this scenario, some or all of the fire regime polygons (`fireRegimePolys`) may be too geographically limited to include  historical fire data sufficient for calibration.
+The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (`studyAreaLarge`).
+In this case, `scfmLandcoverInit` will calculate fire regime attributes for the larger area* (`landscapeAttrLarge`), `scfmRegime` will estimate fire regime parameters using the larger region, but `scfmDriver` will calibrate spread probability for the smaller region only.
+This ensures the simulated fires achieve the correct mean fire size. 
+Additional objects needed: `studyAreaLarge`, `rasterToMatchLarge.` If `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapLarge`, `fireRegimePolysLarge`, respectively). 
 
-Scenario 2: a priori knowledge of fire regimes
-In this scenario, a user may have a priori knowledge of the maximum fire size and/or the fire return interval for one or more fire regime areas. These parameters can be passed to override the estimate provided by scfmRegime
-Additional objects needed: fireRegimePolys
-Additional params needed: scfmRegime's 'targetBurnRate' (1/Fire Return Interval) for a known fire return interval, and scfmRegime's 'targetMaxFireSize' for a known maximum fire size. Each is a named vector, with names corresponding to the IDs in fireRegimePolys$PolyID. 
+Scenario 2: *a priori* knowledge of fire regimes
+In this scenario, a user may have *a priori* knowledge of the maximum fire size and/or the fire return interval for one or more fire regime areas.
+These parameters can be passed to override the estimate provided by `scfmRegime`.
+Additional objects needed: `fireRegimePolys`.
+Additional parameters needed: `scfmRegime`'s `targetBurnRate` (1/Fire Return Interval) for a known fire return interval, and `scfmRegime`'s `targetMaxFireSize` for a known maximum fire size.
+Each is a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`.
 
 Technical notes:
-*the parameter most likely to be underestimated is the maximum fire size (maxFireSize). This is not typically very consequential, as simulated fires are unlikely to reach the maximum size unless it is drastically underestimated. The suggested solution is to pass pre-defined maximums to scfmRegime ('targetMaxFireSize'). The parameterized maximum fire size, in hectares, can be verified in `scfmRegimePars$<PolyID>emfs_ha`. 
-**'Sliver polygons', ie polygons that are smaller than the sliver threshold parameter (default 100 km2), are joined with their nearest non-sliver neighbour. This prevents any areas that have too little fire data from being de-facto nonflammable. If a larger parameterization area is supplied ('fireRegimePolysLarge'), slivers are identified and merged only in the larger area. The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying fireRegimePolys is unnecessary when fireRegimePolysLarge is also supplied, as the former is overwritten by the latter.
-
+*the parameter most likely to be underestimated is the maximum fire size (`maxFireSize`).
+This is not typically very consequential, as simulated fires are unlikely to reach the maximum size unless it is drastically underestimated. The suggested solution is to pass pre-defined maximums to `scfmRegime` (`targetMaxFireSize`).
+The parameterized maximum fire size, in hectares, can be verified in `scfmRegimePars$<PolyID>emfs_ha`. 
+**'Sliver polygons', i.e., polygons that are smaller than the sliver threshold parameter (default $100 km^2$), are joined with their nearest non-sliver neighbour.
+This prevents any areas that have too little fire data from being de-facto nonflammable.
+If a larger parameterization area is supplied (`fireRegimePolysLarge`), slivers are identified and merged only in the larger area.
+The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying `fireRegimePolys` is unnecessary when `fireRegimePolysLarge` is also supplied, as the former is overwritten by the latter.
 
 ## References
 
@@ -71,7 +90,7 @@ Technical notes:
 
 ## Usage example
 
-```{r load-SpaDES, eval=TRUE}
+```{r load-SpaDES, eval = FALSE}
 library(Require)
 
 Require(c("data.table", "ggplot2",
@@ -189,4 +208,3 @@ gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
 clearPlot()
 gridExtra::grid.arrange(fps,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
 ```
-
