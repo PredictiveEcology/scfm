@@ -2,8 +2,11 @@ defineModule(sim, list(
   name = "scfmRegime",
   description = "estimates fire regime parameters for BEACONs a la Steve's method",
   keywords = c("fire regime", "BEACONs"),
-  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
+  authors = c(
+    person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
+  ),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
