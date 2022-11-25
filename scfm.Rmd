@@ -189,7 +189,7 @@ outSim <- simInitAndSpades(times = times,
 ```
 
 ```{r module evaluate module output, eval = FALSE}
-## TODO: add these plots as outputs in new scfmSummary module
+## NOTE: these plots are generated as part of the scfmDiagnostics module
 
 dt <- scfmutils::comparePredictions_summaryDT(outSim)
   
@@ -206,5 +206,5 @@ gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
 gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
 
 clearPlot()
-gridExtra::grid.arrange(fps,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
 ```

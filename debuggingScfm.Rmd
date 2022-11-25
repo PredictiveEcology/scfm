@@ -3,8 +3,10 @@ title: "scfm"
 author: "Ian Eddy"
 date: "December 18, 2018"
 output:
-  pdf_document:
+  pdf_document: 
     latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -142,14 +144,11 @@ newObjects <- list("fireRegimePolys" = newLandscape,
                    "scfmRegimePars" = newRegime, 
                    "landscapeAttr" = newLandscapeAttr)
 
-
-
 outSim <- simInitAndSpades(times = times, 
                            params = parameters, 
                            modules = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread"),
                            objects = newObjects, 
                            paths = paths)
-
 ```
 
 ```{r module evaluate module output, eval = FALSE}
@@ -170,6 +169,5 @@ gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
 gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
 
 clearPlot()
-gridExtra::grid.arrange(fps,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
 ```
-
