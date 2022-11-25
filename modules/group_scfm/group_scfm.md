@@ -1,7 +1,7 @@
 ---
 title: "group_scfm Manual"
-subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'group_scfm', path = '..')$version`"
-date: "Last updated: `r Sys.Date()`"
+subtitle: "v.0.0.1"
+date: "Last updated: 2022-11-24"
 output:
   bookdown::html_document2:
     toc: true
@@ -23,26 +23,7 @@ always_allow_html: true
 <!-- the following are text references used in captions for LaTeX compatibility -->
 (ref:group_scfm) *group_scfm*
 
-```{r setup-group_scfm, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
 
-## get citation style
-if (!file.exists("citations/ecology-letters.csl")) {
-  dir.create("citations", showWarnings = FALSE)
-  download.file("https://www.zotero.org/styles/ecology-letters", destfile = "citations/ecology-letters.csl")
-}
-
-if (!require(dplyr)) {
-  install.packages("dplyr")
-  library(dplyr)
-}
-
-dir.create("figures", showWarnings = FALSE)
-
-download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
-              destfile = "figures/markdownBadge.png",
-              mode = 'wb')
-```
 
 [![made-with-Markdown](figures/markdownBadge.png)](http://commonmark.org)
 
@@ -50,7 +31,7 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 #### Authors:
 
-`r paste(as.character(SpaDES.core::moduleMetadata(module = "group_scfm", path = '..')$authors), sep = ', ')`
+Steve Cumming <stevec@sbf.ulaval.ca> [aut], Ian Eddy <ian.eddy@nrcan-rncan.gc.ca> [aut], Alex M Chubaty <achubaty@for-cast.ca> [ctb]
 <!-- ideally separate authors with new lines, '\n' not working -->
 
 ## Module Overview
@@ -68,20 +49,55 @@ Describe input data required by the module and how to obtain it (e.g., directly 
 If `sourceURL` is specified, `downloadData("group_scfm", "..")` may be sufficient.
 Table \@ref(tab:moduleInputs-group_scfm) shows the full list of module inputs.
 
-```{r moduleInputs-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("group_scfm", "..")
-knitr::kable(df_inputs,
-             caption = "List of (ref:group_scfm) input objects and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
+<table class="kable_wrapper table" style="margin-left: auto; margin-right: auto;">
+<caption>(\#tab:moduleInputs-group_scfm)List of (ref:group_scfm) input objects and their description.</caption>
+<tbody>
+  <tr>
+   <td> 
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> x </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+
+  </tr>
+</tbody>
+</table>
+
+ </td>
+  </tr>
+</tbody>
+</table>
 
 Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-group_scfm))
 
-```{r moduleParams-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("group_scfm", "..")
-knitr::kable(df_params, caption = "List of (ref:group_scfm) parameters and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
+<table class="kable_wrapper table" style="margin-left: auto; margin-right: auto;">
+<caption>(\#tab:moduleParams-group_scfm)List of (ref:group_scfm) parameters and their description.</caption>
+<tbody>
+  <tr>
+   <td> 
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> x </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+
+  </tr>
+</tbody>
+</table>
+
+ </td>
+  </tr>
+</tbody>
+</table>
 
 ### Events
 
@@ -99,11 +115,29 @@ Write what is saved.
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-group_scfm)).
 
-```{r moduleOutputs-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("group_scfm", "..")
-knitr::kable(df_outputs, caption = "List of (ref:group_scfm) outputs and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
+<table class="kable_wrapper table" style="margin-left: auto; margin-right: auto;">
+<caption>(\#tab:moduleOutputs-group_scfm)List of (ref:group_scfm) outputs and their description.</caption>
+<tbody>
+  <tr>
+   <td> 
+
+<table>
+ <thead>
+  <tr>
+   <th style="text-align:left;"> x </th>
+  </tr>
+ </thead>
+<tbody>
+  <tr>
+
+  </tr>
+</tbody>
+</table>
+
+ </td>
+  </tr>
+</tbody>
+</table>
 
 ### Links to other modules
 
