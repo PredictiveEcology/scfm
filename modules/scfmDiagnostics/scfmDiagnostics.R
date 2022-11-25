@@ -68,7 +68,7 @@ browser()
                                                     times = times(sim))
 
       ## Some useful plots
-      gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt)
+      gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)

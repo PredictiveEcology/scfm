@@ -63,8 +63,12 @@ Init <- function(sim) {
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pIg <- raster(sim$flammableMap)
-      #for (x in names(sim$scfmDriverPars)) { ## TODO: not all x in landscapeAttr
-      for (x in intersect(names(sim$scfmDriverPars), names(sim$landscapeAttr))) {
+      for (x in names(sim$scfmDriverPars)) {
+        if (!all(names(sim$scfmDriverPars) %in% names(sim$landscapeAttr))) {
+          stop("polygon IDs in 'scfmDriverPars' don't match those in 'landscapeAttr'.\n",
+               "possible cache problem? be sure not to cache the init events of scfm modules.")
+        }
+
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
       pIg[] <- pIg[] * (sim$flammableMap[])
