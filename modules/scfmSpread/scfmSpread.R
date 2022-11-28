@@ -16,7 +16,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
+  reqdPkgs = list("data.table", "fpCompare", "magrittr", "raster", "reproducible",
                   "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA,
@@ -97,7 +97,7 @@ Init <- function(sim) {
   ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
   sim$burnMap <- raster(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
-  sim$burnMap[sim$flammableMap[] == 0] <- NA
+  sim$burnMap[sim$flammableMap[] %==% 0] <- NA
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pSpread <- raster(sim$flammableMap)
@@ -120,8 +120,8 @@ Init <- function(sim) {
                                 "polyID" = numeric(0))
 
   sim$rstCurrentBurn <- raster(sim$fireRegimeRas)
-  sim$rstCurrentBurn[sim$flammableMap[] == 1] <- 0 # reset annual burn
-  sim$rstCurrentBurn[sim$flammableMap[] == 0] <- NA # might have to ignore warnings
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 # reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA # might have to ignore warnings
 
   return(invisible(sim))
 }
@@ -148,8 +148,8 @@ Burnemup <- function(sim) {
                                       asRaster = FALSE)
 
   sim$rstCurrentBurn <- raster(sim$fireRegimeRas) #must wrap with 'raster' to get around file-backed problems
-  sim$rstCurrentBurn[sim$flammableMap[] == 1] <- 0 #reset annual burn
-  sim$rstCurrentBurn[sim$flammableMap[] == 0] <- NA #might have to ignore warnings.
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 #reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA #might have to ignore warnings.
 
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))

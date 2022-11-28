@@ -77,10 +77,10 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bindrows(
-   createsOutput("scfmRegimePars", "list",
-                 desc =  "list of fire regime parameters for each polygon"),
-   createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
-                 desc = "Fire locations. Points outside studyArea are removed")
+    createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
+                  desc = "Fire locations. Points outside studyArea are removed"),
+    createsOutput("scfmRegimePars", "list",
+                  desc =  "list of fire regime parameters for each polygon")
   )
 ))
 
@@ -180,7 +180,7 @@ Init <- function(sim) {
   }
 
   if (!suppliedElsewhere("rasterToMatchLarge", sim)) {
-    sim$rasterToMatchLarge <- rasterToMatch
+    sim$rasterToMatchLarge <- sim$rasterToMatch
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {

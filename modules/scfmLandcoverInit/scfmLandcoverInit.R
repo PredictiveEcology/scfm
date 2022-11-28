@@ -42,13 +42,20 @@ defineModule(sim, list(
   ),
   inputObjects = bindrows(
     expectsInput(
-      "studyArea", "SpatialPolygonsDataFrame",
-      desc = "", ## TODO
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"
+      "fireRegimePolys", "sf",
+      desc = paste(
+        "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
+        "Must have numeric field 'PolyID' or it will be created for individual polygons"
+      ),
+      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
     ),
     expectsInput(
-      "studyAreaLarge", "SpatialPolygonsDataFrame",
-      desc = "optional larger study area used for parameterization but not simulation"
+      "fireRegimePolysLarge", "sf",
+      desc = paste(
+        "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
+        "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
+      ),
+      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
     ),
     expectsInput(
       "flammableMap", "RasterLayer",
@@ -75,20 +82,13 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      "fireRegimePolys", "sf",
-      desc = paste(
-        "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
-        "Must have numeric field 'PolyID' or it will be created for individual polygons"
-      ),
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
+      "studyArea", "SpatialPolygonsDataFrame",
+      desc = "", ## TODO
+      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"
     ),
     expectsInput(
-      "fireRegimePolysLarge", "sf",
-      desc = paste(
-        "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
-        "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
-      ),
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
+      "studyAreaLarge", "SpatialPolygonsDataFrame",
+      desc = "optional larger study area used for parameterization but not simulation"
     )
   ),
   outputObjects = bindrows(
@@ -264,7 +264,7 @@ Init <- function(sim) {
     )
   }
 
-  if (hasSAL & !suppliedElsewhere(sim$rasterToMatchLarge, sim)) {
+  if (hasSAL & !suppliedElsewhere("rasterToMatchLarge", sim)) {
     message(paste(
       "rasterToMatch not supplied. generating from LCC2010 using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"

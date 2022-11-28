@@ -59,7 +59,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
     },
     diagnosticPlots = {
       # ! ----- EDIT BELOW ----- ! #
-browser()
+
       dt <- scfmutils::comparePredictions_summaryDT(scfmDriverPars = sim$scfmDriverPars,
                                                     scfmRegimePars = sim$scfmRegimePars,
                                                     landscapeAttr = sim$landscapeAttr,
