@@ -164,6 +164,18 @@ Init <- function(sim) {
     sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
   }
 
+  ## ensure flammability maps are integer ('binary') maps
+  stopifnot(
+    all(unique(sim$flammableMap[]) %in% c(NA_integer_, 0L, 1L)),
+    all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
+  )
+
+  if (!is.integer(sim$flammableMap[]))
+    sim$flammableMap[] <- as.integer(sim$flammableMap[])
+
+  if (!is.integer(sim$flammableMapLarge[]))
+    sim$flammableMapLarge[] <- as.integer(sim$flammableMapLarge[])
+
   message("checking sim$fireRegimePolys for sliver polygons...")
 
   # this only needs to be done on the larger area, if it is provided
@@ -210,6 +222,7 @@ Init <- function(sim) {
       cacheTag = c("scfmLandcoverInit", "fireRegimePolys")
     )
   }
+
   sim$landscapeAttr <- Cache(genFireMapAttr,
     flammableMap = sim$flammableMap,
     fireRegimePolys = sim$fireRegimePolys,
