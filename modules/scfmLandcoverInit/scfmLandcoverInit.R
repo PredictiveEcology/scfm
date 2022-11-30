@@ -293,7 +293,7 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("flammableMapLarge") & hasSAL) {
+  if (!suppliedElsewhere("flammableMapLarge", sim) & hasSAL) {
 
     if (!is.null(sim$flammableMap)) {
       stop("flammableMap was supplied but not flammableMapLarge. Please supply neither or both")
@@ -348,7 +348,7 @@ Init <- function(sim) {
       url = extractURL("fireRegimePolys", sim),
       destinationPath = dPath,
       studyArea = sa,
-      fun = st_read,
+      fun = "st_read",
       useSAcrs = TRUE,
       filename2 = NULL,
       userTags = c(cacheTags, "fireRegimePolys")
