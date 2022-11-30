@@ -77,10 +77,10 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       # MAAB can still be calculated manually if a user desires ## TODO
 
       if ("png" %in% P(sim)$.plots) {
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnstics_FRI.png"), gg_fri)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnstics_FRP.png"), gg_frp)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnstics_IGN.png"), gg_ign)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnstics_MFS.png"), gg_mfs)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRI.png"), gg_fri)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRP.png"), gg_frp)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_IGN.png"), gg_ign)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_MFS.png"), gg_mfs)
       }
 
       if ("screen" %in% P(sim)$.plots) {
