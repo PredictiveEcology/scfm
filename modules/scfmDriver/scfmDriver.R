@@ -18,7 +18,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils (>= 0.0.0.9002)",
+                  "PredictiveEcology/scfmutils (>= 0.0.4)",
                   "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
