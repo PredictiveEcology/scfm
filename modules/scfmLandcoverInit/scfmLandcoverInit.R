@@ -46,16 +46,14 @@ defineModule(sim, list(
       desc = paste(
         "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
         "Must have numeric field 'PolyID' or it will be created for individual polygons"
-      ),
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
+      )
     ),
     expectsInput(
       "fireRegimePolysLarge", "sf",
       desc = paste(
         "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
         "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
-      ),
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"
+      )
     ),
     expectsInput(
       "flammableMap", "RasterLayer",
@@ -344,23 +342,16 @@ Init <- function(sim) {
     }
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
     # cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
-    fireRegimePolys <- prepInputs(
-      url = extractURL("fireRegimePolys", sim),
-      destinationPath = dPath,
-      studyArea = sa,
-      fun = "st_read",
-      useSAcrs = TRUE,
-      filename2 = NULL,
-      userTags = c(cacheTags, "fireRegimePolys")
-    )
-    fireRegimePolys <- st_transform(fireRegimePolys, crs = crs(sim$rasterToMatch))
 
-    # this should preserve ecoregions in row-names -
-    fireRegimePolys$PolyID <- fireRegimePolys$ECOREGION
+    fireRegimePolys <- Cache(prepInputsFireRegimePolys, url = NULL, destinationPath = dPath,
+                             studyArea = sa, type = "ECOREGION") %>%
+      st_transform(., st_crs(sa))
+
+
     if (hasSAL) {
       sim$fireRegimePolysLarge <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,
-        studyArea = sim$studyArea
+                                         studyArea = sim$studyArea
       )
     } else {
       sim$fireRegimePolys <- fireRegimePolys

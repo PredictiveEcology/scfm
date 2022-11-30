@@ -135,7 +135,8 @@ parameters <- list(
 modules <- list(
   "scfmLandcoverInit", "scfmRegime", "scfmDriver",
   "scfmIgnition", "scfmEscape",
-  "scfmSpread", "scfmSummary"
+  "scfmSpread", "scfmDiagnostics"
+  , "ageModule"
 )
 ## NOTE: replace modules with "group_scfm" to include ageModule;
 ##       ageModule isn't necessary to run and download of `ageMap` takes time
