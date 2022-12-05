@@ -87,13 +87,13 @@ Init <- function(sim) {
 
 ### template for your event1
 Ignite <- function(sim) {
+
   ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
   ignitions <- lapply(unique(names(sim$scfmDriverPars)),
                       FUN = calcIgnitions,
                       landscapeAttr = sim$landscapeAttr,
                       pIg = sim$pIg)
-
   ## resample generates a random permutation of the elements of ignitions
   ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
@@ -102,11 +102,12 @@ Ignite <- function(sim) {
 }
 
 calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
+
   cells <- landscapeAttr[[polygonType]]$cellsByZone
   if (is(pIg, "Raster")) {
-    cells <- cells[which(runif(length(cells)) < pIg[cells])]
+    cells <- cells[which(runif(length(cells)) <= pIg[cells])]
   } else {
-    cells <- cells[which(runif(length(cells)) < pIg)]
+    cells <- cells[which(runif(length(cells)) <= pIg)]
   }
   return(cells)
 }

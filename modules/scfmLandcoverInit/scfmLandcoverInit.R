@@ -100,7 +100,7 @@ defineModule(sim, list(
     createsOutput(
       "landscapeAttrLarge", "list",
       desc = paste(
-        "if SAL is passed, this object will supersede landscapeAttr in scfmRegmie, so that",
+        "if SAL is passed, this object will supersede landscapeAttr in scfmRegime, so that",
         "estimates of mean fire size, max fire size, ignition prob, and escape prob",
         "are based on fireRegimePolysLarge. Allows for calibration over larger area."
       )
