@@ -172,6 +172,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
+
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
@@ -200,7 +201,7 @@ Init <- function(sim) {
   if (!suppliedElsewhere("fireRegimePolysLarge", sim)) {
     message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
-    sim$fireRegimePolys <- Cache(
+    sim$fireRegimePolysLarge <- Cache(
       scfmutils::prepInputsFireRegimePolys,
       url = extractURL("fireRegimePolys", sim),
       destinationPath = dPath,
