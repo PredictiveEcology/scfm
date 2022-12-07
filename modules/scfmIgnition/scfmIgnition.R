@@ -97,7 +97,8 @@ Ignite <- function(sim) {
 
   ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(unique(names(sim$scfmDriverPars)),
+
+  ignitions <- lapply(names(sim$scfmDriverPars),
                       FUN = calcIgnitions,
                       landscapeAttr = sim$landscapeAttr,
                       pIg = sim$pIg)

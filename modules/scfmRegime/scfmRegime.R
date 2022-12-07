@@ -159,7 +159,7 @@ Init <- function(sim) {
                            targetMaxFireSize = P(sim)$targetMaxFireSize)
 
   names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
-  # keep only the fire regime polygons that are in study area
+  ## only keep the attributes that are in study area
   scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
 
   nullIdx <- sapply(scfmRegimePars, is.null)
@@ -167,6 +167,10 @@ Init <- function(sim) {
     scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
   }
   sim$scfmRegimePars <- scfmRegimePars
+
+  stopifnot(
+    identical(unique(names(sim$scfmRegimePars)), names(sim$scfmRegimePars))
+  )
 
   return(invisible(sim))
 }

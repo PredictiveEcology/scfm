@@ -159,6 +159,11 @@ Init <- function(sim) {
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
+
+  stopifnot(
+    identical(unique(names(sim$scfmDriverPars)), names(sim$scfmDriverPars))
+  )
+
   return(invisible(sim))
 }
 
