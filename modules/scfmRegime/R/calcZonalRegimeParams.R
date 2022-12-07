@@ -100,7 +100,7 @@ calcZonalRegimePars <- function(polygonID, firePolys,
       pEscape <- newFireValues$pEscape
       xBar <- newFireValues$xBar
     } else {
-      warning("ratio cannot be < 1. Please make sure this does not happen")
+      warning("ratio cannot be < 1. Please make sure this does not happen.")
     }
   }
 

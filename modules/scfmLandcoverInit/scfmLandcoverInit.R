@@ -292,7 +292,6 @@ Init <- function(sim) {
   }
 
   if (!suppliedElsewhere("flammableMapLarge", sim) & hasSAL) {
-
     if (!is.null(sim$flammableMap)) {
       stop("flammableMap was supplied but not flammableMapLarge. Please supply neither or both")
     }
