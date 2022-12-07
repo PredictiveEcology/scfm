@@ -70,9 +70,19 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     burn = {
       if (!is.null(sim$spreadState)) {
-        ## we really want to test if the data table has any rows
-        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
+
+        if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
           sim <- Burnemup(sim)
+          #fire sizes recorded in  sim$burnSummary
+        } else {
+          #make sure to record fires that did not escape/spread
+          tempDT <- sim$spreadState[, .(.N), by = "initialPixels"]
+          tempDT$year <- time(sim)
+          tempDT[, areaBurned := 0] #these fires failed to escape. Alternatively, this should be
+          tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
+          setnames(tempDT, c("initialPixels"), c("igLoc"))
+          sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+        }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
