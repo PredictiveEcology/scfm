@@ -186,7 +186,7 @@ Burnemup <- function(sim) {
     message("you should run scfmIgnition with scfmLandcoverInit")
     flammableMap <- raster(sim$rasterToMatch)
     vals <- sample(x = 0:1, size = ncell(sim$rasterToMatch), replace = TRUE)
-    sim$flammmableMap <- setValues(flammableMap, vals)
+    sim$flammableMap <- setValues(flammableMap, vals)
   }
 
   return(sim)
