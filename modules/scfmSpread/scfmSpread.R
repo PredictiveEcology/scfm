@@ -70,9 +70,19 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     burn = {
       if (!is.null(sim$spreadState)) {
-        ## we really want to test if the data table has any rows
-        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
+
+        if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
           sim <- Burnemup(sim)
+          #fire sizes recorded in  sim$burnSummary
+        } else {
+          #make sure to record fires that did not escape/spread
+          tempDT <- sim$spreadState[, .(.N), by = "initialPixels"]
+          tempDT$year <- time(sim)
+          tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize] #these fires failed to escape.
+          tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
+          setnames(tempDT, c("initialPixels"), c("igLoc"))
+          sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+        }
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
@@ -175,7 +185,7 @@ Burnemup <- function(sim) {
     message("you should run scfmIgnition with scfmLandcoverInit")
     flammableMap <- raster(sim$rasterToMatch)
     vals <- sample(x = 0:1, size = ncell(sim$rasterToMatch), replace = TRUE)
-    sim$flammmableMap <- setValues(flammableMap, vals)
+    sim$flammableMap <- setValues(flammableMap, vals)
   }
 
   return(sim)
