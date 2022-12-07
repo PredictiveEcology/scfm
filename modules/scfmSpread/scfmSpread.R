@@ -147,18 +147,17 @@ Burnemup <- function(sim) {
                                       # maxSize = maxSizes,  #not sure this works
                                       asRaster = FALSE)
 
-  sim$rstCurrentBurn <- raster(sim$fireRegimeRas) #must wrap with 'raster' to get around file-backed problems
-  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 #reset annual burn
-  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA #might have to ignore warnings.
+  sim$rstCurrentBurn <- raster(sim$fireRegimeRas) ## use fireRegimeRas as template
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 ## reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA ## might have to ignore warnings.
 
-  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
+  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 ## update annual burn
   sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
-  sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 #update cumulative burn
-  # sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
+  sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 ## update cumulative burn
 
-  #get fire year, pixels burned, area burned, poly ID of all burned pixels
-  tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
+  ## get fire year, pixels burned, area burned, poly ID of all burned pixels
+  tempDT <- sim$burnDT[, .(.N), by = "initialPixels"] ## TODO: burnSummary by rasterToMatchReporting
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
   tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
