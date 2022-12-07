@@ -63,9 +63,16 @@ Init <- function(sim) {
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pIg <- raster(sim$flammableMap)
+
+      if (!all(names(sim$scfmDriverPars) %in% names(sim$landscapeAttr))) {
+        stop("polygon IDs in 'scfmDriverPars' don't match those in 'landscapeAttr'.\n",
+             "possible cache problem? be sure not to cache the init events of scfm modules.")
+      }
+
       for (x in names(sim$scfmDriverPars)) {
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
+
       pIg[] <- pIg[] * (sim$flammableMap[])
     } else {
       pIg <- sim$scfmDriverPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
@@ -98,10 +105,11 @@ Ignite <- function(sim) {
 
 calcIgnitions <- function(polygonType, landscapeAttr, pIg){
   cells <- landscapeAttr[[polygonType]]$cellsByZone
+
   if (is(pIg, "Raster")) {
-    cells <- cells[which(runif(length(cells)) < pIg[cells])]
+    cells <- cells[which(runif(length(cells)) <= pIg[cells])]
   } else {
-    cells <- cells[which(runif(length(cells)) < pIg)]
+    cells <- cells[which(runif(length(cells)) <= pIg)]
   }
   return(cells)
 }
