@@ -78,7 +78,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
           #make sure to record fires that did not escape/spread
           tempDT <- sim$spreadState[, .(.N), by = "initialPixels"]
           tempDT$year <- time(sim)
-          tempDT[, areaBurned := 0] #these fires failed to escape. Alternatively, this should be
+          tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize] #these fires failed to escape.
           tempDT$polyID <- sim$fireRegimeRas[tempDT$initialPixels]
           setnames(tempDT, c("initialPixels"), c("igLoc"))
           sim$burnSummary <- rbind(sim$burnSummary, tempDT)
