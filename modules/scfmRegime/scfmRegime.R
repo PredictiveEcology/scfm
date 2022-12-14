@@ -146,6 +146,7 @@ Init <- function(sim) {
     tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
   }
   sim$fireRegimePoints <- tmp
+
   ## this function estimates the ignition probability and escape probability based on NFDB
   scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
                            FUN = calcZonalRegimePars,
