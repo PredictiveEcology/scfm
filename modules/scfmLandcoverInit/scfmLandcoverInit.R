@@ -31,11 +31,11 @@ defineModule(sim, list(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
                     paste("fire regime polygons with area less than this number will be merged",
-                          "with their closest non-sliver neighbour using sf::st_nearest_feature.")),
+                          "with their closest non-sliver neighbour using `sf::st_nearest_feature`.")),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
-                    "Used by Plots function, which can be optionally used here"),
+                    "Used by `Plots` function, which can be optionally used here."),
     defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, "Initial time for saving"),
     defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, "Interval between save events"),
     defineParameter(".useCache", "logical", TRUE, NA, NA, "Use cache")
@@ -51,8 +51,8 @@ defineModule(sim, list(
     expectsInput(
       "fireRegimePolysLarge", "sf",
       desc = paste(
-        "if StudyAreaLarge is supplied, the corresponding fire regime areas. Must have",
-        "numeric field 'PolyID' if supplied, and uses same defaults as fireRegimePolys"
+        "if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
+        "Must have integer field `PolyID` if supplied, and uses same defaults as `fireRegimePolys`"
       )
     ),
     expectsInput(
@@ -62,10 +62,10 @@ defineModule(sim, list(
     expectsInput(
       "flammableMapLarge", "RasterLayer",
       desc = paste(
-        "binary flammability map - defaults to using LandR::prepInputsLCC.",
-        "This is only necessary if passing studyAreaLarge OR running scfmDriver.",
-        "It should match the extent of studyAreaLarge, and if running scfmDriver,",
-        "it should extend by >= scfmDriver's P(sim)$buffDist."
+        "binary flammability map - defaults to using `LandR::prepInputsLCC`.",
+        "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
+        "It should match the extent of studyAreaLarge, and if running `scfmDriver`,",
+        "it should extend by >= scfmDriver's `P(sim)$buffDist`."
       )
     ),
     expectsInput(
@@ -75,14 +75,13 @@ defineModule(sim, list(
     expectsInput(
       "rasterToMatchLarge", "RasterLayer",
       desc = paste(
-        "Template raster for raster GIS operations. Only necessary if SAL is passed.",
+        "Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed.",
         "Must be supplied by user."
       )
     ),
     expectsInput(
       "studyArea", "SpatialPolygonsDataFrame",
-      desc = "", ## TODO
-      sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"
+      desc = "Polygon to use as the simulation study area (typically buffered)."
     ),
     expectsInput(
       "studyAreaLarge", "SpatialPolygonsDataFrame",
@@ -345,7 +344,6 @@ Init <- function(sim) {
     fireRegimePolys <- Cache(prepInputsFireRegimePolys, url = NULL, destinationPath = dPath,
                              studyArea = sa, type = "ECOREGION") %>%
       st_transform(., st_crs(sa))
-
 
     if (hasSAL) {
       sim$fireRegimePolysLarge <- fireRegimePolys
