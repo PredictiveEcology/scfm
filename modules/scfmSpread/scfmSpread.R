@@ -88,7 +88,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
           tempDT <- sim$spreadState[pixels %in% pixKeep, .(.N), by = "initialPixels"]
           tempDT$year <- time(sim)
           tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize] #these fires failed to escape.
-          tempDT$PolyID <- sim$fireRegimeRas[tempDT$initialPixels]
+          tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
           setnames(tempDT, c("initialPixels"), c("igLoc"))
           sim$burnSummary <- rbind(sim$burnSummary, tempDT)
         }
@@ -181,7 +181,7 @@ Burnemup <- function(sim) {
   tempDT <- sim$burnDT[pixels %in% pixKeep, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
-  tempDT$PolyID <- sim$fireRegimeRas[tempDT$initialPixels]
+  tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
   return(invisible(sim))
