@@ -80,11 +80,12 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       if (!is.null(sim$spreadState)) {
 
         if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
-          sim <- Burnemup(sim)
-          #fire sizes recorded in  sim$burnSummary
+          sim <- Burnemup(sim) ## fire sizes recorded in  sim$burnSummary
         } else {
-          #make sure to record fires that did not escape/spread
-          tempDT <- sim$spreadState[, .(.N), by = "initialPixels"]
+          ## make sure to record fires that did not escape/spread
+          tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
+          pixKeep <- which(!is.na(tmpRas[]))
+          tempDT <- sim$spreadState[pixels %in% pixKeep, .(.N), by = "initialPixels"]
           tempDT$year <- time(sim)
           tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize] #these fires failed to escape.
           tempDT$PolyID <- sim$fireRegimeRas[tempDT$initialPixels]
@@ -177,8 +178,7 @@ Burnemup <- function(sim) {
   ## get fire year, pixels burned, area burned, poly ID of all burned pixels in studyAreaReporting
   tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
   pixKeep <- which(!is.na(tmpRas[]))
-  tempDT <- sim$burnDT[pixels %in% pixKeep, ]
-  tempDT <- tempDT[, .(.N), by = "initialPixels"]
+  tempDT <- sim$burnDT[pixels %in% pixKeep, .(.N), by = "initialPixels"]
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
   tempDT$PolyID <- sim$fireRegimeRas[tempDT$initialPixels]
