@@ -14,7 +14,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.1)",
+                  "PredictiveEcology/scfmutils (>= 0.0.4.9000)",
                   "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9001)"),
   parameters = bindrows(
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
@@ -77,10 +77,10 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       # MAAB can still be calculated manually if a user desires ## TODO
 
       if ("png" %in% P(sim)$.plots) {
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRI.png"), gg_fri)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRP.png"), gg_frp)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_IGN.png"), gg_ign)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_MFS.png"), gg_mfs)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRI.png"), gg_fri, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRP.png"), gg_frp, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_IGN.png"), gg_ign, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_MFS.png"), gg_mfs, height = 8, width = 8)
       }
 
       if ("screen" %in% P(sim)$.plots) {
