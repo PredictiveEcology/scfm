@@ -126,8 +126,7 @@ Init <- function(sim) {
 
   #extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
-  if (length(epoch) != 2 ||
-      !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
+  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
     stop("illegal fireEpoch: ", epoch)
 
   quotes <- paste0("tmp$", paste(eval(P(sim)$fireYearColumnName)))
