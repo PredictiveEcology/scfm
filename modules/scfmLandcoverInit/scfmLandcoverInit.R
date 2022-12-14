@@ -197,17 +197,7 @@ Init <- function(sim) {
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
     options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
 
-    sim$fireRegimePolys <- checkForIssues(
-      fireRegimePolys = sim$fireRegimePolys,
-      studyArea = sim$studyArea,
-      rasterToMatch = sim$rasterToMatch,
-      flammableMap = sim$flammableMap,
-      sliverThresh = P(sim)$sliverThreshold,
-      cacheTag = c("scfmLandcoverInit", "fireRegimePolys")
-    )
-
-    # remnant slivers will be whole in the larger object
-    if (is(sim$fireRegimePolys$geometry, "sfc_GEOMETRY")) {
+    if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
@@ -218,16 +208,16 @@ Init <- function(sim) {
       neighbours = P(sim)$neighbours,
       userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaLarge")
     )
-  } else {
-    sim$fireRegimePolys <- checkForIssues(
-      fireRegimePolys = sim$fireRegimePolys,
-      studyArea = sim$studyArea,
-      rasterToMatch = sim$rasterToMatch,
-      flammableMap = sim$flammableMap,
-      sliverThresh = P(sim)$sliverThreshold,
-      cacheTag = c("scfmLandcoverInit", "fireRegimePolys")
-    )
   }
+
+  sim$fireRegimePolys <- checkForIssues(
+    fireRegimePolys = sim$fireRegimePolys,
+    studyArea = sim$studyArea,
+    rasterToMatch = sim$rasterToMatch,
+    flammableMap = sim$flammableMap,
+    sliverThresh = P(sim)$sliverThreshold,
+    cacheTag = c("scfmLandcoverInit", "fireRegimePolys")
+  )
 
   sim$landscapeAttr <- Cache(genFireMapAttr,
     flammableMap = sim$flammableMap,
