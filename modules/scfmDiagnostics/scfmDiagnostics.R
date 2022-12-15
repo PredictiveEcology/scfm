@@ -40,7 +40,9 @@ defineModule(sim, list(
     expectsInput("scfmDriverPars", "list",
                  "burn parameters for each polygon in `fireRegimePolys`", sourceURL = NA),
     expectsInput("scfmRegimePars", "list",
-                 "list of fire regime parameters for each polygon.", sourceURL = NA)
+                 "list of fire regime parameters for each polygon.", sourceURL = NA),
+    expectsInput("studyAreaReporting", "sf",
+                 "multipolygon (typically smaller/unbuffered than studyArea) to use for plotting/reporting.")
   ),
   outputObjects = bindrows(
     createsOutput("scfmSummaryDT", "data.table",
