@@ -14,10 +14,9 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.4.9000)",
+                  "PredictiveEcology/scfmutils (>= 0.0.5.9003)",
                   "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9001)"),
   parameters = bindrows(
-    #defineParameter("paramName", "paramClass", value, min, max, "parameter description"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here"),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
@@ -60,12 +59,32 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
     diagnosticPlots = {
       # ! ----- EDIT BELOW ----- ! #
 
-      dt <- scfmutils::comparePredictions_summaryDT(scfmDriverPars = sim$scfmDriverPars,
-                                                    scfmRegimePars = sim$scfmRegimePars,
-                                                    landscapeAttr = sim$landscapeAttr,
-                                                    fireRegimePoints = sim$fireRegimePoints,
-                                                    burnSummary = sim$burnSummary,
-                                                    times = times(sim))
+      fireRegimePointsReporting <- sf::st_intersection(sim$fireRegimePoints, sim$studyAreaReporting)
+
+      fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sim$studyAreaReporting)
+
+      landscapeAttrReporting <- genFireMapAttr(
+        flammableMap = raster::mask(sim$flammableMap, sim$studyAreaReporting),
+        fireRegimePolys = fireRegimePolysReporting,
+        neighbours = 8
+      )
+
+      polyNames <- as.character(unique(fireRegimePolysReporting$PolyID))
+
+      stopifnot(all(polyNames %in% names(landscapeAttrReporting)))
+
+      scfmDriverParsReporting <- subset(sim$scfmDriverPars, names(sim$scfmDriverPars) %in% polyNames)
+
+      scfmRegimeParsReporting <- subset(sim$scfmRegimePars, names(sim$scfmRegimePars) %in% polyNames)
+
+      dt <- scfmutils::comparePredictions_summaryDT(
+        scfmDriverPars = scfmDriverParsReporting,
+        scfmRegimePars = scfmRegimeParsReporting,
+        landscapeAttr = landscapeAttrReporting,
+        fireRegimePoints = fireRegimePointsReporting,
+        burnSummary = sim$burnSummary, ## already summarized for studyAreaReporting
+        times = times(sim)
+      )
 
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
