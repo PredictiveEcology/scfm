@@ -35,6 +35,8 @@ defineModule(sim, list(
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons."),
                  sourceURL = NA),
+    expectsInput("flammableMap", "RasterLayer",
+                 desc = "binary flammability map.", sourceURL = NA),
     expectsInput("landscapeAttr", "list",
                  "contains landscape attributes for each polygon.", sourceURL = NA),
     expectsInput("scfmDriverPars", "list",
