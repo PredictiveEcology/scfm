@@ -145,7 +145,7 @@ Init <- function(sim) {
                               cloudFolderID = sim$cloudFolderID,
                               useCache = P(sim)$.useCache,
                               useCloud = P(sim)$.useCloud,
-                              omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
+                              omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               regime = sim$scfmRegimePars,
                               polygonType = names(sim$scfmRegimePars),
                               MoreArgs = list(targetN = P(sim)$targetN,
