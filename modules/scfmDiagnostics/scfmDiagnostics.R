@@ -78,7 +78,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
     diagnosticPlotsSingle = {
       # ! ----- EDIT BELOW ----- ! #
 
-      dt <- diagnosticPlots(sim)
+      dt <- diagnosticPlotsDT(sim)
 
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
