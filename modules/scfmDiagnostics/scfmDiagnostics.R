@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.5.9003)",
+                  "PredictiveEcology/scfmutils (>= 0.0.7)",
                   "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9001)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
@@ -113,7 +113,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       summaryDT <- rbindlist(lapply(allReps, function(r) {
         fsim <- file.path(outputPath(sim), sprintf("rep%02d", r), sprintf("mySimOut_%04d.qs", P(sim)$simTimes[2]))
-        tmp <- loadSimList(fsim)
+        tmp <- suppressMessages(loadSimList(fsim))
         if (r == allReps[1]) {
           gg_frp <<- scfmutils::plot_fireRegimePolys(tmp$fireRegimePolys)
         }

@@ -1,5 +1,3 @@
-# Everything in this file gets sourced during simInit, and all functions and objects
-# are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmSpread",
   description = "model fire spread",
@@ -10,7 +8,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = numeric_version("1.1.0.9002"),
+  version = numeric_version("2.0.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
@@ -69,6 +67,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       sim <- Init(sim)
+
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
 
@@ -83,11 +82,9 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
           sim <- Burnemup(sim) ## fire sizes recorded in  sim$burnSummary
         } else {
           ## make sure to record fires that did not escape/spread
-          tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
-          pixKeep <- which(!is.na(tmpRas[]))
-          tempDT <- sim$spreadState[pixels %in% pixKeep, .(.N), by = "initialPixels"]
+          tempDT <- countBurnedPixelsInSAR(sim$spreadState)
           tempDT$year <- time(sim)
-          tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize] #these fires failed to escape.
+          tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize]
           tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
           setnames(tempDT, c("initialPixels"), c("igLoc"))
           sim$burnSummary <- rbind(sim$burnSummary, tempDT)
@@ -113,6 +110,9 @@ Init <- function(sim) {
   compareRaster(sim$rasterToMatch, sim$fireRegimeRas, sim$flammableMap,
                 extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
 
+  tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
+  mod$pixInSAR <- which(!is.na(tmpRas[]))
+
   ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
   sim$burnMap <- raster(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
@@ -132,17 +132,35 @@ Init <- function(sim) {
   }
   sim$pSpread <- pSpread
   #Create empty data table to store each year's burn data
-  sim$burnSummary <- data.table("igLoc" = numeric(0),
-                                "N" = numeric(0),
-                                "year" = numeric(0),
-                                "areaBurned" = numeric(0),
-                                "PolyID" = numeric(0))
+  sim$burnSummary <- data.table(igLoc = integer(0),
+                                grp = integer(0),
+                                N = numeric(0),
+                                year = numeric(0),
+                                areaBurned = numeric(0),
+                                PolyID = integer(0))
 
   sim$rstCurrentBurn <- raster(sim$fireRegimeRas)
   sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 # reset annual burn
   sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA # might have to ignore warnings
 
   return(invisible(sim))
+}
+
+countBurnedPixelsInSAR <- function(burnDT) {
+  tempDT <- copy(burnDT)
+
+  ## grp 1: pixels from fires ignited in SAR & spread in SAR
+  ## grp 2: pixels from fires ignited in SAR & spread outside SAR
+  ## grp 3: pixels from fires ignited outside SAR & spread in SAR
+  ## grp 4: pixels from fires ignited outside SAR & spread outside SAR
+
+  tempDT[(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 1L]
+  tempDT[(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 2L]
+  tempDT[!(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 3L]
+  tempDT[!(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 4L]
+  tempDT <- tempDT[, .N, by = c("initialPixels", "grp")]
+
+  return(tempDT)
 }
 
 ## name 'Burnemup' is a homage to Walters and Hillborne
@@ -176,9 +194,7 @@ Burnemup <- function(sim) {
   sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 ## update cumulative burn
 
   ## get fire year, pixels burned, area burned, poly ID of all burned pixels in studyAreaReporting
-  tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
-  pixKeep <- which(!is.na(tmpRas[]))
-  tempDT <- sim$burnDT[pixels %in% pixKeep, .(.N), by = "initialPixels"]
+  tempDT <- countBurnedPixelsInSAR(sim$burnDT)
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
   tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
