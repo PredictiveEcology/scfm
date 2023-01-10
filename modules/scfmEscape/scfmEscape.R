@@ -22,7 +22,7 @@ defineModule(sim, list(
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
+    defineParameter("neighbours", "integer", 8L, 4L, 8L, "Number of cell immediate neighbours (one of `4L` or `8L`)."),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("startTime", "numeric", start(sim, "year"), NA, NA, "simulation time of first escape"),
