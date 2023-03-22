@@ -22,8 +22,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(
-    "fasterize", "purrr", "raster", "sf",
-    "PredictiveEcology/LandR@development",
+    "fasterize", "purrr", "terra", "sf",
+    "PredictiveEcology/LandR@terra-migration",
     "PredictiveEcology/reproducible@development",
     "PredictiveEcology/scfmutils (>= 0.0.0.9005)"
   ),
@@ -56,11 +56,11 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      "flammableMap", "RasterLayer",
+      "flammableMap", "SpatRaster",
       desc = "binary flammability map - defaults to using LandR::prepInputsLCC"
     ),
     expectsInput(
-      "flammableMapLarge", "RasterLayer",
+      "flammableMapLarge", "SpatRaster",
       desc = paste(
         "binary flammability map - defaults to using `LandR::prepInputsLCC`.",
         "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
@@ -69,11 +69,11 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      "rasterToMatch", "RasterLayer",
+      "rasterToMatch", "SpatRaster",
       desc = "template raster for raster GIS operations. Must be supplied by user"
     ),
     expectsInput(
-      "rasterToMatchLarge", "RasterLayer",
+      "rasterToMatchLarge", "SpatRaster",
       desc = paste(
         "Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed.",
         "Must be supplied by user."
@@ -119,7 +119,7 @@ defineModule(sim, list(
       )
     ),
     createsOutput(
-      "fireRegimeRas", "RasterLayer",
+      "fireRegimeRas", "SpatRaster",
       desc = "Rasterized version of fireRegimePolys with values representing polygon ID"
     )
   )
@@ -167,12 +167,15 @@ Init <- function(sim) {
     all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
   )
 
-  if (!is.integer(sim$flammableMap[]))
+  if (!is.integer(sim$flammableMap[])){
     sim$flammableMap[] <- as.integer(sim$flammableMap[])
+  }
 
-  if (!is.integer(sim$flammableMapLarge[]))
-    sim$flammableMapLarge[] <- as.integer(sim$flammableMapLarge[])
-
+  if (!is.integer(sim$flammableMapLarge[])){
+    sim$flammableMapLarge <- setValues(sim$flammableMapLarge,
+                                       as.integer(values(sim$flammableMapLarge,
+                                                         mat = FALSE)))
+  }
   message("checking sim$fireRegimePolys for sliver polygons...")
 
   # this only needs to be done on the larger area, if it is provided
@@ -192,16 +195,19 @@ Init <- function(sim) {
     )
 
     # now that slivers are removed, remake frp from the larger object
-    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
-    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
-    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
+    sim$fireRegimePolys <- postProcessTerra(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
+    #for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
     if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
+      #this object may have empty geometries, which can occur when SAL and SA are both subsets of the same file
+      #the empty geometries will cause an error
+      sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0,]
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
     # This makes sim$landscapeAttr & sim$cellsByZone
+    sim$fireRegimePolysLarge <- sim$fireRegimePolysLarge[order(sim$fireRegimePolysLarge$PolyID),]
+
     sim$landscapeAttrLarge <- Cache(genFireMapAttr,
       flammableMap = sim$flammableMapLarge,
       fireRegimePolys = sim$fireRegimePolysLarge,
@@ -218,6 +224,7 @@ Init <- function(sim) {
     sliverThresh = P(sim)$sliverThreshold,
     cacheTag = c("scfmLandcoverInit", "fireRegimePolys")
   )
+  sim$fireRegimePolys <- sim$fireRegimePolys[order(sim$fireRegimePolys$PolyID),]
 
   sim$landscapeAttr <- Cache(genFireMapAttr,
     flammableMap = sim$flammableMap,
@@ -229,17 +236,14 @@ Init <- function(sim) {
   ##############
   # ONLY FOR SA
 
-  # fireRegimeRas is handy for post-simulation analyses
-  fireRegimeRas <- fasterize::fasterize(sim$fireRegimePolys, sim$rasterToMatch, field = "PolyID")
-
   # doing this prevents fireRegimeRas from inheriting colormaps
-  sim$fireRegimeRas <- raster(fireRegimeRas)
-  sim$fireRegimeRas <- setValues(sim$fireRegimeRas, getValues(fireRegimeRas))
+  sim$fireRegimeRas <- rasterize(sim$fireRegimePolys, sim$rasterToMatch, fun = "max", field = "PolyID")
 
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
+
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
 
@@ -301,7 +305,10 @@ Init <- function(sim) {
       rasterToMatch = sim$rasterToMatchLarge,
       userTags = c("prepInputsLCC", "studyAreaLarge")
     )
-    vegMap[] <- asInteger(vegMap[])
+    if (!is.integer(vegMap[])) {
+      vegMap <- setValues(vegMap, as.integer(values(vegMap)))
+    }
+
     sim$flammableMapLarge <- defineFlammable(vegMap,
       mask = sim$rasterToMatchLarge,
       nonFlammClasses = c(13L, 16L:19L)
