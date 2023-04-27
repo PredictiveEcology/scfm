@@ -221,6 +221,7 @@ Init <- function(sim) {
       studyArea = sim$fireRegimePolysLarge,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
+    sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysLarge)
   }
 
   return(invisible(sim))

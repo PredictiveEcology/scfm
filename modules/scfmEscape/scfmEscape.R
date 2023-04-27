@@ -61,7 +61,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     },
     plot = {
       if (time(sim) > start(sim)) {
-        escapeRaster <- raster(sim$rasterToMatch)
+        escapeRaster <- rast(sim$rasterToMatch)
         values(escapeRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
         values(escapeRaster)[sim$ignitionLoci] <- 1          # mark the initials specially
         Plot(escapeRaster, title = paste0("Annual fire escapes", time(sim)))
@@ -85,11 +85,11 @@ Init <- function(sim) {
 
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
-      p0 <- raster(sim$flammableMap)
+      p0 <- rast(sim$flammableMap)
       for (x in names(sim$scfmDriverPars)) {
-        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
+        values(p0)[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
       }
-      p0[] <- p0[] * (sim$flammableMap[])
+      p0 <- p0 * sim$flammableMap
     } else {
       p0 <- sim$scfmDriverPars[[1]]$p0
     }

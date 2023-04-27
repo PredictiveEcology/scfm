@@ -107,23 +107,23 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  compareRaster(sim$rasterToMatch, sim$fireRegimeRas, sim$flammableMap,
-                extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
+  compareGeom(sim$rasterToMatch, sim$fireRegimeRas)
+  compareGeom(sim$fireRegimeRas, sim$flammableMap)
 
   tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
-  mod$pixInSAR <- which(!is.na(tmpRas[]))
+  mod$pixInSAR <- which(!is.na(as.vector(tmpRas)))
 
   ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
-  sim$burnMap <- raster(sim$fireRegimeRas)
+  sim$burnMap <- rast(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
   sim$burnMap[sim$flammableMap[] %==% 0] <- NA
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
-      pSpread <- raster(sim$flammableMap)
+      pSpread <- rast(sim$flammableMap)
       for (x in names(sim$scfmDriverPars)) {
         pSpread[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pSpread
       }
-      pSpread[] <- pSpread[] * (sim$flammableMap[])
+      pSpread <- pSpread * sim$flammableMap
     } else {
       pSpread <- sim$flammableMap * sim$scfmDriverPars[[1]]$pSpread
     }
@@ -172,9 +172,6 @@ Burnemup <- function(sim) {
   threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
   on.exit({setDTthreads(threadsDT)}, add = TRUE)
-
-  compareRaster(sim$rasterToMatch, sim$fireRegimeRas, sim$flammableMap,
-                extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
 
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,

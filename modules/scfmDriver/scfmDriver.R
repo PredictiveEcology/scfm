@@ -9,7 +9,7 @@ defineModule(sim, list(
   ),
   childModules = character(),
   version = numeric_version("0.1.1"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
@@ -54,12 +54,12 @@ defineModule(sim, list(
     expectsInput("fireRegimePolys", "sf",
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
-    expectsInput("flammableMapLarge", "RasterLayer",
+    expectsInput("flammableMapLarge", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
                        "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
     expectsInput("landscapeAttr", "list",
                  "contains landscape attributes for each polygon."),
-    expectsInput("rasterToMatch", "RasterLayer",
+    expectsInput("rasterToMatch", "SpatRaster",
                  "template raster for raster GIS operations. Must be supplied by user."),
     expectsInput("scfmRegimePars", "list",
                  "list of fire regime parameters for each polygon.")
@@ -88,12 +88,13 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
-    sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
+    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
   }
 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
+
   seeIfItHasRun <- CacheDigest(
     list(
       Map2,
@@ -135,11 +136,20 @@ Init <- function(sim) {
     cl <- NULL
   }
 
-  if (!compareRaster(sim$flammableMap, sim$flammableMapLarge, extent = FALSE, rowcol = FALSE, res = TRUE)) {
+  if (!compareGeom(sim$flammableMap, sim$flammableMapLarge, ext = FALSE, rowcol = FALSE, res = TRUE)) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
   message("Running calibrateFireRegimePolys()...")
+
+  if (inMemory(sim$flammableMapLarge)){
+   #write to disk
+    flammableMapLarge <- tempfile(fileext = ".tif")
+    writeRaster(sim$flammableMapLarge, filename = flammableMapLarge)
+  } else {
+    flammableMapLarge <- sources(sim$flammableMapLarge)
+  }
+
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
@@ -157,7 +167,7 @@ Init <- function(sim) {
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
                                               neighbours = P(sim)$neighbours,
-                                              flammableMap = sim$flammableMapLarge,
+                                              flammableMap = flammableMapLarge,
                                               plotPath = file.path(outputPath(sim), "figures"),
                                               optimizer = P(sim)$scamOptimizer
                               ),
