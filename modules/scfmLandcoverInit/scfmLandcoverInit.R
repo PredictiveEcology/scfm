@@ -25,7 +25,7 @@ defineModule(sim, list(
     "fasterize", "purrr", "terra", "sf",
     "PredictiveEcology/LandR@terra-migration",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/scfmutils (>= 0.0.0.9005)"
+    "PredictiveEcology/scfmutils (>= 0.0.7.9001)"
   ),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
