@@ -19,7 +19,7 @@ defineModule(sim, list(
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/scfmutils (>= 0.0.7.9001)",
-                  "PredictiveEcology/SpaDES.tools@development"),
+                  "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
                     "Buffer width for fire landscape calibration"),
@@ -94,7 +94,6 @@ Init <- function(sim) {
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
   ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
-
   seeIfItHasRun <- CacheDigest(
     list(
       Map2,
@@ -142,13 +141,7 @@ Init <- function(sim) {
 
   message("Running calibrateFireRegimePolys()...")
 
-  if (inMemory(sim$flammableMapLarge)){
-   #write to disk
-    flammableMapLarge <- tempfile(fileext = ".tif")
-    writeRaster(sim$flammableMapLarge, filename = flammableMapLarge)
-  } else {
-    flammableMapLarge <- sources(sim$flammableMapLarge)
-  }
+  flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
 
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
