@@ -18,7 +18,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/scfmutils (>= 0.0.5)",
-                  "PredictiveEcology/SpaDES.tools@development"),
+                  "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA,
                     desc = "Number of immediate cell neighbours"),
@@ -109,8 +109,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   compareGeom(sim$rasterToMatch, sim$fireRegimeRas)
   compareGeom(sim$fireRegimeRas, sim$flammableMap)
-
-  tmpRas <- mask(sim$rasterToMatch, sim$studyAreaReporting)
+  tmpRas <- postProcess(sim$rasterToMatch, sim$studyAreaReporting)
   mod$pixInSAR <- which(!is.na(as.vector(tmpRas)))
 
   ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
@@ -139,7 +138,7 @@ Init <- function(sim) {
                                 areaBurned = numeric(0),
                                 PolyID = integer(0))
 
-  sim$rstCurrentBurn <- raster(sim$fireRegimeRas)
+  sim$rstCurrentBurn <- rast(sim$fireRegimeRas)
   sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 # reset annual burn
   sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA # might have to ignore warnings
 
