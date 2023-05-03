@@ -109,7 +109,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   compareGeom(sim$rasterToMatch, sim$fireRegimeRas)
   compareGeom(sim$fireRegimeRas, sim$flammableMap)
-  tmpRas <- postProcess(sim$rasterToMatch, sim$studyAreaReporting)
+  tmpRas <- postProcess(sim$rasterToMatch, studyArea = sim$studyAreaReporting)
   mod$pixInSAR <- which(!is.na(as.vector(tmpRas)))
 
   ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
