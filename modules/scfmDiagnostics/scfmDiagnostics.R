@@ -163,7 +163,7 @@ diagnosticPlotsDT <- function(sim) {
   fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sim$studyAreaReporting)
 
   landscapeAttrReporting <- genFireMapAttr(
-    flammableMap = raster::mask(sim$flammableMap, sim$studyAreaReporting),
+    flammableMap = postProcess(sim$flammableMap, studyArea = sim$studyAreaReporting),
     fireRegimePolys = fireRegimePolysReporting,
     neighbours = 8 ## TODO: use the param from the sim rather than hardcoding here
   )
