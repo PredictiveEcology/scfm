@@ -170,7 +170,7 @@ Init <- function(sim) {
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
 
   stopifnot(
-    identical(names(sim$scfmDriverPars), names(sim$scfmDriverPars))
+    identical(names(sim$scfmDriverPars), names(sim$scfmRegimePars))
   )
 
   return(invisible(sim))
