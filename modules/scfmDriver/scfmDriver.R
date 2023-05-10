@@ -142,11 +142,11 @@ Init <- function(sim) {
   message("Running calibrateFireRegimePolys()...")
 
   flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
-
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              useCache = P(sim)$.useCache,
+                              useCache = TRUE,
+                              #I believe cache should be controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               regime = sim$scfmRegimePars,
