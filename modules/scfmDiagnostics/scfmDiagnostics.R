@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.7)",
+                  "PredictiveEcology/scfmutils (>= 0.0.9)",
                   "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9001)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
@@ -38,6 +38,8 @@ defineModule(sim, list(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput("burnSummary", "data.table",
                  "describes details of all burned pixels. Required in single mode.", sourceURL = NA),
+    expectsInput("burnMap", "SpatRaster",
+                 "cumulative burn map from simulation", sourceURL = NA),
     expectsInput("fireRegimePoints", "SpatialPointsDataFrame",
                  "Fire locations. Points outside studyArea are removed. Required in single mode.", sourceURL = NA),
     expectsInput("fireRegimePolys", "sf",
@@ -85,6 +87,9 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
+      gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
+      #note historical distribution is derived purely from historical data
+      gg_histDist <- scfmutils::comparePredictions_fireDistribution(dt)
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
@@ -94,11 +99,13 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRP.png"), gg_frp, height = 8, width = 8)
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_IGN.png"), gg_ign, height = 8, width = 8)
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_MFS.png"), gg_mfs, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_ESC.png"), gg_esc, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_histDist.png"), gg_histDist, height = 8, width= 8)
       }
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc, gg_histDist, nrow = 2, ncol = 3)
       }
 
       sim$scfmSummaryDT <- dt
@@ -132,6 +139,9 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(summaryDT) +
         geom_smooth(method = lm)
 
+      gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT) +
+        geom_smooth(method = lm)
+
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
 
@@ -140,11 +150,13 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_FRP.png"), gg_frp, height = 8, width = 8)
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_IGN.png"), gg_ign, height = 8, width = 8)
         ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_MFS.png"), gg_mfs, height = 8, width = 8)
+        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_ESC.png"), gg_esc, height = 8, width = 8)
       }
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc,
+                                nrow = 2, ncol = 3)
       }
 
       sim$scfmSummaryDT <- summaryDT
