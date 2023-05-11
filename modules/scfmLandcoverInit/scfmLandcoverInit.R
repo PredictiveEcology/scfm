@@ -38,7 +38,8 @@ defineModule(sim, list(
                     "Used by `Plots` function, which can be optionally used here."),
     defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, "Initial time for saving"),
     defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, "Interval between save events"),
-    defineParameter(".useCache", "logical", TRUE, NA, NA, "Use cache")
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
+                    "Use caching of events - not recommended as of 10/05/2023")
   ),
   inputObjects = bindrows(
     expectsInput(

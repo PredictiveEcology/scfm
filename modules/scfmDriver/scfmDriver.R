@@ -40,7 +40,7 @@ defineModule(sim, list(
                     "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here"),
-    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+    defineParameter(".useCache", "character", FALSE, NA, NA,
                     "Can be names of events or the whole module name; these will be cached by SpaDES"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     "should a cloud cache be used for heavy operations"),
@@ -146,7 +146,7 @@ Init <- function(sim) {
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
                               useCache = TRUE,
-                              #I believe cache should be controlled by option("reproducible.useCache")
+                              #function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               regime = sim$scfmRegimePars,
