@@ -145,7 +145,6 @@ Init <- function(sim) {
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              useCache = TRUE,
                               #function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
