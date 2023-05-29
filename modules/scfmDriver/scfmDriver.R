@@ -71,7 +71,7 @@ defineModule(sim, list(
 ))
 
 ## event types
-#   - type `init` is required for initiliazation
+#   - type `init` is required for initilization
 
 doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
