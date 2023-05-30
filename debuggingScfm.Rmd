@@ -1,7 +1,7 @@
 ---
 title: "scfm"
 author: "Ian Eddy"
-date: "December 18, 2018"
+date: "Updated May 2023"
 output:
   pdf_document: 
     latex_engine: xelatex
@@ -18,17 +18,34 @@ See `scfm.Rmd` for an overview of the model.
 
 ## Usage example
 
-```{r load-SpaDES, eval=TRUE}
-library(Require)
-library(reproducible)
+```{r load-packages, eval=TRUE}
+if (!"remotes" %in% rownames(installed.packages())) {
+  install.packages("remotes")
+}
+
+if (!"Require" %in% rownames(installed.packages())) {
+  remotes::install_github("PredictiveEcology/Require@development", dependencies = TRUE)
+}
+
+if (!"reproducible" %in% rownames(installed.packages())) {
+  remotes::install_github("PredictiveEcology/reproducible@development", dependencies = TRUE)
+}
+
+if (!"SpaDES.core" %in% rownames(installed.packages())) {
+  remotes::install_github("PredictiveEcology/SpaDES.core@development", dependencies = TRUE)
+}
+
+library("Require")
 Require(c("data.table", "ggplot2",
-          "LandR","magrittr", "terra", 
-          "SpaDES.core", "sf"), upgrade = FALSE)
+          "PredictiveEcology/LandR@development",
+          "PredictiveEcology/reproducible@development",
+          "PredictiveEcology/scfmutils@development",
+          "sf",
+          "PredictiveEcology/SpaDES.core@development",
+          "terra"), upgrade = FALSE)
 ```
 
 ```{r module usage example, eval = FALSE}
-# Parameters
-#Paths
 paths <- list(
   cachePath = file.path("cache"),
   modulePath = file.path("modules"),
@@ -39,8 +56,7 @@ paths <- list(
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
 options("reproducible.useTerra" = TRUE)
-options("reproducible.rasterRead" = "terra::rast")
-
+options("reproducible.rasterRead" = "terra::rast") ## default
 
 timeunit <- "year"
 times <- list(start = 1, end = 10)
@@ -82,14 +98,15 @@ modules <- list(
   "scfmLandcoverInit", "scfmRegime", "scfmDriver",
   "scfmIgnition", "scfmEscape","scfmSpread",
   "scfmDiagnostics"
-  )
+)
 
-#canonical 'pseudo-random' SA has coords -1209980, 7586865
-center <- terra::vect(cbind(-1209980,y = 7586865))
-crs(center) <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
-            "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
-studyAreaReporting <- LandR::randomStudyArea(size = 10000 * 250 * 30000, center = center, seed = 1002)
-studyAreaReporting <- st_as_sf(studyArea)
+targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0",
+                   "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+
+## canonical 'pseudo-random' SA has coords -1209980, 7586865
+studyAreaReporting <- terra::vect(cbind(-1209980, 7586865), crs = targetCRS) |>
+  SpaDES.tools::randomStudyArea(center = _, size = 10000 * 250 * 30000, seed = 1002) |>
+  st_as_sf()
 studyArea <- st_buffer(studyAreaReporting, 5000)
 studyAreaLarge <- st_buffer(studyArea, 20000)
 
@@ -101,21 +118,18 @@ rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
 rasterToMatch <- crop(rasterToMatchLarge, studyArea)
 rasterToMatch <- mask(rasterToMatch, studyArea)
 
-# #add FRP?
-# library(scfmutils)
-# fireRegimePolysLarge <- prepInputsFireRegimePolys(studyArea = studyAreaLarge, 
-#                                                   rasterToMatch = rasterToMatchLarge,
-#                                                   destinationPath = "inputs",
-#                                                   type = "ecoprovince")
-
+fireRegimePolysLarge <- prepInputsFireRegimePolys(studyArea = studyAreaLarge, 
+                                                  rasterToMatch = rasterToMatchLarge,
+                                                  destinationPath = "inputs",
+                                                  type = "FRT")
 
 objects <- list(
   studyArea = studyArea,
   studyAreaLarge = studyAreaLarge,
   studyAreaReporting = studyAreaReporting,
   rasterToMatch = rasterToMatch,
-  rasterToMatchLarge = rasterToMatchLarge
-  #, fireRegimePolysLarge = fireRegimePolysLarge
+  rasterToMatchLarge = rasterToMatchLarge,
+  fireRegimePolysLarge = fireRegimePolysLarge
 )
 
 outSim <- simInitAndSpades(times = list(start = 1, end = 2500), 
@@ -123,7 +137,6 @@ outSim <- simInitAndSpades(times = list(start = 1, end = 2500),
                            modules = modules,
                            objects = objects, 
                            paths = paths)
-
 ```
 
 ```{r experiment, eval = FALSE}
