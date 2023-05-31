@@ -22,10 +22,12 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(
-    "fasterize", "purrr", "terra", "sf",
-    "PredictiveEcology/LandR@terra-migration",
+    "fasterize", ## TODO: use terra::rasterize()
+    "PredictiveEcology/LandR@development",
+    "purrr",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/scfmutils (>= 0.0.7.9001)"
+    "PredictiveEcology/scfmutils (>= 0.0.7.9001)",
+    "sf", "terra"
   ),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
@@ -81,11 +83,11 @@ defineModule(sim, list(
       )
     ),
     expectsInput(
-      "studyArea", "SpatialPolygonsDataFrame",
+      "studyArea", "SpatialPolygonsDataFrame", ## TODO: should be sf?
       desc = "Polygon to use as the simulation study area (typically buffered)."
     ),
     expectsInput(
-      "studyAreaLarge", "SpatialPolygonsDataFrame",
+      "studyAreaLarge", "SpatialPolygonsDataFrame", ## TODO: should be sf?
       desc = "optional larger study area used for parameterization but not simulation"
     )
   ),
@@ -95,10 +97,10 @@ defineModule(sim, list(
       desc = "explains which raster cells are in which polygon"
     ),
     createsOutput(
-      "landscapeAttr", "list",
+      "landscapeAttr", "list", ## TODO: use sf object (#32)
       desc = "list of polygon attributes inc. area"),
     createsOutput(
-      "landscapeAttrLarge", "list",
+      "landscapeAttrLarge", "list", ## TODO: use sf object (#32)
       desc = paste(
         "if SAL is passed, this object will supersede landscapeAttr in scfmRegime, so that",
         "estimates of mean fire size, max fire size, ignition prob, and escape prob",

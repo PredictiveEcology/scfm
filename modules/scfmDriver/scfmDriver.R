@@ -57,15 +57,15 @@ defineModule(sim, list(
     expectsInput("flammableMapLarge", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
                        "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
-    expectsInput("landscapeAttr", "list",
+    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
                  "contains landscape attributes for each polygon."),
     expectsInput("rasterToMatch", "SpatRaster",
                  "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput("scfmRegimePars", "list",
+    expectsInput("scfmRegimePars", "list", ## TODO: use sf object (#32)
                  "list of fire regime parameters for each polygon.")
   ),
   outputObjects = bindrows(
-    createsOutput("scfmDriverPars", "list",
+    createsOutput("scfmDriverPars", "list", ## TODO: use sf object (#32)
                   "burn parameters for each polygon in `fireRegimePolys`")
   )
 ))

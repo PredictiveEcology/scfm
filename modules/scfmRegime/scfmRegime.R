@@ -55,9 +55,9 @@ defineModule(sim, list(
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
                               "from the simulation region.")),
-    expectsInput("landscapeAttr", "list",
+    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
                  desc = "list of landscape attributes for each polygon"),
-    expectsInput("landscapeAttrLarge", "list",
+    expectsInput("landscapeAttrLarge", "list", ## TODO: use sf object (#32)
                  desc = paste("list of landscape attributes for larger study area - if supplied, the module",
                               "will generate fire regime parameters for the polygons in landscapeAttr",
                               "using the attributes from landscapeAttrLarge.")),
@@ -79,7 +79,7 @@ defineModule(sim, list(
   outputObjects = bindrows(
     createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
                   desc = "Fire locations. Points outside studyArea are removed"),
-    createsOutput("scfmRegimePars", "list",
+    createsOutput("scfmRegimePars", "list", ## TODO: use sf object (#32)
                   desc =  "list of fire regime parameters for each polygon")
   )
 ))
@@ -142,7 +142,7 @@ Init <- function(sim) {
   tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) ## gives studyArea colnames to points
 
   if (any(is.na(tmp$PolyID))) {
-    tmp <- tmp[!is.na(tmp$PolyID),] ## need to remove NA points
+    tmp <- tmp[!is.na(tmp$PolyID), ] ## need to remove NA points
   }
   sim$fireRegimePoints <- tmp
 
