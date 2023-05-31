@@ -42,15 +42,15 @@ Require(c("data.table", "ggplot2",
           "PredictiveEcology/scfmutils@development",
           "sf",
           "PredictiveEcology/SpaDES.core@development",
-          "terra"), upgrade = FALSE)
+          "terra"), standAlone = TRUE, upgrade = FALSE)
 ```
 
 ```{r module usage example, eval = FALSE}
 paths <- list(
-  cachePath = file.path("cache"),
+  cachePath = file.path("cache_debug"),
   modulePath = file.path("modules"),
   inputPath = file.path("inputs"),
-  outputPath = file.path("outputs")
+  outputPath = file.path("outputs_debug")
 )
 
 options("reproducible.cachePath" = paths$cachePath) 
@@ -117,6 +117,29 @@ rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
 
 rasterToMatch <- crop(rasterToMatchLarge, studyArea)
 rasterToMatch <- mask(rasterToMatch, studyArea)
+
+if (FALSE) {
+  paths[["modulePath"]] <- "modules/scfm/modules"
+  
+  Require::Require("bcdata")
+  studyAreaReporting <- bcdata::bcdc_get_data("0bc73892-e41f-41d0-8d8e-828c16139337") |>
+    subset(REGION_ORG_UNIT_NAME == "Cariboo Natural Resource Region") |>
+    st_union() |>
+    st_cast("MULTIPOLYGON")
+  studyArea <- st_buffer(studyAreaReporting, 7000)
+  studyAreaLarge <- st_buffer(studyArea, 1e5)
+  
+  rasterToMatch <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
+                                 studyArea = studyArea) |>
+    disagg(fact = 2)
+  rasterToMatchLarge <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
+                                      studyArea = studyAreaLarge) |>
+    disagg(fact = 2)
+
+  studyArea <- st_transform(studyArea, crs = crs(rasterToMatch))
+  studyAreaLarge <- st_transform(studyAreaLarge, crs = crs(rasterToMatch))
+  studyAreaReporting <- st_transform(studyAreaReporting, crs = crs(rasterToMatch))
+}
 
 fireRegimePolysLarge <- prepInputsFireRegimePolys(studyArea = studyAreaLarge, 
                                                   rasterToMatch = rasterToMatchLarge,
