@@ -58,31 +58,33 @@ defaultInitialSaveTime <- NA #don't be saving nuffink
 globCache <- c(FALSE)  #don't cache the init event - it is too prone to false positives
 
 parameters <- list(
-  scfmLandcoverInit = list(
+    scfmDiagnostics = list(
+    .studyAreaName = "debug"
+  ),
+  scfmDriver = list(
+    targetN = 4000, # default 4000; increase targetN for more robust estimates, longer run-time
     .useCache = globCache,
-    sliverThreshold = 1e8), ## polygons <100 km2 are merged with closest non-sliver neighbour
-  scfmIgnition = list(
-    .useCache = globCache
+    .useParallelFireRegimePolys = TRUE
   ),
   scfmEscape = list(
     .useCache = globCache, 
     .plotInitialTime = NA
   ),
-  scfmSpread = list(
+  scfmIgnition = list(
+    .useCache = globCache
+  ),
+  scfmLandcoverInit = list(
+    sliverThreshold = 1e8, ## polygons <100 km2 are merged with closest non-sliver neighbour
     .useCache = globCache,
-    .plotInitialTime = times$start,
-    .plotInterval = 20),
+  ),
   scfmRegime = list(
-    .useCache = globCache,
-    fireCause=c("L")
+    fireCause = c("L"),
+    .useCache = globCache
   ),
-  scfmDriver = list(
-    .useCache = globCache,
-    .useParallelFireRegimePolys = TRUE,
-    targetN = 4000 # default 4000; increase targetN for more robust estimates, longer run-time
-  ),
-  scfmDiagnostics = list(
-    .studyAreaName = "debug"
+  scfmSpread = list(
+    .plotInitialTime = times$start,
+    .plotInterval = 20,
+    .useCache = globCache
   )
 )
 
