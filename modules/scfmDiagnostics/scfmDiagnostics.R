@@ -30,7 +30,7 @@ defineModule(sim, list(
                     "Used by Plots function, which can be optionally used here"),
     defineParameter(".studyAreaName", "character", NA, NA, NA,
                     "Human-readable name for the study area used - e.g., a hash of the study",
-                          "area obtained using `reproducible::studyAreaName()`"),
+                    "area obtained using `reproducible::studyAreaName()`"),
     defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Should caching of events or module be used?")
   ),
@@ -88,19 +88,19 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
-      #note historical distribution is derived purely from historical data
+      # note historical distribution is derived purely from historical data
       gg_histDist <- scfmutils::comparePredictions_fireDistribution(dt)
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
 
       if ("png" %in% P(sim)$.plots) {
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRI.png"), gg_fri, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_FRP.png"), gg_frp, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_IGN.png"), gg_ign, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_MFS.png"), gg_mfs, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_ESC.png"), gg_esc, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_histDist.png"), gg_histDist, height = 8, width= 8)
+        ggsave(file.path(figurePath(sim), "FRI.png"), gg_fri, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "FRP.png"), gg_frp, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "IGN.png"), gg_ign, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "MFS.png"), gg_mfs, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "ESC.png"), gg_esc, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "histDist.png"), gg_histDist, height = 8, width = 8)
       }
 
       if ("screen" %in% P(sim)$.plots) {
@@ -142,15 +142,19 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT) +
         geom_smooth(method = lm)
 
+      # note historical distribution is derived purely from historical data
+      gg_histDist <- scfmutils::comparePredictions_fireDistribution(summaryDT) ## TODO: test this
+
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
 
       if ("png" %in% P(sim)$.plots) {
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_FRI.png"), gg_fri, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_FRP.png"), gg_frp, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_IGN.png"), gg_ign, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_MFS.png"), gg_mfs, height = 8, width = 8)
-        ggsave(file.path(outputPath(sim), "figures", "scfmDiagnostics_multi_ESC.png"), gg_esc, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_FRI.png"), gg_fri, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_FRP.png"), gg_frp, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_IGN.png"), gg_ign, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_MFS.png"), gg_mfs, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_ESC.png"), gg_esc, height = 8, width = 8)
+        ggsave(file.path(figurePath(sim), "multi_histDist.png"), gg_histDist, height = 8, width = 8)
       }
 
       if ("screen" %in% P(sim)$.plots) {
@@ -198,4 +202,12 @@ diagnosticPlotsDT <- function(sim) {
   )
 
   return(dt)
+}
+
+## older version of SpaDES.core used here doesn't have this function
+if (packageVersion("SpaDES.core") < "2.0.2.9001") {
+  figurePath <- function(sim) {
+    file.path(outputPath(sim), "figures", current(sim)[["moduleName"]]) |>
+      checkPath(create = TRUE)
+  }
 }
