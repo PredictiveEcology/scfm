@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmIgnition.Rmd"),
+  documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
@@ -58,8 +58,8 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  #if either of these is a map, it needs to have NAs in the right place
-  #and be conformant with flammableMap
+  ## if either of these is a map, it needs to have NAs in the right place
+  ##   and be conformant with flammableMap
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
       pIg <- raster(sim$flammableMap)
@@ -70,6 +70,11 @@ Init <- function(sim) {
       }
 
       for (x in names(sim$scfmDriverPars)) {
+        if (!all(names(sim$scfmDriverPars) %in% names(sim$landscapeAttr))) {
+          stop("polygon IDs in 'scfmDriverPars' don't match those in 'landscapeAttr'.\n",
+               "possible cache problem? be sure not to cache the init events of scfm modules.")
+        }
+
         pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
       }
 
@@ -89,21 +94,23 @@ Init <- function(sim) {
 
 ### template for your event1
 Ignite <- function(sim) {
-  #TODO: this calcIgnitions could be simpler
+
+  ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(unique(names(sim$scfmDriverPars)),
+
+  ignitions <- lapply(names(sim$scfmDriverPars),
                       FUN = calcIgnitions,
                       landscapeAttr = sim$landscapeAttr,
                       pIg = sim$pIg)
-
-  #resample generates a random permutation of the elements of ignitions
-  #so that we don't always sequence in map index order. EJM pointed this out.
+  ## resample generates a random permutation of the elements of ignitions
+  ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
 
   return(invisible(sim))
 }
 
-calcIgnitions <- function(polygonType, landscapeAttr, pIg){
+calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
+
   cells <- landscapeAttr[[polygonType]]$cellsByZone
 
   if (is(pIg, "Raster")) {
@@ -115,6 +122,12 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg){
 }
 
 .inputObjects <- function(sim) {
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  mod$dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
+
+  # ! ----- EDIT BELOW ----- ! #
+
   if (!suppliedElsewhere("flammableMap", sim)) {
     message("you should run scfmIgnition with scfmLandcoverInit")
     vegMap <- prepInputsLCC(
@@ -139,5 +152,6 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg){
     stop("scfmDriverPars is missing. Please run scfmDriver.")
   }
 
-  return(sim)
+  # ! ----- STOP EDITING ----- ! #
+  return(invisible(sim))
 }

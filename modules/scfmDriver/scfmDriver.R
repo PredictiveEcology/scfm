@@ -2,38 +2,46 @@ defineModule(sim, list(
   name = "scfmDriver",
   description = "generate parameters for the generic percolation model",
   keywords = c("fire"),
-  authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
-              person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
+  ),
   childModules = character(),
-  version = numeric_version("0.1.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = numeric_version("0.1.1"),
+
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "PredictiveEcology/LandR", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc@development", "reproducible",
-                  "scam", "sf", "SpaDES.tools", "stats", "spatialEco"),
+  reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/pemisc@development",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/scfmutils (>= 0.0.7.9001)",
+                  "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
                     "Buffer width for fire landscape calibration"),
     defineParameter("bufferLCCYear", "numeric", 2010, NA, 2010,
                     paste("If relying on default buffered flammable map",
                           "the year of LCC to use for defining flammable classes.")),
+    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
-    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
+    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
+    defineParameter("scamOptimizer", "character", "bfgs", NA, NA,
+                    "numerical optimization method used in fitting scam model; see `?scam`."),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-    defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
                     "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA,
                     "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here"),
-    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES"),
+    defineParameter(".useCache", "character", FALSE, NA, NA,
+                    "Can be names of events or the whole module name; these will be cached by SpaDES"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     "should a cloud cache be used for heavy operations"),
     defineParameter(".useParallelFireRegimePolys", "logical", getOption("pemisc.useParallel", FALSE), NA, NA,
@@ -46,24 +54,24 @@ defineModule(sim, list(
     expectsInput("fireRegimePolys", "sf",
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
-    expectsInput("flammableMapLarge", "RasterLayer",
+    expectsInput("flammableMapLarge", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
                        "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
-    expectsInput("landscapeAttr", "list",
+    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
                  "contains landscape attributes for each polygon."),
-    expectsInput("rasterToMatch", "RasterLayer",
+    expectsInput("rasterToMatch", "SpatRaster",
                  "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput("scfmRegimePars", "list",
+    expectsInput("scfmRegimePars", "list", ## TODO: use sf object (#32)
                  "list of fire regime parameters for each polygon.")
   ),
   outputObjects = bindrows(
-    createsOutput("scfmDriverPars", "list",
+    createsOutput("scfmDriverPars", "list", ## TODO: use sf object (#32)
                   "burn parameters for each polygon in `fireRegimePolys`")
   )
 ))
 
 ## event types
-#   - type `init` is required for initiliazation
+#   - type `init` is required for initilization
 
 doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -78,49 +86,34 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-# 1 - (1-p0)**N = pEscape
-# 1 - pEscape = (1-p0)**N
-# (1 - pEscape)**1/N = 1 - p0
-# p0 = 1 - (1 - pEscape)**1/N
-
-hatP0 <- function(pEscape, n = 8) {
-  1 - (1 - pEscape) ** (1 / n)
-}
-
-#a real clever boots would minimise the abs log odds ratio.
-#be my guest.
-
-escapeProbDelta <- function(p0, w, hatPE) {
-  abs(sum(w*(1 - (1 - p0) ** (0:8))) - hatPE)
-}
-
 Init <- function(sim) {
   if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
-    sim$fireRegimePolys <- sf::st_as_sf(sim$fireRegimePolys)
+    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
   }
 
   cellSize <- sim$landscapeAttr[[1]]$cellSize
 
-  # Download 1 canonical version of the LCC, cropped to the sim$fireRegimePolys + buffer,
-  #  pass this one into the calibrateFireRegimePolys, avoiding many downloads (esp when
-  #  in parallel)
-
-  # Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
-  seeIfItHasRun <- CacheDigest(list(pemisc::Map2,
-                                    regime = sim$scfmRegimePars,
-                                    polygonType = names(sim$scfmRegimePars),
-                                    MoreArgs = list(targetN = P(sim)$targetN,
-                                                    landAttr = sim$landscapeAttr,
-                                                    cellSize = cellSize,
-                                                    fireRegimePolys = sim$fireRegimePolys,
-                                                    buffDist = P(sim)$buffDist,
-                                                    pJmp = P(sim)$pJmp,
-                                                    pMin = P(sim)$pMin,
-                                                    pMax = P(sim)$pMax,
-                                                    neighbours = P(sim)$neighbours,
-                                                    flammableMap = sim$flammableMapLarge
-                                    ),
-                                    calibrateFireRegimePolys))
+  ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
+  seeIfItHasRun <- CacheDigest(
+    list(
+      Map2,
+      regime = sim$scfmRegimePars,
+      polygonType = names(sim$scfmRegimePars),
+      MoreArgs = list(
+        targetN = P(sim)$targetN,
+        landAttr = sim$landscapeAttr,
+        cellSize = cellSize,
+        fireRegimePolys = sim$fireRegimePolys,
+        buffDist = P(sim)$buffDist,
+        pJmp = P(sim)$pJmp,
+        pMin = P(sim)$pMin,
+        pMax = P(sim)$pMax,
+        neighbours = P(sim)$neighbours,
+        flammableMap = sim$flammableMapLarge
+      ),
+      f = calibrateFireRegimePolys ## scfmutils
+    )
+  )
 
   if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
     cl <- pemisc::makeOptimalCluster(
@@ -129,30 +122,32 @@ Init <- function(sim) {
       MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
       maxNumClusters = length(sim$scfmRegimePars),
       outfile = file.path(outputPath(sim), "log", "scfm.log"),
-      objects = c("genSimLand"), envir = environment(),
-      libraries = c("rlang", "raster", "reproducible",
-                    "LandR", "sf", "fasterize", "data.table")
+      objects = c(), envir = environment(),
+      libraries = c("scfmutils")
     )
 
     on.exit({
-      if (!is.null(cl))
+      if (!is.null(cl)) {
         parallel::stopCluster(cl)
+      }
     })
   } else {
     cl <- NULL
   }
 
-  if (!identical(res(sim$flammableMap), res(sim$flammableMapLarge))) {
-    stop("mismatch in resolution of buffered flammable map. Please supply this object manually")
+  if (!compareGeom(sim$flammableMap, sim$flammableMapLarge, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+    stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
   message("Running calibrateFireRegimePolys()...")
+
+  flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              useCache = P(sim)$.useCache, #getOption("reproducible.useCache", TRUE),
+                              #function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
-                              omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
+                              omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               regime = sim$scfmRegimePars,
                               polygonType = names(sim$scfmRegimePars),
                               MoreArgs = list(targetN = P(sim)$targetN,
@@ -164,12 +159,19 @@ Init <- function(sim) {
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
                                               neighbours = P(sim)$neighbours,
-                                              flammableMap = sim$flammableMapLarge
+                                              flammableMap = flammableMapLarge,
+                                              plotPath = file.path(outputPath(sim), "figures"),
+                                              optimizer = P(sim)$scamOptimizer
                               ),
-                              calibrateFireRegimePolys,
+                              f = scfmutils::calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
   names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
+
+  stopifnot(
+    identical(names(sim$scfmDriverPars), names(sim$scfmRegimePars))
+  )
+
   return(invisible(sim))
 }
 

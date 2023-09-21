@@ -1,122 +1,170 @@
 ---
-title: "scfm"
-author: "Ian Eddy"
-date: "December 18, 2018"
+title: "Debugging scfm"
+author: "Ian Eddy and Alex Chubaty"
+date: "Updated May 2023"
 output:
-  pdf_document:
+  pdf_document: 
     latex_engine: xelatex
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
 ```
-## Overview
+
+# Overview
 
 See `scfm.Rmd` for an overview of the model.
 
-## Usage example
+# Usage example
 
-```{r load-SpaDES, eval=TRUE}
+```{r load-packages}
+if (!"Require" %in% rownames(installed.packages())) {
+  install.packages("Require", repos = c("https://predictiveecology.r-universe.dev", getOption("repos")))
+}
 library(Require)
 
+Install(c("PredictiveEcology/reproducible@development",
+          "PredictiveEcology/SpaDES.core@development"),
+        dependencies = TRUE, standAlone = TRUE, upgrade = FALSE)
 Require(c("data.table", "ggplot2",
           "PredictiveEcology/LandR@development",
-          "magrittr", "raster", "SpaDES.core", "sf"))
+          "PredictiveEcology/reproducible@development (>= 2.0.4.9000)",
+          "PredictiveEcology/scfmutils@development",
+          "sf",
+          "PredictiveEcology/SpaDES.core@development",
+          "terra"), standAlone = TRUE, upgrade = FALSE)
 ```
 
-```{r module usage example, eval = FALSE}
-# Parameters
+```{r module usage example}
+paths <- list(
+  cachePath = file.path("cache_debug"),
+  modulePath = file.path("modules"),
+  inputPath = file.path("inputs"),
+  outputPath = file.path("outputs_debug")
+)
+
+options("reproducible.cachePath" = paths$cachePath) 
+options("reproducible.useMemoise" = FALSE)
+options("reproducible.useTerra" = TRUE)
+options("reproducible.rasterRead" = "terra::rast") ## default
+
 timeunit <- "year"
-times <- list(start = 1, end = 250)
+times <- list(start = 1, end = 10)
 defaultPlotInterval <- 50
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- c('.inputObjects')  #don't cache the init event - it is too prone to false positives
+globCache <- c(FALSE)  #don't cache the init event - it is too prone to false positives
 
 parameters <- list(
-  scfmLandcoverInit = list(
-    useCache = globCache,
-    sliverThreshold = 1e8), #polygons <100 km2 are merged with closest non-sliver neighbour
+    scfmDiagnostics = list(
+    .studyAreaName = "debug"
+  ),
+  scfmDriver = list(
+    targetN = 4000, # default 4000; increase targetN for more robust estimates, longer run-time
+    .useCache = globCache,
+    .useParallelFireRegimePolys = TRUE
+  ),
+  scfmEscape = list(
+    .useCache = globCache, 
+    .plotInitialTime = NA
+  ),
   scfmIgnition = list(
     .useCache = globCache
   ),
-  scfmEscape = list(
+  scfmLandcoverInit = list(
+    sliverThreshold = 1e8, ## polygons <100 km2 are merged with closest non-sliver neighbour
+    .useCache = globCache,
+  ),
+  scfmRegime = list(
+    fireCause = c("L"),
     .useCache = globCache
   ),
   scfmSpread = list(
-    .useCache = globCache,
     .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval),
-  scfmRegime = list(
-    .useCache = ".inputObjects",
-    fireCause=c("L")
-  ),
-  scfmDriver = list(
-    .useCache = '.inputObjects',
-    targetN = 1000 #increase targetN for more robust estimates, longer run-time
-  )# default targetN = 4000, for reference. 
-) 
-
+    .plotInterval = 20,
+    .useCache = globCache
+  )
+)
 
 modules <- list(
   "scfmLandcoverInit", "scfmRegime", "scfmDriver",
-  "scfmIgnition", "scfmEscape",
-  # "scfmSpread", "scfmSummary"
+  "scfmIgnition", "scfmEscape","scfmSpread",
+  "scfmDiagnostics"
 )
-## NOTE: replace modules with "group_scfm" to include ageModule;
-##       ageModule isn't necessary to run and download of `ageMap` takes time
 
-#Paths
-paths <- list(
-  cachePath = file.path("cache"),
-  modulePath = file.path("modules"),
-  inputPath = file.path("inputs"),
-  outputPath = file.path("outputs")
-)
-#if you supply studyArea you should supply rtm to make sure the crs are identical. 
+targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0",
+                   "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
 
-center <- SpatialPoints(coords = data.frame(x = c(-1209980), 
-            y = c(7586895)), proj4string = CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
-            "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
-studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = center, seed = 1001)
+## canonical 'pseudo-random' SA has coords -1209980, 7586865
+studyAreaReporting <- terra::vect(cbind(-1209980, 7586865), crs = targetCRS) |>
+  SpaDES.tools::randomStudyArea(center = _, size = 10000 * 250 * 30000, seed = 1002) |>
+  st_as_sf()
+studyArea <- st_buffer(studyAreaReporting, 5000)
+studyAreaLarge <- st_buffer(studyArea, 20000)
 
-studyAreaLarge <- buffer(studyArea, 50000)
-
-rasterToMatchLarge <- raster(extent(studyAreaLarge), res = c(250, 250))
+rasterToMatchLarge <- rast(ext(studyAreaLarge), res = c(250, 250))
 crs(rasterToMatchLarge) <- crs(studyAreaLarge)
 rasterToMatchLarge[] <- 1
 rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
-rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
 
-studyAreaLarge$name <- "SAL" #make SPDF
+rasterToMatch <- crop(rasterToMatchLarge, studyArea)
+rasterToMatch <- mask(rasterToMatch, studyArea)
 
-studyArea <- st_as_sf(studyArea)
-studyAreaLarge <- st_as_sf(studyAreaLarge)
-# rasterToMatchLarge <- terra::rast(rasterToMatchLarge)
-# rastertoMatch <- terra::rast(rasterToMatch)
-#if run with no studyArea, the default is a small area in southwest Alberta with very few fires
+if (FALSE) {
+  paths[["modulePath"]] <- "modules/scfm/modules"
+  
+  Require::Require("bcdata")
+  studyAreaReporting <- bcdata::bcdc_get_data("0bc73892-e41f-41d0-8d8e-828c16139337") |>
+    subset(REGION_ORG_UNIT_NAME == "Cariboo Natural Resource Region") |>
+    st_union() |>
+    st_cast("MULTIPOLYGON")
+  studyArea <- st_buffer(studyAreaReporting, 7000)
+  studyAreaLarge <- st_buffer(studyArea, 1e5)
+  
+  rasterToMatch <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
+                                 studyArea = studyArea) |>
+    disagg(fact = 2)
+  rasterToMatchLarge <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
+                                      studyArea = studyAreaLarge) |>
+    disagg(fact = 2)
+
+  studyArea <- st_transform(studyArea, crs = crs(rasterToMatch))
+  studyAreaLarge <- st_transform(studyAreaLarge, crs = crs(rasterToMatch))
+  studyAreaReporting <- st_transform(studyAreaReporting, crs = crs(rasterToMatch))
+}
+
+fireRegimePolys <- prepInputsFireRegimePolys(studyArea = studyArea, 
+                                             rasterToMatch = rasterToMatch,
+                                             destinationPath = paths[["inputPath"]],
+                                             type = "FRT")
+
+fireRegimePolysLarge <- prepInputsFireRegimePolys(studyArea = studyAreaLarge, 
+                                                  rasterToMatch = rasterToMatchLarge,
+                                                  destinationPath = paths[["inputPath"]],
+                                                  type = "FRT")
+
 objects <- list(
   studyArea = studyArea,
   studyAreaLarge = studyAreaLarge,
+  studyAreaReporting = studyAreaReporting,
   rasterToMatch = rasterToMatch,
-  rasterToMatchLarge = rasterToMatchLarge
+  rasterToMatchLarge = rasterToMatchLarge,
+  fireRegimePolys = fireRegimePolys,
+  fireRegimePolysLarge = fireRegimePolysLarge
 )
 
-#Run module
-#The calibration process may take hours (it's cached)
-options("reproducible.cachePath" = paths$cachePath) 
-options("reproducible.useMemoise" = FALSE)
-
-outSim <- simInitAndSpades(times = list(start = 1, end = 5), 
+outSim <- simInitAndSpades(times = list(start = 1, end = 5000), 
                            params = parameters, 
                            modules = modules,
                            objects = objects, 
                            paths = paths)
 ```
 
-```{r experiment, eval = FALSE}
-#####experiment####
+## Experiment
 
+```{r experiment}
 newLandscape <- randomStudyArea(size = 6.25*10000 * 1000 * 1000) ## this is 10k m2/ha * 6.25 ha/pixel * 1000x1000
 newLandscape$PolyID <- 139
 newLandscape <- st_as_sf(newLandscape)
@@ -142,17 +190,14 @@ newObjects <- list("fireRegimePolys" = newLandscape,
                    "scfmRegimePars" = newRegime, 
                    "landscapeAttr" = newLandscapeAttr)
 
-
-
 outSim <- simInitAndSpades(times = times, 
                            params = parameters, 
                            modules = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread"),
                            objects = newObjects, 
                            paths = paths)
-
 ```
 
-```{r module evaluate module output, eval = FALSE}
+```{r module evaluate module output}
 ## TODO: add these plots as outputs in new scfmSummary module
 
 dt <- scfmutils::comparePredictions_summaryDT(outSim)
@@ -170,6 +215,5 @@ gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
 gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
 
 clearPlot()
-gridExtra::grid.arrange(fps,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
 ```
-

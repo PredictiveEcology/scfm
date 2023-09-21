@@ -2,21 +2,27 @@
 #  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmEscape",
-  description = "This Escapes fire(s) from an initial set of loci returned by an ignition module, and readies the results for use by scfmSpread",
-  keywords = c("fire Escape BEACONs"),
-  authors = c(person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person(c("Ian", "MS"), "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut"))),
+  description = paste("'Escapes' fire(s) from an initial set of loci returned by an ignition module,",
+                      "and prepares the results for use by `scfmSpread`."),
+  keywords = c("fire escape", "BEACONs"),
+  authors = c(
+    person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+    person("Ian MS", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
+  ),
   childModules = character(),
   version = numeric_version("0.1.0"),
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible",
-                  "SpaDES.tools", "PredictiveEcology/LandR"),
+  documentation = list("README.md", "scfmEscape.Rmd"),
+  reqdPkgs = list("data.table", "raster",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours"),
+    defineParameter("neighbours", "integer", 8L, 4L, 8L, "Number of cell immediate neighbours (one of `4L` or `8L`)."),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("startTime", "numeric", start(sim, "year"), NA, NA, "simulation time of first escape"),
@@ -55,7 +61,7 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     },
     plot = {
       if (time(sim) > start(sim)) {
-        escapeRaster <- raster(sim$rasterToMatch)
+        escapeRaster <- rast(sim$rasterToMatch)
         values(escapeRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
         values(escapeRaster)[sim$ignitionLoci] <- 1          # mark the initials specially
         Plot(escapeRaster, title = paste0("Annual fire escapes", time(sim)))
@@ -79,11 +85,11 @@ Init <- function(sim) {
 
   if ("scfmDriverPars" %in% ls(sim)) {
     if (length(sim$scfmDriverPars) > 1) {
-      p0 <- raster(sim$flammableMap)
+      p0 <- rast(sim$flammableMap)
       for (x in names(sim$scfmDriverPars)) {
-        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
+        values(p0)[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
       }
-      p0[] <- p0[] * (sim$flammableMap[])
+      p0 <- p0 * sim$flammableMap
     } else {
       p0 <- sim$scfmDriverPars[[1]]$p0
     }
