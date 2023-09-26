@@ -174,12 +174,17 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 }
 
 diagnosticPlotsDT <- function(sim) {
-  fireRegimePointsReporting <- sf::st_intersection(sim$fireRegimePoints, sim$studyAreaReporting)
+  sAR <- sim$studyAreaReporting |>
+    sf::st_union() |>
+    sf::st_make_valid() |>
+    sf::st_as_sf()
 
-  fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sim$studyAreaReporting)
+  fireRegimePointsReporting <- sf::st_intersection(sim$fireRegimePoints, sAR)
+
+  fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
 
   landscapeAttrReporting <- genFireMapAttr(
-    flammableMap = postProcess(sim$flammableMap, studyArea = sim$studyAreaReporting),
+    flammableMap = postProcessTo(sim$flammableMap, to = sAR),
     fireRegimePolys = fireRegimePolysReporting,
     neighbours = 8 ## TODO: use the param from the sim rather than hardcoding here
   )
