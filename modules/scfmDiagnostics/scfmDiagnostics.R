@@ -5,9 +5,9 @@ defineModule(sim, list(
                       "Inputs objects will be loaded from saved simulation files when in 'multi' mode."),
   keywords = c("diagnostics", "scfm"),
   authors = c(
-    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = "aut"),
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = "aut"),
-    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "aut")
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("aut", "cre"))
   ),
   childModules = character(0),
   version = list(scfmDiagnostics = "0.0.4"),
@@ -17,13 +17,15 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
                   "PredictiveEcology/scfmutils (>= 0.0.9)",
-                  "PredictiveEcology/SpaDES.core@development (>= 1.1.0.9001)"),
+                  "PredictiveEcology/SpaDES.core@development (>= 2.0.2)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",
                           "use 'multi' to run as part of postprocessing multiple scfm runs.")),
     defineParameter("reps", "integer", NA_integer_, 1L, NA_integer_,
                     paste("number of replicates/runs per study area when running in 'multi' mode.")),
+    defineParameter("simOutPrefix", "character", "mySimOut", NA_character_, NA_character_,
+                    "saved simList file prefix"),
     defineParameter("simTimes", "numeric", c(NA, NA), NA, NA,
                     "Simulation start and end times when running in 'multi' mode."),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
@@ -40,14 +42,14 @@ defineModule(sim, list(
                  "describes details of all burned pixels. Required in single mode.", sourceURL = NA),
     expectsInput("burnMap", "SpatRaster",
                  "cumulative burn map from simulation", sourceURL = NA),
-    expectsInput("fireRegimePoints", "SpatialPointsDataFrame",
+    expectsInput("fireRegimePoints", "sf",
                  "Fire locations. Points outside studyArea are removed. Required in single mode.", sourceURL = NA),
     expectsInput("fireRegimePolys", "sf",
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.",
                        "Required in single mode."),
                  sourceURL = NA),
-    expectsInput("flammableMap", "RasterLayer",
+    expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map. Required in single mode.", sourceURL = NA),
     expectsInput("landscapeAttr", "list",
                  "contains landscape attributes for each polygon. Required in single mode.", sourceURL = NA),
@@ -116,17 +118,25 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       # ! ----- EDIT BELOW ----- ! #
 
       allReps <- P(sim)$reps
-      gg_frp <- NULL
+      gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
 
       summaryDT <- rbindlist(lapply(allReps, function(r) {
-        fsim <- file.path(outputPath(sim), sprintf("rep%02d", r), sprintf("mySimOut_%04d.qs", P(sim)$simTimes[2]))
-        tmp <- suppressMessages(loadSimList(fsim))
-        if (r == allReps[1]) {
-          gg_frp <<- scfmutils::plot_fireRegimePolys(tmp$fireRegimePolys)
+        message("Loading saved simulation rep", r, "/", max(allReps), "...")
+        fsim <- file.path(outputPath(sim), sprintf("rep%02d", r),
+                          sprintf("%s_%04d.qs", P(sim)$simOutPrefix, P(sim)$simTimes[2]))
+        if (!file.exists(fsim)) {
+          fsim <- paste0(tools::file_path_sans_ext(fsim), ".rds") ## fallback to rds if qs not used
         }
+        tmpSimPaths <- paths(sim)
+        tmpSimPaths$outputPath <- dirname(fsim)
+        tmp <- suppressMessages({
+          loadSimList(fsim, paths = tmpSimPaths)
+        })
 
         dt <- diagnosticPlotsDT(tmp)
         dt[, rep := r]
+
+        message("  done")
       }))
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
