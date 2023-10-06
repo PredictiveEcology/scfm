@@ -121,7 +121,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
 
       summaryDT <- rbindlist(lapply(allReps, function(r) {
-        message("Loading saved simulation rep", r, "/", max(allReps), "...")
+        message("Loading saved simulation rep ", r, "/", max(allReps), " ...")
         fsim <- file.path(outputPath(sim), sprintf("rep%02d", r),
                           sprintf("%s_%04d.qs", P(sim)$simOutPrefix, P(sim)$simTimes[2]))
         if (!file.exists(fsim)) {
