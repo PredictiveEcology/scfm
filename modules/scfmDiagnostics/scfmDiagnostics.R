@@ -107,7 +107,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc, gg_histDist, nrow = 2, ncol = 3)
+        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc, gg_histDist,
+                                nrow = 2, ncol = 3)
       }
 
       sim$scfmSummaryDT <- dt
@@ -169,7 +170,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc,
+        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc,  gg_histDist,
                                 nrow = 2, ncol = 3)
       }
 
