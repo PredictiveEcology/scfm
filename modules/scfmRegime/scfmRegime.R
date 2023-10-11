@@ -14,7 +14,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
-  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.7.9001)"),
+  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.7.9001)", "dplyr"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
@@ -55,12 +55,6 @@ defineModule(sim, list(
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
                               "from the simulation region.")),
-    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
-                 desc = "list of landscape attributes for each polygon"),
-    expectsInput("landscapeAttrLarge", "list", ## TODO: use sf object (#32)
-                 desc = paste("list of landscape attributes for larger study area - if supplied, the module",
-                              "will generate fire regime parameters for the polygons in landscapeAttr",
-                              "using the attributes from landscapeAttrLarge.")),
     expectsInput("rasterToMatch", "RasterLayer",
                  desc = paste("template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyArea`.")),
@@ -79,7 +73,7 @@ defineModule(sim, list(
   outputObjects = bindrows(
     createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
                   desc = "Fire locations. Points outside studyArea are removed"),
-    createsOutput("scfmRegimePars", "list", ## TODO: use sf object (#32)
+    createsOutput("fireRegimePolys", "sf", ## TODO: use sf object (#32)
                   desc =  "list of fire regime parameters for each polygon")
   )
 ))
@@ -95,6 +89,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
+
   tmp <- sim$firePoints
   ## extract and validate fireCause spec
 
@@ -147,30 +142,18 @@ Init <- function(sim) {
   sim$fireRegimePoints <- tmp
 
   ## this function estimates the ignition probability and escape probability based on NFDB
-  scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
-                           FUN = calcZonalRegimePars,
-                           firePolys = sim$fireRegimePolysLarge,
-                           landscapeAttr = sim$landscapeAttrLarge,
-                           firePoints = sim$fireRegimePoints,
-                           epochLength = epochLength,
-                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName,
-                           targetBurnRate = P(sim)$targetBurnRate,
-                           targetMaxFireSize = P(sim)$targetMaxFireSize)
+  scfmRegimePars <- rbindlist(lapply(unique(sim$fireRegimePolysLarge$PolyID),
+                                     FUN = calcZonalRegimePars,
+                                     firePolys = sim$fireRegimePolysLarge,
+                                     firePoints = sim$fireRegimePoints,
+                                     epochLength = epochLength,
+                                     maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                                     fireSizeColumnName = P(sim)$fireSizeColumnName,
+                                     targetBurnRate = P(sim)$targetBurnRate,
+                                     targetMaxFireSize = P(sim)$targetMaxFireSize))
 
-  names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
   ## only keep the attributes that are in study area
-  scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
-
-  nullIdx <- sapply(scfmRegimePars, is.null)
-  if (any(nullIdx)) {
-    scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
-  }
-  sim$scfmRegimePars <- scfmRegimePars
-
-  stopifnot(
-    identical(unique(names(sim$scfmRegimePars)), names(sim$scfmRegimePars))
-  )
+  sim$firePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
 
   return(invisible(sim))
 }

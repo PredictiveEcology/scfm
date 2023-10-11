@@ -44,87 +44,38 @@ defineModule(sim, list(
                     "Use caching of events - not recommended as of 10/05/2023")
   ),
   inputObjects = bindrows(
-    expectsInput(
-      "fireRegimePolys", "sf",
-      desc = paste(
-        "Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
-        "Must have numeric field 'PolyID' or it will be created for individual polygons"
-      )
-    ),
-    expectsInput(
-      "fireRegimePolysLarge", "sf",
-      desc = paste(
-        "if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
-        "Must have integer field `PolyID` if supplied, and uses same defaults as `fireRegimePolys`"
-      )
-    ),
-    expectsInput(
-      "flammableMap", "SpatRaster",
-      desc = "binary flammability map - defaults to using LandR::prepInputsLCC"
-    ),
-    expectsInput(
-      "flammableMapLarge", "SpatRaster",
-      desc = paste(
-        "binary flammability map - defaults to using `LandR::prepInputsLCC`.",
-        "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
-        "It should match the extent of studyAreaLarge, and if running `scfmDriver`,",
-        "it should extend by >= scfmDriver's `P(sim)$buffDist`."
-      )
-    ),
-    expectsInput(
-      "rasterToMatch", "SpatRaster",
-      desc = "template raster for raster GIS operations. Must be supplied by user"
-    ),
-    expectsInput(
-      "rasterToMatchLarge", "SpatRaster",
-      desc = paste(
-        "Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed.",
-        "Must be supplied by user."
-      )
-    ),
-    expectsInput(
-      "studyArea", "SpatialPolygonsDataFrame", ## TODO: should be sf?
-      desc = "Polygon to use as the simulation study area (typically buffered)."
-    ),
-    expectsInput(
-      "studyAreaLarge", "SpatialPolygonsDataFrame", ## TODO: should be sf?
-      desc = "optional larger study area used for parameterization but not simulation"
-    )
+    expectsInput("fireRegimePolys", "sf",
+                 desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
+    expectsInput("fireRegimePolysLarge", "sf",
+                 desc = paste("if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
+                              "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`")),
+    expectsInput("flammableMap", "SpatRaster",
+                 desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
+    expectsInput("flammableMapLarge", "SpatRaster",
+                 desc = paste("binary flammability map - defaults to using `LandR::prepInputsLCC`.",
+                              "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
+                              "It should match the extent of studyAreaLarge, and if running `scfmDriver`,",
+                              "it should extend by >= scfmDriver's `P(sim)$buffDist`.")),
+    expectsInput("rasterToMatch", "SpatRaster",
+                 desc = "template raster for raster GIS operations. Must be supplied by user"),
+    expectsInput("rasterToMatchLarge", "SpatRaster",
+                 desc = paste("Template raster for raster GIS operations. Required if `studyAreaLarge` is passed.",
+                              "Must be supplied by user.")),
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area (typically buffered)."),
+    expectsInput("studyAreaLarge", "sf",
+                 desc = "optional larger study area used for parameterization but not simulation")
   ),
   outputObjects = bindrows(
-    createsOutput(
-      "cellsByZone", "data.frame",
-      desc = "explains which raster cells are in which polygon"
-    ),
-    createsOutput(
-      "landscapeAttr", "list", ## TODO: use sf object (#32)
-      desc = "list of polygon attributes inc. area"),
-    createsOutput(
-      "landscapeAttrLarge", "list", ## TODO: use sf object (#32)
-      desc = paste(
-        "if SAL is passed, this object will supersede landscapeAttr in scfmRegime, so that",
-        "estimates of mean fire size, max fire size, ignition prob, and escape prob",
-        "are based on fireRegimePolysLarge. Allows for calibration over larger area."
-      )
-    ),
-    createsOutput(
-      "fireRegimePolys", "SpatialPolygonsDataFrame",
-      desc = paste(
-        "areas to calibrate individual fire regime parameters. If supplied, it must",
-        "have a field called PolyID that defines unique regimes. Defaults to ecozones"
-      )
-    ),
-    createsOutput(
-      "fireRegimePolysLarge", "SpatialPolygonsDataFrame",
-      desc = paste(
-        "areas to calibrate individual fire regime parameters if studyAreaLarge is passed.",
-        "If supplied, it MUST have a field PolyID used to define unique fire regimes"
-      )
-    ),
-    createsOutput(
-      "fireRegimeRas", "SpatRaster",
-      desc = "Rasterized version of fireRegimePolys with values representing polygon ID"
-    )
+    createsOutput("fireRegimePolys", "sf",
+                  desc = paste("areas to calibrate individual fire regime parameters. If supplied, it must",
+                               "have a field called PolyID that defines unique regimes. Defaults to ecozones")),
+    createsOutput("fireRegimePolysLarge", "sf",
+                  desc = paste("areas to calibrate individual fire regime parameters if studyAreaLarge is passed.",
+                               "If supplied, it MUST have a field PolyID used to define unique fire regimes.")),
+    createsOutput("fireRegimeRas", "SpatRaster",
+                  desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
   )
 ))
 
@@ -208,10 +159,9 @@ Init <- function(sim) {
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
-    # This makes sim$landscapeAttr & sim$cellsByZone
     sim$fireRegimePolysLarge <- sim$fireRegimePolysLarge[order(sim$fireRegimePolysLarge$PolyID),]
 
-    sim$landscapeAttrLarge <- Cache(genFireMapAttr,
+    sim$fireRegimePolysLarge <- Cache(genFireMapAttr,
       flammableMap = sim$flammableMapLarge,
       fireRegimePolys = sim$fireRegimePolysLarge,
       neighbours = P(sim)$neighbours,
@@ -229,7 +179,7 @@ Init <- function(sim) {
   )
   sim$fireRegimePolys <- sim$fireRegimePolys[order(sim$fireRegimePolys$PolyID),]
 
-  sim$landscapeAttr <- Cache(genFireMapAttr,
+  sim$fireRegimePolys <- Cache(genFireMapAttr,
     flammableMap = sim$flammableMap,
     fireRegimePolys = sim$fireRegimePolys,
     neighbours = P(sim)$neighbours,
