@@ -57,16 +57,11 @@ defineModule(sim, list(
     expectsInput("flammableMapLarge", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
                        "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
-    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
-                 "contains landscape attributes for each polygon."),
     expectsInput("rasterToMatch", "SpatRaster",
-                 "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput("scfmRegimePars", "list", ## TODO: use sf object (#32)
-                 "list of fire regime parameters for each polygon.")
+                 "template raster for raster GIS operations. Must be supplied by user.")
   ),
   outputObjects = bindrows(
-    createsOutput("scfmDriverPars", "list", ## TODO: use sf object (#32)
-                  "burn parameters for each polygon in `fireRegimePolys`")
+    createsOutput("fireRegimePolys", "sf", "fireRegimePolys with driver attributes appended")
   )
 ))
 
@@ -97,11 +92,9 @@ Init <- function(sim) {
   seeIfItHasRun <- CacheDigest(
     list(
       Map2,
-      regime = sim$scfmRegimePars,
-      polygonType = names(sim$scfmRegimePars),
+      polygonType = unique(sim$fireRegimePolys$PolyID),
       MoreArgs = list(
         targetN = P(sim)$targetN,
-        landAttr = sim$landscapeAttr,
         cellSize = cellSize,
         fireRegimePolys = sim$fireRegimePolys,
         buffDist = P(sim)$buffDist,
@@ -142,16 +135,14 @@ Init <- function(sim) {
   message("Running calibrateFireRegimePolys()...")
 
   flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
-  sim$scfmDriverPars <- Cache(pemisc::Map2,
+  scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
                               #function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
-                              regime = sim$scfmRegimePars,
-                              polygonType = names(sim$scfmRegimePars),
+                              polygonType = unique(sim$fireRegimePolys$PolyID),
                               MoreArgs = list(targetN = P(sim)$targetN,
-                                              landAttr = sim$landscapeAttr,
                                               cellSize = cellSize,
                                               fireRegimePolys = sim$fireRegimePolys,
                                               buffDist = P(sim)$buffDist,
@@ -166,13 +157,10 @@ Init <- function(sim) {
                               f = scfmutils::calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
-  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
+  # names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
+  sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
 
-  stopifnot(
-    identical(names(sim$scfmDriverPars), names(sim$scfmRegimePars))
-  )
-
-  return(invisible(sim))
+ return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
