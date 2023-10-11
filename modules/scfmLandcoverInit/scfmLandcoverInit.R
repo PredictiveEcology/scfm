@@ -62,18 +62,12 @@ defineModule(sim, list(
     expectsInput("rasterToMatchLarge", "SpatRaster",
                  desc = paste("Template raster for raster GIS operations. Required if `studyAreaLarge` is passed.",
                               "Must be supplied by user.")),
-    expectsInput("studyArea", "sf",
-                 desc = "Polygon to use as the simulation study area (typically buffered)."),
-    expectsInput("studyAreaLarge", "sf",
-                 desc = "optional larger study area used for parameterization but not simulation")
+    expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
+    expectsInput("studyAreaLarge", "sf", desc = "optional larger study area used for parameterization only")
   ),
   outputObjects = bindrows(
-    createsOutput("fireRegimePolys", "sf",
-                  desc = paste("areas to calibrate individual fire regime parameters. If supplied, it must",
-                               "have a field called PolyID that defines unique regimes. Defaults to ecozones")),
-    createsOutput("fireRegimePolysLarge", "sf",
-                  desc = paste("areas to calibrate individual fire regime parameters if studyAreaLarge is passed.",
-                               "If supplied, it MUST have a field PolyID used to define unique fire regimes.")),
+    createsOutput("fireRegimePolys", "sf", desc = "fireRegimePolys with landcover attributes appended"),
+    createsOutput("fireRegimePolysLarge", "sf", desc = "fireRegimePolysLarge with landcover attributes appended"),
     createsOutput("fireRegimeRas", "SpatRaster",
                   desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
   )
