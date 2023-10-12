@@ -9,11 +9,12 @@ defineModule(sim, list(
   ),
   childModules = character(),
   version = numeric_version("0.1.1"),
-
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
+                   before = c("scfmIgnition")),
   reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development",
@@ -27,7 +28,6 @@ defineModule(sim, list(
                     paste("If relying on default buffered flammable map",
                           "the year of LCC to use for defining flammable classes.")),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
-    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
@@ -86,8 +86,6 @@ Init <- function(sim) {
     sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
   }
 
-  cellSize <- sim$landscapeAttr[[1]]$cellSize
-
   ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
   seeIfItHasRun <- CacheDigest(
     list(
@@ -95,13 +93,11 @@ Init <- function(sim) {
       polygonType = unique(sim$fireRegimePolys$PolyID),
       MoreArgs = list(
         targetN = P(sim)$targetN,
-        cellSize = cellSize,
         fireRegimePolys = sim$fireRegimePolys,
         buffDist = P(sim)$buffDist,
         pJmp = P(sim)$pJmp,
         pMin = P(sim)$pMin,
         pMax = P(sim)$pMax,
-        neighbours = P(sim)$neighbours,
         flammableMap = sim$flammableMapLarge
       ),
       f = calibrateFireRegimePolys ## scfmutils
@@ -143,20 +139,21 @@ Init <- function(sim) {
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               polygonType = unique(sim$fireRegimePolys$PolyID),
                               MoreArgs = list(targetN = P(sim)$targetN,
-                                              cellSize = cellSize,
                                               fireRegimePolys = sim$fireRegimePolys,
                                               buffDist = P(sim)$buffDist,
                                               pJmp = P(sim)$pJmp,
                                               pMin = P(sim)$pMin,
                                               pMax = P(sim)$pMax,
-                                              neighbours = P(sim)$neighbours,
                                               flammableMap = flammableMapLarge,
                                               plotPath = file.path(outputPath(sim), "figures"),
+                                              outputPath = file.path(outputPath(sim)),
                                               optimizer = P(sim)$scamOptimizer
                               ),
                               f = scfmutils::calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
+
+  scfmDriverPars <- rbindlist(scfmDriverPars)
   # names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
   sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
 
@@ -165,34 +162,20 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
-
-  if (any(!suppliedElsewhere("scfmRegimePars", sim),
-          !suppliedElsewhere("landscapeAttr", sim))) {
-    stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
-  }
-
   if (!suppliedElsewhere("flammableMapLarge")) {
-    bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+    bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
                           destinationPath = dataPath(sim),
-                          studyArea = bufferedPoly, useSAcrs = TRUE,
+                          studyArea = bufferedPoly,
+                          projectTo = sim$rasterToMatch,
+                          cropTo = bufferedPoly,
+                          maskTo = bufferedPoly,
+                          method = "near",
                           omitArgs = "destinationPath")
-    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {
-      #warning is about identical crs
-     landscapeLCC <- suppressWarnings(expr = eval(
-        #we want the resolution of rasterToMatch, but not the extent
-        Cache(projectRaster,
-              landscapeLCC,
-              method = "ngb",
-              res = res(sim$rasterToMatch),
-              crs = crs(bufferedPoly),
-              userTags = c("scfmDriver", "projectBufferedLCC"))
-      ))
-    }
 
-    landscapeLCC <- setValues(landscapeLCC, as.integer(getValues(landscapeLCC)))
+    landscapeLCC <- setValues(landscapeLCC, as.integer(values(landscapeLCC)))
 
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
