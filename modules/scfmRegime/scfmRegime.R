@@ -153,7 +153,7 @@ Init <- function(sim) {
                                      targetMaxFireSize = P(sim)$targetMaxFireSize))
 
   ## only keep the attributes that are in study area
-  sim$firePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
+  sim$fireRegimePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
 
   return(invisible(sim))
 }
