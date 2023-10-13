@@ -27,10 +27,10 @@ defineModule(sim, list(
                     "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput("flammableMap", "RasterLayer", desc = "map of flammability"),
-    expectsInput("landscapeAttr", "list", desc = "list of fire regime polygon attributes"),
-    expectsInput("scfmDriverPars", "list", desc = "fire modules' parameters")
-  ),
+    expectsInput("fireRegimePolys", "sf", "fire regime polys with ignition rate"),
+    expectsInput("fireRegimeRas", "SpatRaster", "rasterized version of fire regime polys"),
+    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability")
+    ),
   outputObjects = bindrows(
     createsOutput("ignitionLoci", "numeric", desc = "vector of ignition locations"),
     createsOutput("pIg", "numeric", desc = "ignition probability raster")
@@ -60,32 +60,20 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   ## if either of these is a map, it needs to have NAs in the right place
   ##   and be conformant with flammableMap
-  if ("scfmDriverPars" %in% ls(sim)) {
-    if (length(sim$scfmDriverPars) > 1) {
-      pIg <- raster(sim$flammableMap)
+  if (!is.null(sim$fireRegimePolys$ignitionRate)) {
 
-      if (!all(names(sim$scfmDriverPars) %in% names(sim$landscapeAttr))) {
-        stop("polygon IDs in 'scfmDriverPars' don't match those in 'landscapeAttr'.\n",
-             "possible cache problem? be sure not to cache the init events of scfm modules.")
-      }
-
-      for (x in names(sim$scfmDriverPars)) {
-        if (!all(names(sim$scfmDriverPars) %in% names(sim$landscapeAttr))) {
-          stop("polygon IDs in 'scfmDriverPars' don't match those in 'landscapeAttr'.\n",
-               "possible cache problem? be sure not to cache the init events of scfm modules.")
-        }
-
-        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
-      }
-
-      pIg[] <- pIg[] * (sim$flammableMap[])
-    } else {
-      pIg <- sim$scfmDriverPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
-    }
+    igValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
+                           pIg = sim$fireRegimePolys$ignitionRate)
+    igRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
+                        flam = as.vector(sim$flammableMap))
+    igValues <- igValues[igRas, on = c("PolyID")]
+    igValues[flam != 1, pIg := NA]
+    sim$pIg <- rast(sim$fireRegimeRas)
+    sim$pIg <- setValues(sim$pIg, igValues$pIg)
   } else {
-    pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
+    warning("using default pIgnition as no 'ignitionRate' column found in fireRegimePolys")
+    sim$pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
   }
-  sim$pIg <- pIg
 
   sim$ignitionLoci <- NULL
 
@@ -98,10 +86,9 @@ Ignite <- function(sim) {
   ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
 
-  ignitions <- lapply(names(sim$scfmDriverPars),
-                      FUN = calcIgnitions,
-                      landscapeAttr = sim$landscapeAttr,
-                      pIg = sim$pIg)
+  ignitions <- calcIgnitions(fireRegimePolys = sim$fireRegimePolys,
+                             pIg = sim$pIg,
+                             fireRegimeRas = sim$fireRegimeRas)
   ## resample generates a random permutation of the elements of ignitions
   ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
@@ -109,16 +96,20 @@ Ignite <- function(sim) {
   return(invisible(sim))
 }
 
-calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
+calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
 
-  cells <- landscapeAttr[[polygonType]]$cellsByZone
+  fireRegimePixels <- 1:ncell(fireRegimeRas)
+  fireRegimePixels <- fireRegimePixels[!is.na(as.vector(fireRegimeRas))]
 
-  if (is(pIg, "Raster")) {
-    cells <- cells[which(runif(length(cells)) <= pIg[cells])]
+  if (inherits(pIg, "SpatRaster")) {
+    stopifnot(ncell(fireRegimeRas) == ncell(pIg))
+    igs <- which(runif(ncell(fireRegimeRas)) < as.vector(pIg)) #NA are allowed and omitted
+
   } else {
-    cells <- cells[which(runif(length(cells)) <= pIg)]
+    igs <- fireRegimePixels[which(runif(length(fireRegimePixels)) <= pIg)]
   }
-  return(cells)
+
+  return(igs)
 }
 
 .inputObjects <- function(sim) {
@@ -142,14 +133,6 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
                                         mask = sim$rasterToMatch,
                                         nonFlammClasses = c(13L, 16L:19L)
     )
-  }
-
-  if (!suppliedElsewhere("landscapeAttr", sim)) {
-    stop("landscapeAttr is missing. Please run scfmLandcoverInit.")
-  }
-
-  if (!suppliedElsewhere("scfmDriverPars", sim)) {
-    stop("scfmDriverPars is missing. Please run scfmDriver.")
   }
 
   # ! ----- STOP EDITING ----- ! #
