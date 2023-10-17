@@ -60,10 +60,10 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   ## if either of these is a map, it needs to have NAs in the right place
   ##   and be conformant with flammableMap
-  if (!is.null(sim$fireRegimePolys$ignitionRate)) {
+  if (!is.null(sim$fireRegimePolys$pIgnition)) {
 
     igValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
-                           pIg = sim$fireRegimePolys$ignitionRate)
+                           pIg = sim$fireRegimePolys$pIgnition)
     igRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
                         flam = as.vector(sim$flammableMap))
     igValues <- igValues[igRas, on = c("PolyID")]
