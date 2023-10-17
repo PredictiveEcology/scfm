@@ -36,6 +36,7 @@ defineModule(sim, list(
                     desc = "Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
+    expectsInput("fireRegimePolys", "sf", desc = "fireRegimePolys with fire attributes appended."),
     expectsInput("fireRegimeRas", "RasterLayer", desc = "raster with fire regimes from `fireRegimePolys`."),
     expectsInput("flammableMap", "RasterLayer", desc = "binary map of landscape flammability"),
     expectsInput("rasterToMatch", "RasterLayer",
@@ -81,7 +82,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
           ## make sure to record fires that did not escape/spread
           tempDT <- countBurnedPixelsInSAR(sim$spreadState)
           tempDT$year <- time(sim)
-          tempDT[, areaBurned := N * sim$landscapeAttr[[1]]$cellSize]
+          tempDT[, areaBurned := N * unique(sim$fireRegimePolys$cellSize)]
           tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
           setnames(tempDT, c("initialPixels"), c("igLoc"))
           sim$burnSummary <- rbind(sim$burnSummary, tempDT)
@@ -198,7 +199,7 @@ Burnemup <- function(sim) {
   ## get fire year, pixels burned, area burned, poly ID of all burned pixels in studyAreaReporting
   tempDT <- countBurnedPixelsInSAR(sim$burnDT)
   tempDT$year <- time(sim)
-  tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
+  tempDT$areaBurned <- tempDT$N * unique(sim$fireRegimePolys$cellSize)
   tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
