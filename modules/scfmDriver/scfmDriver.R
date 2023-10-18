@@ -109,7 +109,7 @@ Init <- function(sim) {
       useParallel = P(sim)$.useParallelFireRegimePolys,
       ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
       MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
-      maxNumClusters = length(sim$scfmRegimePars),
+      maxNumClusters = length(unique(sim$fireRegimePolys$PolyID)),
       outfile = file.path(outputPath(sim), "log", "scfm.log"),
       objects = c(), envir = environment(),
       libraries = c("scfmutils")
@@ -159,7 +159,6 @@ Init <- function(sim) {
   colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
   sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
 
-  # names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
   sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
 
  return(invisible(sim))
