@@ -152,8 +152,13 @@ Init <- function(sim) {
                               f = scfmutils::calibrateFireRegimePolys,
                               userTags = c("scfmDriver", "scfmDriverPars"))
 
-
   scfmDriverPars <- rbindlist(scfmDriverPars)
+
+  #drop the attributes if they are present
+  colsToDrop <- c("pSpread", "p0", "naiveP0", "pIgnition", "maxBurnCells")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
+
   # names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
   sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
 

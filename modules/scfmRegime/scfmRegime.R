@@ -152,6 +152,12 @@ Init <- function(sim) {
                                      targetBurnRate = P(sim)$targetBurnRate,
                                      targetMaxFireSize = P(sim)$targetMaxFireSize))
 
+  #drop the attributes if they are present
+  colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
+                  "xMax", "emfs_ha", "empiricalBurnRate")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
+
   ## only keep the attributes that are in study area
   sim$fireRegimePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
 
