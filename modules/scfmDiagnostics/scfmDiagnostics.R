@@ -16,7 +16,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.9)",
+                  "PredictiveEcology/scfmutils (>= 1.0.0)",
                   "PredictiveEcology/SpaDES.core@development (>= 2.0.2)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
@@ -40,8 +40,7 @@ defineModule(sim, list(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput("burnSummary", "data.table",
                  "describes details of all burned pixels. Required in single mode.", sourceURL = NA),
-    expectsInput("burnMap", "SpatRaster",
-                 "cumulative burn map from simulation", sourceURL = NA),
+    expectsInput("burnMap", "SpatRaster", "cumulative burn map from simulation", sourceURL = NA),
     expectsInput("fireRegimePoints", "sf",
                  "Fire locations. Points outside studyArea are removed. Required in single mode.", sourceURL = NA),
     expectsInput("fireRegimePolys", "sf",
@@ -51,12 +50,6 @@ defineModule(sim, list(
                  sourceURL = NA),
     expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map. Required in single mode.", sourceURL = NA),
-    expectsInput("landscapeAttr", "list",
-                 "contains landscape attributes for each polygon. Required in single mode.", sourceURL = NA),
-    expectsInput("scfmDriverPars", "list",
-                 "burn parameters for each polygon in `fireRegimePolys`.  Required in single mode.", sourceURL = NA),
-    expectsInput("scfmRegimePars", "list",
-                 "list of fire regime parameters for each polygon. Required in single mode.", sourceURL = NA),
     expectsInput("studyAreaReporting", "sf",
                  paste("multipolygon (typically smaller/unbuffered than studyArea) to use for plotting/reporting.",
                        "Required in single mode."))
@@ -194,7 +187,12 @@ diagnosticPlotsDT <- function(sim) {
 
   fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
 
-  landscapeAttrReporting <- genFireMapAttr(
+  #preserve columns from regime + driver while overwriting landscapeAttr
+  colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
+  colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
+  fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]
+
+  fireRegimePolysReporting <- genFireMapAttr(
     flammableMap = postProcessTo(sim$flammableMap, to = sAR),
     fireRegimePolys = fireRegimePolysReporting,
     neighbours = 8 ## TODO: use the param from the sim rather than hardcoding here
@@ -202,17 +200,9 @@ diagnosticPlotsDT <- function(sim) {
 
   polyNames <- as.character(unique(fireRegimePolysReporting$PolyID))
 
-  stopifnot(all(polyNames %in% names(landscapeAttrReporting)))
-
-  scfmDriverParsReporting <- subset(sim$scfmDriverPars, names(sim$scfmDriverPars) %in% polyNames)
-
-  scfmRegimeParsReporting <- subset(sim$scfmRegimePars, names(sim$scfmRegimePars) %in% polyNames)
-
   dt <- scfmutils::comparePredictions_summaryDT(
-    scfmDriverPars = scfmDriverParsReporting,
-    scfmRegimePars = scfmRegimeParsReporting,
-    landscapeAttr = landscapeAttrReporting,
     fireRegimePoints = fireRegimePointsReporting,
+    fireRegimePolys = fireRegimePolysReporting,
     burnSummary = sim$burnSummary, ## already summarized for studyAreaReporting
     times = times(sim)
   )

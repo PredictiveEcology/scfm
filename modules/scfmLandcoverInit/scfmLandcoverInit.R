@@ -26,7 +26,7 @@ defineModule(sim, list(
     "PredictiveEcology/LandR@development",
     "purrr",
     "PredictiveEcology/reproducible@development",
-    "PredictiveEcology/scfmutils (>= 0.0.7.9001)",
+    "PredictiveEcology/scfmutils (>= 1.0.0)",
     "sf", "terra"
   ),
   parameters = rbind(

@@ -19,6 +19,7 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmEscape.Rmd"),
   reqdPkgs = list("data.table", "raster",
                   "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/scfmutils (>= 1.0.0)",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/SpaDES.tools@development"),
   parameters = rbind(
