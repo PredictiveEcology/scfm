@@ -14,7 +14,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
-  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 1.0.0)", "dplyr"),
+  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 1.0.0.9001)", "dplyr"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
