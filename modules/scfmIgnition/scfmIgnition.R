@@ -125,7 +125,7 @@ calcIgnitions <- function(polygonType, landscapeAttr, pIg) {
 
 .inputObjects <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
-  mod$dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  mod$dPath <- asPath(inputPath(sim), 1)
   message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #

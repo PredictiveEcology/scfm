@@ -248,9 +248,8 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
-  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  dPath <- asPath(inputPath(sim), 1)
 
   # object check for SA/FRP/FRPL/SAL - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)

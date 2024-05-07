@@ -178,7 +178,7 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  dPath <- asPath(inputPath(sim), 1)
 
   if (any(!suppliedElsewhere("scfmRegimePars", sim),
           !suppliedElsewhere("landscapeAttr", sim))) {
@@ -190,7 +190,7 @@ Init <- function(sim) {
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
-                          destinationPath = dataPath(sim),
+                          destinationPath = dPath,
                           studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
     if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {

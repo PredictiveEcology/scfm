@@ -178,8 +178,8 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  dPath <- asPath(inputPath(sim), 1)
 
   if (!suppliedElsewhere("studyAreaLarge", sim)) {
     sim$studyAreaLarge <- sim$studyArea
