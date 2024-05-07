@@ -19,6 +19,8 @@ defineModule(sim, list(
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c("2005-01-01", NA)),
   documentation = list("README.md", "scfmLandcoverInit.Rmd"), # same file
+  loadOrder = list(after = c("Biomass_speciesData", "Biomass_borealDataPrep"),
+                   before = c("scfmRegime", "scfmDriver", "scfmEscape", "scfmIgnition", "scfmSpread")),
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(

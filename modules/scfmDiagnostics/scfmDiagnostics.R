@@ -15,6 +15,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
+                             "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
                   "PredictiveEcology/scfmutils (>= 0.0.9)",
                   "PredictiveEcology/SpaDES.core@development (>= 2.0.2)"),

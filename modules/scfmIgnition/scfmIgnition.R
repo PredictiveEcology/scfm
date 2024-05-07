@@ -14,6 +14,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
+                   before = c("scfmEscape", "scfmSpread")),
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR"),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)

@@ -14,6 +14,8 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
+                   before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development",
@@ -145,7 +147,7 @@ Init <- function(sim) {
   sim$scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              #function-level cache is controlled by option("reproducible.useCache")
+                              ## function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               regime = sim$scfmRegimePars,
