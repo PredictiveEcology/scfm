@@ -57,7 +57,7 @@ defineModule(sim, list(
       "fireRegimePolysLarge", "sf",
       desc = paste(
         "if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
-        "Must have integer field `PolyID` if supplied, and uses same defaults as `fireRegimePolys`"
+        "Must have integer field `PolyID` if supplied, and uses same defaults as `fireRegimePolys`."
       )
     ),
     expectsInput(
@@ -68,9 +68,9 @@ defineModule(sim, list(
       "flammableMapLarge", "SpatRaster",
       desc = paste(
         "binary flammability map - defaults to using `LandR::prepInputsLCC`.",
-        "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
-        "It should match the extent of studyAreaLarge, and if running `scfmDriver`,",
-        "it should extend by >= scfmDriver's `P(sim)$buffDist`."
+        "This is only necessary if passing `studyAreaLarge` OR running `scfmDriver`.",
+        "It should match the extent of `studyAreaLarge`, and if running `scfmDriver`,",
+        "it should extend by at least `scfmDriver`'s `buffDist`."
       )
     ),
     expectsInput(
@@ -104,28 +104,28 @@ defineModule(sim, list(
     createsOutput(
       "landscapeAttrLarge", "list", ## TODO: use sf object (#32)
       desc = paste(
-        "if SAL is passed, this object will supersede landscapeAttr in scfmRegime, so that",
-        "estimates of mean fire size, max fire size, ignition prob, and escape prob",
-        "are based on fireRegimePolysLarge. Allows for calibration over larger area."
+        "if `studyAreaLarge` is passed, this object will supersede `landscapeAttr` in `scfmRegime`,",
+        "so that estimates of mean fire size, max fire size, ignition prob, and escape prob",
+        "are based on `fireRegimePolysLarge`. Allows for calibration over larger area."
       )
     ),
     createsOutput(
       "fireRegimePolys", "SpatialPolygonsDataFrame",
       desc = paste(
         "areas to calibrate individual fire regime parameters. If supplied, it must",
-        "have a field called PolyID that defines unique regimes. Defaults to ecozones"
+        "have a field called `PolyID` that defines unique regimes. Defaults to ecozones."
       )
     ),
     createsOutput(
       "fireRegimePolysLarge", "SpatialPolygonsDataFrame",
       desc = paste(
-        "areas to calibrate individual fire regime parameters if studyAreaLarge is passed.",
-        "If supplied, it MUST have a field PolyID used to define unique fire regimes"
+        "areas to calibrate individual fire regime parameters if `studyAreaLarge` is passed.",
+        "If supplied, it must have a field `PolyID` used to define unique fire regimes."
       )
     ),
     createsOutput(
       "fireRegimeRas", "SpatRaster",
-      desc = "Rasterized version of fireRegimePolys with values representing polygon ID"
+      desc = "Rasterized version of `fireRegimePolys` with values representing polygon ID."
     )
   )
 ))
@@ -172,11 +172,11 @@ Init <- function(sim) {
     all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
   )
 
-  if (!is.integer(sim$flammableMap[])){
+  if (!is.integer(sim$flammableMap[])) {
     sim$flammableMap[] <- as.integer(sim$flammableMap[])
   }
 
-  if (!is.integer(sim$flammableMapLarge[])){
+  if (!is.integer(sim$flammableMapLarge[])) {
     sim$flammableMapLarge <- setValues(sim$flammableMapLarge,
                                        as.integer(values(sim$flammableMapLarge,
                                                          mat = FALSE)))
