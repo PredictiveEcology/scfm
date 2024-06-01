@@ -10,7 +10,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("aut", "cre"))
   ),
   childModules = character(0),
-  version = list(scfmDiagnostics = "0.0.4"),
+  version = list(scfmDiagnostics = "0.0.5"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -19,7 +19,8 @@ defineModule(sim, list(
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
                   "PredictiveEcology/scfmutils (>= 0.0.9)",
-                  "PredictiveEcology/SpaDES.core@development (>= 2.0.2)"),
+                  "PredictiveEcology/reproducible@development (>= 2.0.12.9017)",
+                  "PredictiveEcology/SpaDES.core@development (>= 2.0.5.9027)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",
@@ -86,13 +87,15 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       dt <- diagnosticPlotsDT(sim)
 
+      write.csv(dt, file.path(outputPath(sim)), "scfmDiagnostics_single_summary_dt.csv")
+
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
-      # note historical distribution is derived purely from historical data
+      ## NOTE: historical distribution is derived purely from historical data
       gg_histDist <- scfmutils::comparePredictions_fireDistribution(dt)
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
@@ -132,6 +135,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         }
         tmpSimPaths <- paths(sim)
         tmpSimPaths$outputPath <- dirname(fsim)
+
         tmp <- suppressMessages({
           loadSimList(fsim, paths = tmpSimPaths)
         })
@@ -141,6 +145,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
         message("  done")
       }))
+
+      write.csv(summaryDT, file.path(outputPath(sim)), "scfmDiagnostics_multi_summary_dt.csv")
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
         summaryDT, list(start = P(sim)$simTimes[1], end = P(sim)$simTimes[2])) +
