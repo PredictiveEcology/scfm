@@ -172,7 +172,8 @@ Init <- function(sim) {
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
                           destinationPath = dPath,
-                          studyArea = bufferedPoly, useSAcrs = TRUE,
+                          studyArea = bufferedPoly,
+                          useSAcrs = TRUE,
                           omitArgs = "destinationPath")
 
     landscapeLCC <- setValues(landscapeLCC, as.integer(values(landscapeLCC)))

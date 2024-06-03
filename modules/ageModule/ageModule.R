@@ -7,7 +7,6 @@ defineModule(sim, list(
   ),
   childModules = character(),
   version = list(LandR = "0.0.11.9000", ageModule = "0.9.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
