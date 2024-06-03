@@ -9,7 +9,6 @@ defineModule(sim, list(
   ),
   childModules = character(),
   version = numeric_version("0.1.1"),
-
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
