@@ -87,7 +87,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       dt <- diagnosticPlotsDT(sim)
 
-      write.csv(dt, file.path(outputPath(sim)), "scfmDiagnostics_single_summary_dt.csv")
+      write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
 
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
@@ -146,7 +146,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         message("  done")
       }))
 
-      write.csv(summaryDT, file.path(outputPath(sim)), "scfmDiagnostics_multi_summary_dt.csv")
+      write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
         summaryDT, list(start = P(sim)$simTimes[1], end = P(sim)$simTimes[2])) +
