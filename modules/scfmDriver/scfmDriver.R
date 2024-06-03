@@ -14,7 +14,7 @@ defineModule(sim, list(
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
-                   before = c("scfmIgnition")),
+                   before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/pemisc@development",
@@ -134,7 +134,7 @@ Init <- function(sim) {
   scfmDriverPars <- Cache(pemisc::Map2,
                               cl = cl,
                               cloudFolderID = sim$cloudFolderID,
-                              #function-level cache is controlled by option("reproducible.useCache")
+                              ## function-level cache is controlled by option("reproducible.useCache")
                               useCloud = P(sim)$.useCloud,
                               omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
                               polygonType = unique(sim$fireRegimePolys$PolyID),
@@ -165,18 +165,14 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  dPath <- asPath(inputPath(sim), 1)
   if (!suppliedElsewhere("flammableMapLarge")) {
     bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
-                          destinationPath = dataPath(sim),
-                          studyArea = bufferedPoly,
-                          projectTo = sim$rasterToMatch,
-                          cropTo = bufferedPoly,
-                          maskTo = bufferedPoly,
-                          method = "near",
+                          destinationPath = dPath,
+                          studyArea = bufferedPoly, useSAcrs = TRUE,
                           omitArgs = "destinationPath")
 
     landscapeLCC <- setValues(landscapeLCC, as.integer(values(landscapeLCC)))

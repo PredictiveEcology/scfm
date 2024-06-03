@@ -19,6 +19,8 @@ defineModule(sim, list(
   spatialExtent = raster::extent(rep(NA_real_, 4)),
   timeframe = as.POSIXlt(c("2005-01-01", NA)),
   documentation = list("README.md", "scfmLandcoverInit.Rmd"), # same file
+  loadOrder = list(after = c("Biomass_speciesData", "Biomass_borealDataPrep"),
+                   before = c("scfmRegime", "scfmDriver", "scfmEscape", "scfmIgnition", "scfmSpread")),
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(
@@ -49,7 +51,7 @@ defineModule(sim, list(
                               "Must have numeric field 'PolyID' or it will be created for individual polygons")),
     expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
-                              "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`")),
+                              "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
     expectsInput("flammableMapLarge", "SpatRaster",
@@ -60,7 +62,7 @@ defineModule(sim, list(
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user"),
     expectsInput("rasterToMatchLarge", "SpatRaster",
-                 desc = paste("Template raster for raster GIS operations. Required if `studyAreaLarge` is passed.",
+                 desc = paste("Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed.",
                               "Must be supplied by user.")),
     expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
     expectsInput("studyAreaLarge", "sf", desc = "optional larger study area used for parameterization only")
@@ -115,11 +117,11 @@ Init <- function(sim) {
     all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
   )
 
-  if (!is.integer(sim$flammableMap[])){
+  if (!is.integer(sim$flammableMap[])) {
     sim$flammableMap[] <- as.integer(sim$flammableMap[])
   }
 
-  if (!is.integer(sim$flammableMapLarge[])){
+  if (!is.integer(sim$flammableMapLarge[])) {
     sim$flammableMapLarge <- setValues(sim$flammableMapLarge,
                                        as.integer(values(sim$flammableMapLarge,
                                                          mat = FALSE)))
@@ -190,9 +192,8 @@ Init <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
-  dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  dPath <- asPath(inputPath(sim), 1)
 
   # object check for SA/FRP/FRPL/SAL - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)

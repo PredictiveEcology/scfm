@@ -16,6 +16,8 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR",
                   "PredictiveEcology/scfmutils (>= 1.0.0)"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
+                   before = c("scfmEscape", "scfmSpread")),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1,
@@ -115,7 +117,7 @@ calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
 
 .inputObjects <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
-  mod$dPath <- asPath(getOption("reproducible.destinationPath", dataPath(sim)), 1)
+  mod$dPath <- asPath(inputPath(sim), 1)
   message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
 
   # ! ----- EDIT BELOW ----- ! #

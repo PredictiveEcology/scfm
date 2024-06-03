@@ -14,6 +14,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver", "scfmIgnition", "scfmEscape")),
   reqdPkgs = list("data.table", "fpCompare", "magrittr", "raster",
                   "PredictiveEcology/LandR@development",
                   "PredictiveEcology/reproducible@development",
