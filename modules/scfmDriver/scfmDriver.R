@@ -185,7 +185,7 @@ Init <- function(sim) {
   }
 
   if (!suppliedElsewhere("flammableMapLarge")) {
-    bufferedPoly <- buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+    bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
