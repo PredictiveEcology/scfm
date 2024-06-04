@@ -18,8 +18,8 @@ defineModule(sim, list(
   reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.7.9001)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
-                    desc = "subset of `c('H', 'H-PB', 'L', 'Re', 'U')`"),
+    defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
+                    desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
     defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
