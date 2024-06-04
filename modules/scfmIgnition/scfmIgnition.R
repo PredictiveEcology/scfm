@@ -21,12 +21,12 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
   )
 ))
