@@ -50,8 +50,7 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
-                              "Must have numeric field 'PolyID' or it will be created for individual polygons"),
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"),
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
     expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
@@ -202,18 +201,20 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("fireRegimePolysLarge", sim)) {
+  if (!suppliedElsewhere("fireRegimePolysLarge", sim) & !is.null(sim$studyAreaLarge)) {
     message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
     sim$fireRegimePolysLarge <- Cache(
       scfmutils::prepInputsFireRegimePolys,
-      url = extractURL("fireRegimePolys", sim),
+      url = NULL,
       destinationPath = dPath,
       studyArea = sim$studyAreaLarge,
       rasterToMatch = sim$rasterToMatchLarge,
       type = P(sim)$fireRegimePolysType,
       userTags = c(cacheTags, "fireRegimePolys")
     )
+  } else {
+    sim$fireRegimePolysLarge <- sim$fireRegimePolys
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {

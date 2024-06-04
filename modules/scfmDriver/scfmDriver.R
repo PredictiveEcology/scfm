@@ -183,8 +183,8 @@ Init <- function(sim) {
           !suppliedElsewhere("landscapeAttr", sim))) {
     stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
   }
-
-  if (!suppliedElsewhere("flammableMapLarge")) {
+  browser()
+  if (!suppliedElsewhere("flammableMapLarge", sim)) {
     bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
@@ -196,16 +196,16 @@ Init <- function(sim) {
       #warning is about identical crs
      landscapeLCC <- suppressWarnings(expr = eval(
         #we want the resolution of rasterToMatch, but not the extent
-        Cache(projectRaster,
+        Cache(project,
               landscapeLCC,
-              method = "ngb",
+              method = "near",
               res = res(sim$rasterToMatch),
-              crs = crs(bufferedPoly),
+              y = crs(bufferedPoly),
               userTags = c("scfmDriver", "projectBufferedLCC"))
       ))
     }
 
-    landscapeLCC <- setValues(landscapeLCC, as.integer(getValues(landscapeLCC)))
+    landscapeLCC[] <- as.integer(as.vector(landscapeLCC))
 
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
