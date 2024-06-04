@@ -24,14 +24,14 @@ defineModule(sim,list(
       defineParameter("useCache", "logical", TRUE, NA, NA, desc = "Use cache"),
       defineParameter("neighbours", "numeric", 8, NA, NA, desc = "Number of immediate cell neighbours")
     ),
-    inputObjects = bind_rows(
+    inputObjects = bindrows(
       expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
                    sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
       expectsInput(objectName = "vegMap", objectClass = "RasterLayer", desc = "",
                    sourceURL = "ftp://ftp.ccrs.nrcan.gc.ca/ad/NLCCLandCover/LandcoverCanada2005_250m/LandCoverOfCanada2005_V1_4.zip"),
       expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
     ),
-    outputObjects = bind_rows(
+    outputObjects = bindrows(
       createsOutput(objectName = "cellsByZone", objectClass = "data.frame", desc = ""),
       createsOutput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of landscape flammability"),
       createsOutput(objectName = "landscapeAttr", objectClass = "list", desc = "list of polygon attributes inc. area"),
