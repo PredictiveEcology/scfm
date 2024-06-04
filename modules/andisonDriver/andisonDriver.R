@@ -21,7 +21,7 @@ defineModule(sim, list(
     defineParameter("mfsMultiplier", "numeric", 1, 0.1, 4, desc = "hack to increase pSpread")
     ),
     #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "scfmRegimePars", objectClass = "list", desc = "fire regime parameter estimates per polygon"),
     expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = ""),
     expectsInput(objectName = "cTable2", objectClass = "data.frame",
@@ -30,7 +30,7 @@ defineModule(sim, list(
     expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "a study area",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters")
   )
 ))
