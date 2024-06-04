@@ -17,7 +17,7 @@ defineModule(sim, list(
     defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
     defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
@@ -26,7 +26,7 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
    createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
    createsOutput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
                  desc = "Fire locations. Points outside studyArea are removed")
