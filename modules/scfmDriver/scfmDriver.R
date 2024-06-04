@@ -28,7 +28,7 @@ defineModule(sim, list(
                     default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
                     desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput("cloudFolderID", "character",
                  paste("URL for Google-drive-backed cloud cache. ",
                        "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
@@ -37,7 +37,7 @@ defineModule(sim, list(
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
                  desc = "a studyArea where separate polygons denote separate fire regimes")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
   )
 ))
