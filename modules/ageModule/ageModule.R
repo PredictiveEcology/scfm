@@ -22,7 +22,7 @@ defineModule(sim, list(
     defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
     expectsInput(objectName = "ageMap", objectClass = "RasterLayer",
                  desc = "stand age map in study area, default is Canada national stand age map",
@@ -32,7 +32,7 @@ defineModule(sim, list(
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
   )
 ))
