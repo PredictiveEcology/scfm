@@ -20,7 +20,7 @@ defineModule(sim, list(
     defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
     defineParameter("minFRI", "numeric", 40, NA, NA, desc = "minimum fire return interval to consider")
   ),
-  inputObjects = bind_rows(
+  inputObjects = bindrows(
     expectsInput(objectName = "AndisonFRI", objectClass = "SpatialPolygonsDataFrame", desc = "Dave's FRI map",
                  sourceURL = "https://drive.google.com/file/d/1JptU0R7qsHOEAEkxybx5MGg650KC98c6/view?usp=sharing"),
     expectsInput(objectName = "studyArea0", objectClass = "SpatialPolygonsDataFrame",
@@ -29,7 +29,7 @@ defineModule(sim, list(
     expectsInput(objectName = "rasterToMatch", objectClass = "rasterLayer",
                   desc = "template raster for raster GIS operations. Must be supplied by user")
   ),
-  outputObjects = bind_rows(
+  outputObjects = bindrows(
     createsOutput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
                   desc = "Updated study area with 'LTHFC' and 'PolyID' fields.")
   )
