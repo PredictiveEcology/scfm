@@ -183,7 +183,7 @@ Init <- function(sim) {
           !suppliedElsewhere("landscapeAttr", sim))) {
     stop("this module cannot be run without scfmRegime and scfmLandcoverInit")
   }
-  browser()
+
   if (!suppliedElsewhere("flammableMapLarge", sim)) {
     bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
