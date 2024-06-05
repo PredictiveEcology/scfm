@@ -24,7 +24,7 @@ defineModule(sim, list(
   citation = list(),
   reqdPkgs = list(
     "fasterize", ## TODO: use terra::rasterize()
-    "PredictiveEcology/LandR@development",
+    "PredictiveEcology/LandR",
     "purrr",
     "reproducible",
     "PredictiveEcology/scfmutils@development (>= 0.0.7.9001)",
