@@ -112,7 +112,7 @@ Init <- function(sim) {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
 
-  if (any(!(fc %in% causeSet))) {
+  if (all(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
     warning(paste0("This firecause is not present: ", notPresent,
                    " The following are the fire causes: ",
