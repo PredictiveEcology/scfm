@@ -205,7 +205,7 @@ Init <- function(sim) {
       ))
     }
 
-    landscapeLCC[] <- as.integer(as.vector(landscapeLCC))
+    landscapeLCC <- LandR::asInt(landscapeLCC)
 
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
