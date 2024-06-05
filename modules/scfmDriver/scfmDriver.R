@@ -16,7 +16,7 @@ defineModule(sim, list(
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
                    before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
-                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/scfmutils@development (>= 0.0.7.9001)",
