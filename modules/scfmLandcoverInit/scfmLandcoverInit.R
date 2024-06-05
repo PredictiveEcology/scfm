@@ -26,7 +26,7 @@ defineModule(sim, list(
     "fasterize", ## TODO: use terra::rasterize()
     "PredictiveEcology/LandR@development",
     "purrr",
-    "PredictiveEcology/reproducible@development",
+    "reproducible",
     "PredictiveEcology/scfmutils (>= 0.0.7.9001)",
     "sf", "terra"
   ),
