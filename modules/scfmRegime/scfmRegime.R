@@ -15,7 +15,7 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
-  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.13.9001)"),
+  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils@development (>= 0.0.13.9001)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
     defineParameter("fireCause", "character", c("N", "L"), NA_character_, NA_character_,

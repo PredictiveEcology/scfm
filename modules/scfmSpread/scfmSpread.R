@@ -15,9 +15,9 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmSpread.Rmd"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver", "scfmIgnition", "scfmEscape")),
   reqdPkgs = list("data.table", "fpCompare", "magrittr", "raster",
-                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils (>= 0.0.5)",
+                  "PredictiveEcology/scfmutils@development (>= 0.0.5)",
                   "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA,

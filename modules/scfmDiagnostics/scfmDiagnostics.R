@@ -10,7 +10,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("aut", "cre"))
   ),
   childModules = character(0),
-  version = list(scfmDiagnostics = "0.0.5"),
+  version = list(scfmDiagnostics = "0.0.6"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -19,8 +19,8 @@ defineModule(sim, list(
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
                   "PredictiveEcology/scfmutils (>= 0.0.9)",
-                  "PredictiveEcology/reproducible@development (>= 2.0.12.9017)",
-                  "PredictiveEcology/SpaDES.core@development (>= 2.0.5.9027)"),
+                  "PredictiveEcology/reproducible@development (>= 2.1.0)",
+                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",
@@ -144,6 +144,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         dt[, rep := r]
 
         message("  done")
+
+        return(dt)
       }))
 
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
