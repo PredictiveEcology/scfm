@@ -25,10 +25,6 @@ defineModule(sim, list(
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
     defineParameter("startTime", "numeric", start(sim, "year"), NA, NA, "simulation time of first escape"),
-    defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA, "time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", 1, NA, NA, "time at which the first plot event should occur"),
-    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
-                    "Used by Plots function, which can be optionally used here"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
   ),
@@ -53,19 +49,6 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
     init = {
       sim <- Init(sim)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape", eventPriority = 7.5)
-
-      if ("screen" %in% P(sim)$.plots) {
-        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot", eventPriority = 7.5)
-      }
-    },
-    plot = {
-      if (time(sim) > start(sim)) {
-        escapeRaster <- rast(sim$rasterToMatch)
-        values(escapeRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
-        values(escapeRaster)[sim$ignitionLoci] <- 1          # mark the initials specially
-        Plot(escapeRaster, title = paste0("Annual fire escapes", time(sim)))
-      }
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot", eventPriority = 7.5)
     },
     escape = {
       sim <- Escape(sim)
