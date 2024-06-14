@@ -16,10 +16,11 @@ defineModule(sim, list(
   reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 1.0.0.9001)", "dplyr"),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
+  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 0.0.7.9001)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_,
-                    desc = "subset of `c('H', 'H-PB', 'L', 'Re', 'U')`"),
+    defineParameter("fireCause", "character", c("N", "L"), NA_character_, NA_character_,
+                    desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
     defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
@@ -50,8 +51,7 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
-                              "Must have numeric field 'PolyID' or it will be created for individual polygons"),
-                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip"),
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
     expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
@@ -114,7 +114,7 @@ Init <- function(sim) {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
 
-  if (any(!(fc %in% causeSet))) {
+  if (all(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
     warning(paste0("This firecause is not present: ", notPresent,
                    " The following are the fire causes: ",
@@ -197,18 +197,20 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("fireRegimePolysLarge", sim)) {
+  if (!suppliedElsewhere("fireRegimePolysLarge", sim) & !is.null(sim$studyAreaLarge)) {
     message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
     sim$fireRegimePolysLarge <- Cache(
       scfmutils::prepInputsFireRegimePolys,
-      url = extractURL("fireRegimePolys", sim),
+      url = NULL,
       destinationPath = dPath,
       studyArea = sim$studyAreaLarge,
       rasterToMatch = sim$rasterToMatchLarge,
       type = P(sim)$fireRegimePolysType,
       userTags = c(cacheTags, "fireRegimePolys")
     )
+  } else {
+    sim$fireRegimePolysLarge <- sim$fireRegimePolys
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {

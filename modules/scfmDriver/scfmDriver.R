@@ -16,7 +16,7 @@ defineModule(sim, list(
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
                    before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
-                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/scfmutils (>= 1.0.0)",
@@ -166,8 +166,7 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- asPath(inputPath(sim), 1)
-  if (!suppliedElsewhere("flammableMapLarge")) {
-    bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+  if (!suppliedElsewhere("flammableMapLarge", sim)) {
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- Cache(prepInputsLCC,
                           year = P(sim)$bufferLCCYear,
@@ -175,8 +174,20 @@ Init <- function(sim) {
                           studyArea = bufferedPoly,
                           useSAcrs = TRUE,
                           omitArgs = "destinationPath")
+    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {
+      #warning is about identical crs
+     landscapeLCC <- suppressWarnings(expr = eval(
+        #we want the resolution of rasterToMatch, but not the extent
+        Cache(project,
+              landscapeLCC,
+              method = "near",
+              res = res(sim$rasterToMatch),
+              y = crs(bufferedPoly),
+              userTags = c("scfmDriver", "projectBufferedLCC"))
+      ))
+    }
 
-    landscapeLCC <- setValues(landscapeLCC, as.integer(values(landscapeLCC)))
+    landscapeLCC <- LandR::asInt(landscapeLCC)
 
     if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
       nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)

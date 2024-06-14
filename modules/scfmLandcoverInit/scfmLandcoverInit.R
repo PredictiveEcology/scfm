@@ -24,10 +24,10 @@ defineModule(sim, list(
   citation = list(),
   reqdPkgs = list(
     "fasterize", ## TODO: use terra::rasterize()
-    "PredictiveEcology/LandR@development",
+    "PredictiveEcology/LandR (>= 1.1.1)",
     "purrr",
-    "PredictiveEcology/reproducible@development",
     "PredictiveEcology/scfmutils (>= 1.0.0)",
+    "reproducible",
     "sf", "terra"
   ),
   parameters = rbind(

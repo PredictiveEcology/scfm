@@ -17,6 +17,7 @@ defineModule(sim, list(
                   "PredictiveEcology/scfmutils (>= 1.0.0)"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
                    before = c("scfmEscape", "scfmSpread")),
+  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR (>= 1.1.1)"),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("pIgnition", "numeric", 0.001, 0, 1,

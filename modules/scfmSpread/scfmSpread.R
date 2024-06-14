@@ -14,8 +14,8 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver", "scfmIgnition", "scfmEscape")),
-  reqdPkgs = list("data.table", "fpCompare", "magrittr", "raster",
-                  "PredictiveEcology/LandR@development",
+  reqdPkgs = list("data.table", "fpCompare", "magrittr", "terra", "viridis",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/scfmutils (>= 1.0.0)",
                   "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
@@ -28,10 +28,10 @@ defineModule(sim, list(
                     desc = "Time interval between burn events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA,
                     desc = "Simulation time at which to initiate burning"),
-    defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
+    defineParameter(".plotInterval", "numeric", 10, NA, NA,
                     desc = "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", 1, NA, NA,
-                    desc = "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen"), NA, NA,
+                    "Used by Plots function, which can be optionally used here"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
                     desc = "Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
@@ -50,10 +50,10 @@ defineModule(sim, list(
   ),
   outputObjects = bindrows(
     createsOutput("burnDT", "data.table", desc = "data table with pixel IDs of most recent burn"),
-    createsOutput("burnMap", "RasterLayer", desc = "cumulative burn map"),
+    createsOutput("burnMap", "SpatRaster", desc = "cumulative burn map"),
     createsOutput("burnSummary", "data.table", desc = "describes details of all burned pixels"),
-    createsOutput("pSpread", "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput("rstCurrentBurn", "RasterLayer", desc = "annual burn map")
+    createsOutput("pSpread", "SpatRaster", desc = "spread probability applied to flammabiliy Map"),
+    createsOutput("rstCurrentBurn", "SpatRaster", desc = "annual burn map")
   )
 ))
 
@@ -69,8 +69,8 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
 
-      if ("screen" %in% P(sim)$.plots) {
-        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot", eventPriority = .last())
+      if (!any(is.na(P(sim)$.plots))) {
+        sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "plot", 7.5)
       }
     },
     burn = {
@@ -92,9 +92,10 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     plot = {
       if (!is.null(sim$rstCurrentBurn)) {
-        Plot(sim$rstCurrentBurn, new = TRUE, col = c("grey", "red"),
-             title = paste0("annual burn: year", time(sim)))
-        Plot(sim$burnMap, title = "Cumulative Burn", addTo = TRUE)
+        Plots(sim$rstCurrentBurn, type = P(sim)$.plots,
+            main = paste0("Annual Burn: year", time(sim)))
+        Plots(sim$burnMap, type = P(sim)$.plots,
+              main = paste0("Cumulative Burn: ", time(sim)))
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
@@ -187,12 +188,12 @@ Burnemup <- function(sim) {
                                       maxSize = maxSizes,
                                       asRaster = FALSE)
 
-  sim$rstCurrentBurn <- raster(sim$fireRegimeRas) ## use fireRegimeRas as template
+  sim$rstCurrentBurn <- rast(sim$fireRegimeRas) ## use fireRegimeRas as template
   sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 ## reset annual burn
   sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA ## might have to ignore warnings.
 
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 ## update annual burn
-  sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
+  # sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
 
   sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 ## update cumulative burn
 
@@ -213,7 +214,7 @@ Burnemup <- function(sim) {
 
   if (!suppliedElsewhere("flammableMap", sim)) {
     message("you should run scfmIgnition with scfmLandcoverInit")
-    flammableMap <- raster(sim$rasterToMatch)
+    flammableMap <- rast(sim$rasterToMatch)
     vals <- sample(x = 0:1, size = ncell(sim$rasterToMatch), replace = TRUE)
     sim$flammableMap <- setValues(flammableMap, vals)
   }
