@@ -39,10 +39,10 @@ Require(c("data.table", "ggplot2",
 
 ```{r module usage example}
 paths <- list(
-  cachePath = file.path("cache_debug"),
+  cachePath = file.path("cache"),
   modulePath = file.path("modules"),
   inputPath = file.path("inputs"),
-  outputPath = file.path("outputs_debug")
+  outputPath = file.path("outputs")
 )
 
 options("reproducible.cachePath" = paths$cachePath) 
@@ -75,7 +75,7 @@ parameters <- list(
   ),
   scfmLandcoverInit = list(
     sliverThreshold = 1e8, ## polygons <100 km2 are merged with closest non-sliver neighbour
-    .useCache = globCache,
+    .useCache = globCache
   ),
   scfmRegime = list(
     fireCause = c("L"),
@@ -90,7 +90,8 @@ parameters <- list(
 
 modules <- list(
   "scfmLandcoverInit", "scfmRegime", "scfmDriver",
-  "scfmIgnition", "scfmEscape","scfmSpread",
+  "scfmIgnition", "scfmEscape",
+  "scfmSpread",
   "scfmDiagnostics"
 )
 

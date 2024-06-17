@@ -19,8 +19,9 @@ defineModule(sim, list(
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
                   "PredictiveEcology/scfmutils (>= 1.0.0)",
-                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"),
-                  "PredictiveEcology/reproducible@development (>= 2.1.0)",
+                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)",
+                  "PredictiveEcology/reproducible@development (>= 2.1.0)"
+                  ),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",

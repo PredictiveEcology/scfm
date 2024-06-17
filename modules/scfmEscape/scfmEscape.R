@@ -100,6 +100,8 @@ Escape <- function(sim) {
 ## same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
   ## TODO: This module has other dependencies that aren't created: scfmDriverPars and ignitionLoci
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  dPath <- asPath(inputPath(sim), 1)
 
   if (!suppliedElsewhere("flammableMap", sim)) {
     vegMap <- prepInputsLCC(
@@ -107,7 +109,7 @@ Escape <- function(sim) {
       destinationPath = dPath,
       studyArea = sim$studyArea,
       rasterToMatch = sim$fireRegimeRas,
-      userTags = c("prepInputsLCC", "studyArea")
+      userTags = c(cacheTags, "prepInputsLCC", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMap <- defineFlammable(vegMap,
