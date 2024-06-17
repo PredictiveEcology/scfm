@@ -114,6 +114,8 @@ Init <- function(sim) {
   }
 
   if (all(!(fc %in% causeSet))) {
+    if ("N" %in% fc & "L" %in% causeSet) fc["N"] <- "L"
+    if ("L" %in% fc & "N" %in% causeSet) fc["L"] <- "N"
     notPresent <- fc[!fc %in% causeSet]
     warning(paste0("This firecause is not present: ", notPresent,
                    " The following are the fire causes: ",
