@@ -17,8 +17,8 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "fpCompare", "magrittr", "terra", "viridis",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils@development (>= 0.0.5)",
-                  "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
+                  "PredictiveEcology/scfmutils@development (>= 0.0.13.9003)",
+                  "PredictiveEcology/SpaDES.tools (>= 2.0.7)"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA,
                     desc = "Number of immediate cell neighbours"),
@@ -71,7 +71,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       # schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
 
-      if (!any(is.na(P(sim)$.plots))) {
+      if (anyPlotting(P(sim)$.plots)) {
         sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "plot", 7.5)
       }
     },
@@ -94,10 +94,12 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     },
     plot = {
       if (!is.null(sim$rstCurrentBurn)) {
-        Plots(sim$rstCurrentBurn, type = P(sim)$.plots,
-            main = paste0("Annual Burn: year", time(sim)))
-        Plots(sim$burnMap, type = P(sim)$.plots,
-              main = paste0("Cumulative Burn: ", time(sim)))
+        Plots(sim$rstCurrentBurn, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
+              filename = paste0("currentBurnMap_year_", time(sim)),
+              title = paste0("Annual Burn: year ", time(sim)))
+        Plots(sim$burnMap, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
+              filename = paste0("cumulativeBurnMap_year_", time(sim)),
+              title = paste0("Cumulative Burn: year ", time(sim)))
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
@@ -173,7 +175,7 @@ Burnemup <- function(sim) {
 
   threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
-  on.exit({setDTthreads(threadsDT)}, add = TRUE)
+  on.exit(setDTthreads(threadsDT), add = TRUE)
 
   sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                       start = sim$spreadState,

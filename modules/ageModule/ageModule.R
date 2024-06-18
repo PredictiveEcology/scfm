@@ -11,7 +11,9 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "ageModule.Rmd"),
-  reqdPkgs = list("raster", "RColorBrewer", "PredictiveEcology/LandR@development"),
+  reqdPkgs = list("RColorBrewer", "sf", "terra",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/scfmutils@development (>= 0.0.13.9003)"),
   parameters = rbind(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
     defineParameter("maxAge", "numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
@@ -23,51 +25,56 @@ defineModule(sim, list(
                     "Used by Plots function, which can be optionally used here")
   ),
   inputObjects = bindrows(
-    expectsInput("ageMap", "RasterLayer",
+    expectsInput("ageMap", "SpatRaster",
                  desc = "stand age map in study area, default is Canada national stand age map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar"),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
+    expectsInput("studyArea", "sf",
                  desc = "study area template",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput("rasterToMatch", "RasterLayer",
+    expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput("rstCurrentBurn", "RasterLayer",
+    expectsInput("rstCurrentBurn", "SpatRaster",
                  desc = "annual burn map created by `scfmSpread`.")
   ),
   outputObjects = bindrows(
-    createsOutput("ageMap", "RasterLayer", desc = "map of vegetation age")
+    createsOutput("ageMap", "SpatRaster", desc = "map of vegetation age")
   )
 ))
 
 doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
-  if (eventType == "init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
+  switch(eventType,
+    init = {
+      ### check for more detailed object dependencies:
+      ### (use `checkObject` or similar)
 
-    # do stuff for this event
-    sim <- Init(sim)
+      # do stuff for this event
+      sim <- Init(sim)
 
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
+      # schedule future event(s)
+      sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
 
-    if ("screen" %in% P(sim)$.plots) {
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot", eventPriority = 7.5)
-    }
+      if (anyPlotting(P(sim)$.plots)) {
+        sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "plot", eventPriority = 7.5)
+      }
+    },
+    age = {
+      # do stuff for this event
+      sim <- Age(sim)
 
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save", eventPriority = 7.5)
-  } else if (eventType == "age") {
-    # do stuff for this event
-    sim <- Age(sim)
+      # schedule the next event
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "ageModule", "age")
+    },
+    plot = {
+      Plots(sim$ageMap, fn = scfmutils::plot_ageMap, type = P(sim)$.plots,
+            filename = paste0("ageMap_year_", time(sim)),
+            title = paste0("Age map: year ", time(sim)),
+            maxAge = P(sim)$maxAge)
 
-    # schedule the next event
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "ageModule", "age")
-  } else if (eventType == "plot") {
-    Plot(sim$ageMap, legendRange = c(0, P(sim)$maxAge))
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "ageModule", "plot")
-  }  else {
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "ageModule", "plot")
+    },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
-                  "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+               "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
+  )
   return(invisible(sim))
 }
 
@@ -85,16 +92,6 @@ Init <- function(sim) {
   ## we will use our colour choices, not whatever may have come with the loaded map.
   setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
 
-  return(invisible(sim))
-}
-
-### template for save events
-Save <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 

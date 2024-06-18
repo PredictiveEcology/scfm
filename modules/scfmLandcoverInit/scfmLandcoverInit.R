@@ -27,7 +27,7 @@ defineModule(sim, list(
     "PredictiveEcology/LandR (>= 1.1.1)",
     "purrr",
     "reproducible",
-    "PredictiveEcology/scfmutils@development (>= 0.0.7.9001)",
+    "PredictiveEcology/scfmutils@development (>= 0.0.13.9003)",
     "sf", "terra"
   ),
   parameters = rbind(
@@ -134,19 +134,21 @@ doEvent.scfmLandcoverInit <- function(sim, eventTime, eventType, debug = FALSE) 
     init = {
       sim <- Init(sim)
 
-      if ("screen" %in% P(sim)$.plots) {
-        sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmLandcoverInit", "plot")
+      if (anyPlotting(P(sim)$.plots)) {
+        sim <- scheduleEvent(sim, start(sim), "scfmLandcoverInit", "plot")
       }
 
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmLandcoverInit", "save")
     },
     plot = {
-      if (time(sim) > start(sim)) {
-        Plot(sim$fireRegimeRas, title = c("fire regimes"), new = TRUE)
-        Plot(sim$flammableMap, legend = FALSE)
-      }
-      # schedule future event(s)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmLandcoverInit", "plot")
+      ## NOTE: these objects don't change during sim, so only need to be plotted once
+      Plots(sim$fireRegimeRas, fn = scfmutils::plot_fireRegimeRas, type = P(sim)$.plots,
+            filename = paste0("fireRegimeRas"),
+            title = paste0("Fire regimes"))
+
+      Plots(sim$flammableMap, fn = scfmutils::plot_flammableMap, type = P(sim)$.plots,
+            filename = paste0("fireRegimeRas"),
+            title = paste0("Fire regimes"))
     },
     save = {
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
