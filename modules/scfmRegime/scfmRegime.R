@@ -44,7 +44,7 @@ defineModule(sim, list(
                     desc = "Internal. Can be names of events or the whole module name to be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput("firePoints", "SpatialPointsDataFrame",
+    expectsInput("firePoints", "sf",
                  desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
                                'YEAR', and 'SIZE_HA', or pass the parameters to identify those."),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
@@ -59,12 +59,12 @@ defineModule(sim, list(
                  desc = "list of landscape attributes for each polygon"),
     expectsInput("landscapeAttrLarge", "list", ## TODO: use sf object (#32)
                  desc = paste("list of landscape attributes for larger study area - if supplied, the module",
-                              "will generate fire regime parameters for the polygons in landscapeAttr",
-                              "using the attributes from landscapeAttrLarge.")),
-    expectsInput("rasterToMatch", "RasterLayer",
+                              "will generate fire regime parameters for the polygons in `landscapeAttr`",
+                              "using the attributes from `landscapeAttrLarge`.")),
+    expectsInput("rasterToMatch", "SpatRaster",
                  desc = paste("template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyArea`.")),
-    expectsInput("rasterToMatchLarge", "RasterLayer",
+    expectsInput("rasterToMatchLarge", "SpatRaster",
                  desc = paste("large template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyAreaLarge`.")),
     expectsInput("studyArea", "SpatialPolygonsDataFrame",
