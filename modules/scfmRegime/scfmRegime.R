@@ -18,7 +18,7 @@ defineModule(sim, list(
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("N", "L"), NA_character_, NA_character_,
+    defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
@@ -108,7 +108,8 @@ Init <- function(sim) {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
 
-  if ("N" %in% fc & "L" %in% causeSet) fc["N"] <- "L"
+  if ("N" %in% fc & "L" %in% causeSet) fc[fc == "N"] <- "L"
+  if ("L" %in% fc & "N" %in% causeSet) fc[fc == "L"] <- "N"
 
   if (all(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
