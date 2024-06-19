@@ -18,7 +18,7 @@ defineModule(sim, list(
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 1.0.0)",
+                  "PredictiveEcology/scfmutils (>= 1.0.0.9002)",
                   "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)",
                   "PredictiveEcology/reproducible@development (>= 2.1.0)"
                   ),
@@ -189,6 +189,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 }
 
 diagnosticPlotsDT <- function(sim) {
+
   sAR <- sim$studyAreaReporting |>
     sf::st_union() |>
     sf::st_make_valid() |>
@@ -198,7 +199,7 @@ diagnosticPlotsDT <- function(sim) {
 
   fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
 
-  #preserve columns from regime + driver while overwriting landscapeAttr
+  #preserve columns from regime + driver
   colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
   colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
   fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]

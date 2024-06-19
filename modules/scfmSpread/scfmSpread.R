@@ -17,8 +17,8 @@ defineModule(sim, list(
   reqdPkgs = list("data.table", "fpCompare", "magrittr", "terra", "viridis",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/SpaDES.tools (>= 2.0.7)"),
-                  "PredictiveEcology/scfmutils (>= 1.0.0)",
+                  "PredictiveEcology/SpaDES.tools (>= 2.0.7)",
+                  "PredictiveEcology/scfmutils (>= 1.0.0.9001)"),
   parameters = rbind(
     defineParameter("neighbours", "numeric", 8, NA, NA,
                     desc = "Number of immediate cell neighbours"),
