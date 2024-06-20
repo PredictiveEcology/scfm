@@ -154,8 +154,8 @@ Init <- function(sim) {
                                      maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
                                      fireSizeColumnName = P(sim)$fireSizeColumnName,
                                      targetBurnRate = P(sim)$targetBurnRate,
-                                     targetMaxFireSize = P(sim)$targetMaxFireSize))
-
+                                     targetMaxFireSize = P(sim)$targetMaxFireSize),
+                              fill = TRUE)
   #drop the attributes if they are present
   colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
                   "xMax", "emfs_ha", "empiricalBurnRate")
