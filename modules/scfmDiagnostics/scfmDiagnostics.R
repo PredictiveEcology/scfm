@@ -90,7 +90,11 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
       ## NOTE: historical distribution is derived purely from historical data
-      gg_histDist <- scfmutils::comparePredictions_fireDistribution(dt)
+      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
+                                                         size = min(sim$fireRegimePolys$cellSize),
+                                                         burnSummary = sim$burnSummary)
+      #note that fireRegimePoints may include SAL but this figure only compares distribution
+      #so total area is irrelevant
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
@@ -158,7 +162,11 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         geom_smooth(method = lm)
 
       # note historical distribution is derived purely from historical data
-      gg_histDist <- scfmutils::comparePredictions_fireDistribution(summaryDT) ## TODO: test this
+      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
+                                                         size = min(sim$fireRegimePolys$cellSize),
+                                                         burnSummary = sim$burnSummary)
+      #note that fireRegimePoints may include SAL but this figure only compares distribution
+      #so total area is irrelevant
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
