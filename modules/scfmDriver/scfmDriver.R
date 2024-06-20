@@ -24,10 +24,10 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
                     "Buffer width for fire landscape calibration"),
-    defineParameter("bufferLCCYear", "numeric", 2010, NA, 2010,
-                    paste("If relying on default buffered flammable map",
-                          "the year of LCC to use for defining flammable classes.")),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMapLarge if the object is unsupplied")),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
@@ -166,17 +166,26 @@ Init <- function(sim) {
 
 .inputObjects <- function(sim) {
   dPath <- asPath(inputPath(sim), 1)
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    stop("fireRegimePolys unsupplied - please run scfmLandcoverInit and scfmRegime")
+    #it is impossible to get this behaviour correct without also testing for
+    #rasterToMatch, studyArea, and then supplying artificial regime and landcover
+    #attributes anyway.
+  }
+
   if (!suppliedElsewhere("flammableMapLarge", sim)) {
+    bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
-    landscapeLCC <- Cache(prepInputsLCC,
-                          year = P(sim)$bufferLCCYear,
-                          destinationPath = dPath,
-                          studyArea = bufferedPoly,
-                          useSAcrs = TRUE,
-                          omitArgs = "destinationPath")
+    landscapeLCC <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
+      destinationPath = dPath,
+      projectTo = sim$rasterToMatch,
+      cropTo = bufferedPoly,
+      maskTo = bufferedPoly)
     if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {
       #warning is about identical crs
-     landscapeLCC <- suppressWarnings(expr = eval(
+      landscapeLCC <- suppressWarnings(expr = eval(
         #we want the resolution of rasterToMatch, but not the extent
         Cache(project,
               landscapeLCC,
@@ -189,14 +198,8 @@ Init <- function(sim) {
 
     landscapeLCC <- LandR::asInt(landscapeLCC)
 
-    if (P(sim)$bufferLCCYear == 2010 | P(sim)$bufferLCCYear == 2015) {
-      nonFlamClasses <- c(13L, 16L, 17L, 18L, 19L)
-    } else if (P(sim)$bufferLCCYear == 2005) {
-      nonFlamClasses <- c(0L, 25L, 30L, 33L, 36L, 37L, 38L, 39L)
-    } else {
-      stop("invalid bufferLCCYear - please supply flammableMapLarge")
-    }
-    sim$flammableMapLarge <- defineFlammable(landscapeLCC, nonFlammClasses = nonFlamClasses)
+    sim$flammableMapLarge <- defineFlammable(landscapeLCC,
+                                             nonFlammClasses = c(20, 31, 32, 33))
   }
 
   return(invisible(sim))

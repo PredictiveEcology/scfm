@@ -30,6 +30,9 @@ defineModule(sim, list(
     "reproducible", "sf", "terra"
   ),
   parameters = rbind(
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMap if the obejct is unsupplied")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
                     paste("fire regime polygons with area less than this number will be merged",
@@ -214,11 +217,12 @@ Init <- function(sim) {
       "rasterToMatch not supplied. generating from LCC2010 using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"
     ))
-    sim$rasterToMatch <- LandR::prepInputsLCC(
-      year = 2010,
+    sim$rasterToMatch <- LandR::prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
       destinationPath = dPath,
-      studyArea = sim$studyArea,
-      useSAcrs = TRUE,
+      cropTo = sim$studyArea,
+      maskTo= sim$studyArea,
+      projectTo = sim$studyArea,
       filename2 = NULL,
       overwrite = TRUE,
       userTags = c(cacheTags, "rasterToMatch")
@@ -227,14 +231,15 @@ Init <- function(sim) {
 
   if (hasSAL & !suppliedElsewhere("rasterToMatchLarge", sim)) {
     message(paste(
-      "rasterToMatch not supplied. generating from LCC2010 using studyArea CRS",
+      "rasterToMatch not supplied. generating from NTEMS LCC using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"
     ))
-    sim$rasterToMatchLarge <- LandR::prepInputsLCC(
-      year = 2010,
+    sim$rasterToMatchLarge <- LandR::prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
       destinationPath = dPath,
-      studyArea = sim$studyAreaLarge,
-      useSAcrs = TRUE,
+      maskTo = sim$studyAreaLarge,
+      projectTo = sim$studyAreaLarge,
+      cropTo = sim$studyAreaLarge,
       filename2 = NULL,
       overwrite = TRUE,
       userTags = c(cacheTags, "rasterToMatchLarge")
@@ -246,20 +251,18 @@ Init <- function(sim) {
       stop("flammableMap was supplied but not flammableMapLarge. Please supply neither or both")
     }
 
-    vegMap <- prepInputsLCC(
-      year = 2010,
+    vegMap <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
       destinationPath = dPath,
-      studyArea = sim$studyAreaLarge,
-      rasterToMatch = sim$rasterToMatchLarge,
-      userTags = c("prepInputsLCC", "studyAreaLarge")
+      maskTo = sim$studyAreaLarge,
+      cropTo = sim$rasterToMatchLarge,
+      projectTo = sim$rasterToMatchLarge,
+      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
-    if (!is.integer(vegMap[])) {
-      vegMap <- setValues(vegMap, as.integer(values(vegMap)))
-    }
-
+    vegMap[] <- asInteger(vegMap[])
     sim$flammableMapLarge <- defineFlammable(vegMap,
-      mask = sim$rasterToMatchLarge,
-      nonFlammClasses = c(13L, 16L:19L)
+                                             mask = sim$rasterToMatchLarge,
+                                             nonFlammClasses = c(20, 31, 32, 33)
     )
   }
 
@@ -270,17 +273,18 @@ Init <- function(sim) {
       sim$flammableMap <- postProcess(sim$flammableMapLarge, rasterToMatch = sim$rasterToMatch)
       options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
-      vegMap <- prepInputsLCC(
-        year = 2010,
+      vegMap <- prepInputs_NTEMS_LCC_FAO(
+        year = P(sim)$dataYear,
         destinationPath = dPath,
-        studyArea = sim$studyArea,
-        rasterToMatch = sim$rasterToMatch,
-        userTags = c("prepInputsLCC", "studyArea")
+        maskTo = sim$studyArea,
+        cropTo = sim$rasterToMatch,
+        projectTo = sim$rasterToMatch,
+        userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
       )
       vegMap[] <- asInteger(vegMap[])
       sim$flammableMap <- defineFlammable(vegMap,
         mask = sim$rasterToMatch,
-        nonFlammClasses = c(13L, 16L:19L)
+        nonFlammClasses = c(20, 31, 32, 33)
       )
     }
   }
