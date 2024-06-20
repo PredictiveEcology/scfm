@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
-  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils (>= 1.1.0.9001)", "dplyr"),
+  reqdPkgs = list("dplyr", "reproducible", "PredictiveEcology/scfmutils (>= 2.0.0)", "sf", "terra"),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
   parameters = rbind(
@@ -40,7 +40,7 @@ defineModule(sim, list(
                                  "These will override the default estimate of scfm and will be used to estimate",
                                  "a new spread probability. Names should correspond to `PolyID`.",
                                  "A partial set of polygons is allowed - missing polys are estimated from data")),
-    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
                     desc = "Internal. Can be names of events or the whole module name to be cached by SpaDES.")
   ),
   inputObjects = bindrows(

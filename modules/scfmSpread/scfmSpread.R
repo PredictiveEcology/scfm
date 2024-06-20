@@ -20,6 +20,9 @@ defineModule(sim, list(
                   "PredictiveEcology/SpaDES.tools (>= 2.0.7)",
                   "PredictiveEcology/scfmutils (>= 1.0.0.9001)"),
   parameters = rbind(
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMap if the obejct is unsupplied")),
     defineParameter("neighbours", "numeric", 8, NA, NA,
                     desc = "Number of immediate cell neighbours"),
     defineParameter("pSpread", "numeric", 0.23, 0, 1,
@@ -215,12 +218,20 @@ Burnemup <- function(sim) {
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    message("you should run scfmIgnition with scfmLandcoverInit")
-    flammableMap <- rast(sim$rasterToMatch)
-    vals <- sample(x = 0:1, size = ncell(sim$rasterToMatch), replace = TRUE)
-    sim$flammableMap <- setValues(flammableMap, vals)
+    vegMap <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
+      destinationPath = dPath,
+      maskTo = sim$studyArea,
+      cropTo = sim$rasterToMatch,
+      projectTo = sim$rasterToMatch,
+      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
+    )
+    vegMap[] <- asInteger(vegMap[])
+    sim$flammableMap <- defineFlammable(vegMap,
+                                        mask = sim$rasterToMatch,
+                                        nonFlammClasses = c(20, 31, 32, 33)
+    )
   }
-
   if (!suppliedElsewhere("studyAreaReporting", sim)) {
     message("'studyAreaReporting' was not provided by user. Using the same as 'studyArea'.")
     sim$studyAreaReporting <- sim$studyArea

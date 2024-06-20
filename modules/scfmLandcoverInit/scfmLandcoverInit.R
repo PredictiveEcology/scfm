@@ -33,6 +33,9 @@ defineModule(sim, list(
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
                                  "flammableMap if the obejct is unsupplied")),
+    defineParameter("fireRegimePolysType", "character", "ECOREGION", NA, NA,
+                    paste("Polygon type to use for scfm `fireRegimePolys`:",
+                          "see `?scfmutils::prepInputsFireRegimePolys` for allowed types.")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
                     paste("fire regime polygons with area less than this number will be merged",
@@ -300,7 +303,7 @@ Init <- function(sim) {
     # cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
 
     fireRegimePolys <- Cache(prepInputsFireRegimePolys, url = NULL, destinationPath = dPath,
-                             studyArea = sa, type = "ECOREGION") %>%
+                             studyArea = sa, type = P(sim)$fireRegimePolysType) %>%
       st_transform(., st_crs(sa))
 
     if (hasSAL) {

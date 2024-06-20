@@ -40,7 +40,7 @@ defineModule(sim, list(
                     "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here"),
-    defineParameter(".useCache", "character", FALSE, NA, NA,
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Can be names of events or the whole module name; these will be cached by SpaDES"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     "should a cloud cache be used for heavy operations"),

@@ -16,12 +16,17 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "raster",
+  reqdPkgs = list("data.table",
                   "PredictiveEcology/LandR (>= 1.1.1)",
-                  "PredictiveEcology/scfmutils (>= 1.0.0)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/SpaDES.tools@development"),
+                  "PredictiveEcology/scfmutils (>= 2.0.0)",
+                  "sf",
+                  "PredictiveEcology/SpaDES.tools@development",
+                  "terra"),
   parameters = rbind(
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMap if the obejct is unsupplied")),
     defineParameter("neighbours", "integer", 8L, 4L, 8L, "Number of cell immediate neighbours (one of `4L` or `8L`)."),
     defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
     defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
@@ -104,17 +109,18 @@ Escape <- function(sim) {
   dPath <- asPath(inputPath(sim), 1)
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    vegMap <- prepInputsLCC(
-      year = 2010,
+    vegMap <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
       destinationPath = dPath,
-      studyArea = sim$studyArea,
-      rasterToMatch = sim$fireRegimeRas,
-      userTags = c(cacheTags, "prepInputsLCC", "studyArea")
+      maskTo = sim$studyArea,
+      cropTo = sim$rasterToMatch,
+      projectTo = sim$rasterToMatch,
+      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMap <- defineFlammable(vegMap,
                                         mask = sim$rasterToMatch,
-                                        nonFlammClasses = c(13L, 16L:19L)
+                                        nonFlammClasses = c(20, 31, 32, 33)
     )
   }
   return(invisible(sim))

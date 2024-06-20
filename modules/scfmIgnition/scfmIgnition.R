@@ -14,18 +14,21 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
   reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR (>= 1.1.1)",
-                  "PredictiveEcology/scfmutils (>= 1.0.0)"),
+                  "PredictiveEcology/scfmutils (>= 2.0.0)"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
                    before = c("scfmEscape", "scfmSpread")),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMap if the obejct is unsupplied")),
     defineParameter("pIgnition", "numeric", 0.001, 0, 1,
-                    "per cell and time ignition probability"),
+                    "default per cell and time ignition probability if unsupplied"),
     defineParameter("startTime", "numeric", start(sim), NA, NA,
                     "simulation time of first ignition"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA,
                     "interval between main events"),
-    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
@@ -35,7 +38,7 @@ defineModule(sim, list(
     ),
   outputObjects = bindrows(
     createsOutput("ignitionLoci", "numeric", desc = "vector of ignition locations"),
-    createsOutput("pIg", "numeric", desc = "ignition probability raster")
+    createsOutput("pIg", "SpatRaster", desc = "ignition probability raster")
   )
 ))
 
@@ -122,18 +125,18 @@ calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
   # ! ----- EDIT BELOW ----- ! #
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    message("you should run scfmIgnition with scfmLandcoverInit")
-    vegMap <- prepInputsLCC(
-      year = 2010,
+    vegMap <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
       destinationPath = dPath,
-      studyArea = sim$studyArea,
-      rasterToMatch = sim$rasterToMatch,
-      userTags = c("prepInputsLCC", "studyArea")
+      maskTo = sim$studyArea,
+      cropTo = sim$rasterToMatch,
+      projectTo = sim$rasterToMatch,
+      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMap <- defineFlammable(vegMap,
                                         mask = sim$rasterToMatch,
-                                        nonFlammClasses = c(13L, 16L:19L)
+                                        nonFlammClasses = c(20, 31, 32, 33)
     )
   }
 
