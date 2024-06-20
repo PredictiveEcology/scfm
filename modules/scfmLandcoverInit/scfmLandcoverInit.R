@@ -147,8 +147,8 @@ doEvent.scfmLandcoverInit <- function(sim, eventTime, eventType, debug = FALSE) 
             title = paste0("Fire regimes"))
 
       Plots(sim$flammableMap, fn = scfmutils::plot_flammableMap, type = P(sim)$.plots,
-            filename = paste0("fireRegimeRas"),
-            title = paste0("Fire regimes"))
+            filename = paste0("flammableMap"),
+            title = paste0("landscape flammability map"))
     },
     save = {
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.saveInterval, "scfmLandcoverInit", "save")
