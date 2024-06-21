@@ -20,7 +20,7 @@ defineModule(sim, list(
     defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging events"),
     defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", 1, NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 10, NA, NA, "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here")
   ),
@@ -80,13 +80,10 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   ## TODO: remove this workaround -- why isn't this 'being 'sticking' when done in .inputObjects??
-  if (!compareRaster(sim$rasterToMatch, sim$ageMap, stopiffalse = FALSE,
-                     extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)) {
+  #my hunch is that ageMap is studyAreaLarge sized if supplied in BBDP
+  if (!compareGeom(sim$rasterToMatch, sim$ageMap, stopOnError = FALSE)) {
     ## ensure ageMap matches rasterToMatch
-    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
-    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
     sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
-    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
   }
 
   ## we will use our colour choices, not whatever may have come with the loaded map.
@@ -96,13 +93,13 @@ Init <- function(sim) {
 }
 
 Age <- function(sim) {
-  newAges <- pmin(P(sim)$maxAge, getValues(sim$ageMap) + P(sim)$returnInterval)
-  sim$ageMap <- setValues(sim$ageMap, newAges)
+
+  newAges <- pmin(P(sim)$maxAge, as.vector(sim$ageMap) + P(sim)$returnInterval)
+  sim$ageMap[newAges]
 
   if (!is.null(sim$rstCurrentBurn)) {
-    compareRaster(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn,
-                  extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)
-    burn <- getValues(sim$rstCurrentBurn)
+    compareGeom(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn)
+    burn <- sim$rstCurrentBurn[]
     sim$ageMap[!is.na(burn) & burn == 1] <- 0
   }
 
@@ -123,18 +120,10 @@ Age <- function(sim) {
     sim$ageMap <- LandR::prepInputsStandAgeMap(
       studyArea = sim$studyArea,
       rasterToMatch = sim$rasterToMatch,
+      ageFun = "terra::rast",
       destinationPath = dPath,
       startTime  = start(sim)
     )
-  }
-
-  if (!compareRaster(sim$rasterToMatch, sim$ageMap, stopiffalse = FALSE,
-                     extent = TRUE, rowcol = TRUE, crs = TRUE, res = TRUE)) {
-    ## ensure ageMap matches rasterToMatch
-    useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
-    options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-    sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
-    options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
   }
 
   if (!suppliedElsewhere("rstCurrentBurn", sim)) {
