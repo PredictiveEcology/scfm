@@ -18,9 +18,10 @@ defineModule(sim, list(
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 0.0.9)",
-                  "PredictiveEcology/reproducible@development (>= 2.1.0)",
-                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"),
+                  "PredictiveEcology/scfmutils (>= 1.0.0.9002)",
+                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)",
+                  "PredictiveEcology/reproducible@development (>= 2.1.0)"
+                  ),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",
@@ -43,8 +44,7 @@ defineModule(sim, list(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput("burnSummary", "data.table",
                  "describes details of all burned pixels. Required in single mode.", sourceURL = NA),
-    expectsInput("burnMap", "SpatRaster",
-                 "cumulative burn map from simulation", sourceURL = NA),
+    expectsInput("burnMap", "SpatRaster", "cumulative burn map from simulation", sourceURL = NA),
     expectsInput("fireRegimePoints", "sf",
                  "Fire locations. Points outside studyArea are removed. Required in single mode.", sourceURL = NA),
     expectsInput("fireRegimePolys", "sf",
@@ -54,12 +54,6 @@ defineModule(sim, list(
                  sourceURL = NA),
     expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map. Required in single mode.", sourceURL = NA),
-    expectsInput("landscapeAttr", "list",
-                 "contains landscape attributes for each polygon. Required in single mode.", sourceURL = NA),
-    expectsInput("scfmDriverPars", "list",
-                 "burn parameters for each polygon in `fireRegimePolys`.  Required in single mode.", sourceURL = NA),
-    expectsInput("scfmRegimePars", "list",
-                 "list of fire regime parameters for each polygon. Required in single mode.", sourceURL = NA),
     expectsInput("studyAreaReporting", "sf",
                  paste("multipolygon (typically smaller/unbuffered than studyArea) to use for plotting/reporting.",
                        "Required in single mode."))
@@ -96,7 +90,11 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
       ## NOTE: historical distribution is derived purely from historical data
-      gg_histDist <- scfmutils::comparePredictions_fireDistribution(dt)
+      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
+                                                         size = min(sim$fireRegimePolys$cellSize),
+                                                         burnSummary = sim$burnSummary)
+      #note that fireRegimePoints may include SAL but this figure only compares distribution
+      #so total area is irrelevant
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
@@ -164,7 +162,11 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
         geom_smooth(method = lm)
 
       # note historical distribution is derived purely from historical data
-      gg_histDist <- scfmutils::comparePredictions_fireDistribution(summaryDT) ## TODO: test this
+      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
+                                                         size = min(sim$fireRegimePolys$cellSize),
+                                                         burnSummary = sim$burnSummary)
+      #note that fireRegimePoints may include SAL but this figure only compares distribution
+      #so total area is irrelevant
 
       # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
       # MAAB can still be calculated manually if a user desires ## TODO
@@ -195,6 +197,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 }
 
 diagnosticPlotsDT <- function(sim) {
+
   sAR <- sim$studyAreaReporting |>
     sf::st_union() |>
     sf::st_make_valid() |>
@@ -204,7 +207,12 @@ diagnosticPlotsDT <- function(sim) {
 
   fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
 
-  landscapeAttrReporting <- genFireMapAttr(
+  #preserve columns from regime + driver
+  colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
+  colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
+  fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]
+
+  fireRegimePolysReporting <- genFireMapAttr(
     flammableMap = postProcessTo(sim$flammableMap, to = sAR),
     fireRegimePolys = fireRegimePolysReporting,
     neighbours = 8 ## TODO: use the param from the sim rather than hardcoding here
@@ -212,17 +220,9 @@ diagnosticPlotsDT <- function(sim) {
 
   polyNames <- as.character(unique(fireRegimePolysReporting$PolyID))
 
-  stopifnot(all(polyNames %in% names(landscapeAttrReporting)))
-
-  scfmDriverParsReporting <- subset(sim$scfmDriverPars, names(sim$scfmDriverPars) %in% polyNames)
-
-  scfmRegimeParsReporting <- subset(sim$scfmRegimePars, names(sim$scfmRegimePars) %in% polyNames)
-
   dt <- scfmutils::comparePredictions_summaryDT(
-    scfmDriverPars = scfmDriverParsReporting,
-    scfmRegimePars = scfmRegimeParsReporting,
-    landscapeAttr = landscapeAttrReporting,
     fireRegimePoints = fireRegimePointsReporting,
+    fireRegimePolys = fireRegimePolysReporting,
     burnSummary = sim$burnSummary, ## already summarized for studyAreaReporting
     times = times(sim)
   )

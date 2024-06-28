@@ -13,12 +13,12 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
+  reqdPkgs = list("dplyr", "reproducible", "PredictiveEcology/scfmutils (>= 2.0.1)", "sf", "terra"),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
-  reqdPkgs = list("raster", "reproducible", "PredictiveEcology/scfmutils@development (>= 0.0.13.9001)"),
   parameters = rbind(
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("N", "L"), NA_character_, NA_character_,
+    defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
@@ -40,7 +40,7 @@ defineModule(sim, list(
                                  "These will override the default estimate of scfm and will be used to estimate",
                                  "a new spread probability. Names should correspond to `PolyID`.",
                                  "A partial set of polygons is allowed - missing polys are estimated from data")),
-    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
                     desc = "Internal. Can be names of events or the whole module name to be cached by SpaDES.")
   ),
   inputObjects = bindrows(
@@ -50,28 +50,23 @@ defineModule(sim, list(
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
     expectsInput("fireRegimePolys", "sf",
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
-                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons.",
+                              "Must be a sf object.")),
     expectsInput("fireRegimePolysLarge", "sf",
-                 desc = paste("A polygons file with field 'PolyID' describing unique fire regimes in a larger",
+                 desc = paste("An sf object with field 'PolyID' describing unique fire regimes in a larger",
                               "study area. Not required - but useful if the parameterization region is different",
-                              "from the simulation region.")),
-    expectsInput("landscapeAttr", "list", ## TODO: use sf object (#32)
-                 desc = "list of landscape attributes for each polygon"),
-    expectsInput("landscapeAttrLarge", "list", ## TODO: use sf object (#32)
-                 desc = paste("list of landscape attributes for larger study area - if supplied, the module",
-                              "will generate fire regime parameters for the polygons in `landscapeAttr`",
-                              "using the attributes from `landscapeAttrLarge`.")),
+                              "from the simulation region. Must be an sf object")),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = paste("template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyArea`.")),
     expectsInput("rasterToMatchLarge", "SpatRaster",
                  desc = paste("large template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyAreaLarge`.")),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = "Polygon to use as the simulation study area.",
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area. Can be a SpatVector.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput("studyAreaLarge", "SpatialPolygonsDataFrame",
-                 desc = paste("Polygon to use as the parametrisation study area.",
+    expectsInput("studyAreaLarge", "sf",
+                 desc = paste("Polygon to use as the parametrisation study area. Can be a SpatVector.",
                               "Note that `studyAreaLarge` is only used for parameter estimation, and",
                               "can be larger than the actual study area used for simulations."),
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
@@ -79,7 +74,7 @@ defineModule(sim, list(
   outputObjects = bindrows(
     createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
                   desc = "Fire locations. Points outside studyArea are removed"),
-    createsOutput("scfmRegimePars", "list", ## TODO: use sf object (#32)
+    createsOutput("fireRegimePolys", "sf", ## TODO: use sf object (#32)
                   desc =  "list of fire regime parameters for each polygon")
   )
 ))
@@ -95,6 +90,7 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
+
   tmp <- sim$firePoints
   ## extract and validate fireCause spec
 
@@ -111,6 +107,9 @@ Init <- function(sim) {
   } else {
     causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
   }
+
+  if ("N" %in% fc & "L" %in% causeSet) fc[fc == "N"] <- "L"
+  if ("L" %in% fc & "N" %in% causeSet) fc[fc == "L"] <- "N"
 
   if (all(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
@@ -147,30 +146,24 @@ Init <- function(sim) {
   sim$fireRegimePoints <- tmp
 
   ## this function estimates the ignition probability and escape probability based on NFDB
-  scfmRegimePars <- lapply(names(sim$landscapeAttrLarge),
-                           FUN = calcZonalRegimePars,
-                           firePolys = sim$fireRegimePolysLarge,
-                           landscapeAttr = sim$landscapeAttrLarge,
-                           firePoints = sim$fireRegimePoints,
-                           epochLength = epochLength,
-                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                           fireSizeColumnName = P(sim)$fireSizeColumnName,
-                           targetBurnRate = P(sim)$targetBurnRate,
-                           targetMaxFireSize = P(sim)$targetMaxFireSize)
+  scfmRegimePars <- rbindlist(lapply(unique(sim$fireRegimePolysLarge$PolyID),
+                                     FUN = calcZonalRegimePars,
+                                     firePolys = sim$fireRegimePolysLarge,
+                                     firePoints = sim$fireRegimePoints,
+                                     epochLength = epochLength,
+                                     maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+                                     fireSizeColumnName = P(sim)$fireSizeColumnName,
+                                     targetBurnRate = P(sim)$targetBurnRate,
+                                     targetMaxFireSize = P(sim)$targetMaxFireSize),
+                              fill = TRUE)
+  #drop the attributes if they are present
+  colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
+                  "xMax", "emfs_ha", "empiricalBurnRate")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
 
-  names(scfmRegimePars) <- names(sim$landscapeAttrLarge)
   ## only keep the attributes that are in study area
-  scfmRegimePars <- scfmRegimePars[names(scfmRegimePars) %in% names(sim$landscapeAttr)]
-
-  nullIdx <- sapply(scfmRegimePars, is.null)
-  if (any(nullIdx)) {
-    scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
-  }
-  sim$scfmRegimePars <- scfmRegimePars
-
-  stopifnot(
-    identical(unique(names(sim$scfmRegimePars)), names(sim$scfmRegimePars))
-  )
+  sim$fireRegimePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
 
   return(invisible(sim))
 }
