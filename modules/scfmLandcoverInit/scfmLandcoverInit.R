@@ -23,10 +23,9 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(
-    "fasterize", ## TODO: use terra::rasterize()
     "PredictiveEcology/LandR (>= 1.1.1)",
     "purrr",
-    "PredictiveEcology/scfmutils (>= 1.0.0)",
+    "PredictiveEcology/scfmutils (>= 2.0.1)",
     "reproducible", "sf", "terra"
   ),
   parameters = rbind(

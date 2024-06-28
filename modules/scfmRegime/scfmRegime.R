@@ -13,7 +13,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
-  reqdPkgs = list("dplyr", "reproducible", "PredictiveEcology/scfmutils (>= 2.0.0)", "sf", "terra"),
+  reqdPkgs = list("dplyr", "reproducible", "PredictiveEcology/scfmutils (>= 2.0.1)", "sf", "terra"),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
   parameters = rbind(
