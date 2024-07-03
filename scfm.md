@@ -25,12 +25,7 @@ link-citations: true
 always_allow_html: true
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(
-  echo = TRUE,
-  eval = FALSE
-)
-```
+
 
 ## Overview
 
@@ -125,7 +120,8 @@ The simulation fire regimes are derived from these, after the slivers are merged
 
 ## Usage example
 
-```{r load-SpaDES, eval = FALSE}
+
+```r
 library(Require)
 
 Require(c("data.table", "ggplot2",
@@ -133,7 +129,8 @@ Require(c("data.table", "ggplot2",
           "magrittr", "raster", "SpaDES.core", "sf"))
 ```
 
-```{r module usage example, eval = FALSE}
+
+```r
 # Parameters
 timeunit <- "year"
 times <- list(start = 1, end = 250)
@@ -224,7 +221,8 @@ outSim <- simInitAndSpades(times = times,
                            paths = paths)
 ```
 
-```{r module evaluate module output, eval = FALSE}
+
+```r
 ## NOTE: these plots are generated as part of the scfmDiagnostics module
 
 dt <- scfmutils::comparePredictions_summaryDT(outSim)
