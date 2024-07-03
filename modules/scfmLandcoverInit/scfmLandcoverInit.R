@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
-  version = numeric_version("2.0.0"),
+  version = list(scfmLandcoverInit = "2.0.0"),
   timeframe = as.POSIXlt(c("2005-01-01", NA)),
   documentation = list("README.md", "scfmLandcoverInit.Rmd"), # same file
   loadOrder = list(after = c("Biomass_speciesData", "Biomass_borealDataPrep"),

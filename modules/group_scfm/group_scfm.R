@@ -9,8 +9,7 @@ defineModule(sim, list(
   ),
   childModules = c("ageModule", "scfmDiagnostics", "scfmDriver", "scfmEscape", "scfmIgnition",
                    "scfmLandcoverInit", "scfmRegime", "scfmSpread"),
-  version = list(group_scfm = "0.0.1"),
-
+  version = list(group_scfm = "2.0.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
