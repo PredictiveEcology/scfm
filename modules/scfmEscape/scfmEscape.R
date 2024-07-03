@@ -19,30 +19,38 @@ defineModule(sim, list(
   reqdPkgs = list("data.table",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils (>= 2.0.0)",
+                  "PredictiveEcology/scfmutils (>= 2.0.1)",
                   "sf",
                   "PredictiveEcology/SpaDES.tools@development",
                   "terra"),
   parameters = rbind(
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
-                    desc = paste("used to select the year of landcover data used to create",
-                                 "flammableMap if the obejct is unsupplied")),
-    defineParameter("neighbours", "integer", 8L, 4L, 8L, "Number of cell immediate neighbours (one of `4L` or `8L`)."),
-    defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
-    defineParameter("returnInterval", "numeric", 1, NA, NA, "This specifies the time interval between Escape events"),
-    defineParameter("startTime", "numeric", start(sim, "year"), NA, NA, "simulation time of first escape"),
+                    paste("used to select the year of landcover data used to create",
+                          "`flammableMap` if the obejct is unsupplied.")),
+    defineParameter("neighbours", "integer", 8L, 4L, 8L,
+                    "Number of cell immediate neighbours (one of `4L` or `8L`)."),
+    defineParameter("p0", "numeric", 0.1, 0, 1,
+                    "probability of an ignition spreading to an unburned immediate neighbour"),
+    defineParameter("returnInterval", "numeric", 1, NA, NA,
+                    "This specifies the time interval between Escape events"),
+    defineParameter("startTime", "numeric", start(sim, "year"), NA, NA,
+                    "simulation time of first escape"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    desc = "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
+                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput("fireRegimePolys", "sf", "fire regime polys with ignition rate"),
-    expectsInput("fireRegimeRas", "SpatRaster", "rasterized version of fire regime polys"),
-    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability"),
-    expectsInput("ignitionLoci", "numeric", desc = "Pixel IDs where ignition occurs")
+    expectsInput("fireRegimePolys", "sf",
+                 desc = "fire regime polys with ignition rate"),
+    expectsInput("fireRegimeRas", "SpatRaster",
+                 desc = "rasterized version of `fireRegimePolys`"),
+    expectsInput("flammableMap", "SpatRaster",
+                 desc = "map of flammability"),
+    expectsInput("ignitionLoci", "numeric",
+                 desc = "pixel IDs where ignition occurs")
   ),
   outputObjects = bindrows(
-    createsOutput("spreadState", "data.table", desc = ""),
-    createsOutput("p0", "raster", desc = "")
+    createsOutput("spreadState", "data.table", desc = "stores the current fire spread state"),
+    createsOutput("p0", "SpatRaster", desc = "escape probability raster")
   )
 ))
 

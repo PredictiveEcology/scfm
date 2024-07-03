@@ -13,17 +13,20 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
-  reqdPkgs = list("raster", "SpaDES.tools", "PredictiveEcology/LandR (>= 1.1.1)",
-                  "PredictiveEcology/scfmutils (>= 2.0.0)"),
+  reqdPkgs = list(
+    "sf", "SpaDES.tools", "terra",
+    "PredictiveEcology/LandR (>= 1.1.1)",
+    "PredictiveEcology/scfmutils (>= 2.0.1)"
+  ),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
                    before = c("scfmEscape", "scfmSpread")),
   parameters = rbind(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
-                    desc = paste("used to select the year of landcover data used to create",
-                                 "flammableMap if the obejct is unsupplied")),
+                    paste("used to select the year of landcover data used to create",
+                          "`flammableMap` if the obejct is unsupplied")),
     defineParameter("pIgnition", "numeric", 0.001, 0, 1,
-                    "default per cell and time ignition probability if unsupplied"),
+                    "default per-cell and time ignition probability if unsupplied."),
     defineParameter("startTime", "numeric", start(sim), NA, NA,
                     "simulation time of first ignition"),
     defineParameter("returnInterval", "numeric", 1.0, NA, NA,
@@ -32,8 +35,8 @@ defineModule(sim, list(
                     "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput("fireRegimePolys", "sf", "fire regime polys with ignition rate"),
-    expectsInput("fireRegimeRas", "SpatRaster", "rasterized version of fire regime polys"),
+    expectsInput("fireRegimePolys", "sf", "`fireRegimePolys` with ignition rate attribute"),
+    expectsInput("fireRegimeRas", "SpatRaster", "rasterized version of `fireRegimePolys`"),
     expectsInput("flammableMap", "SpatRaster", desc = "map of flammability")
     ),
   outputObjects = bindrows(

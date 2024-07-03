@@ -1,13 +1,13 @@
 defineModule(sim, list(
   name = "scfmLandcoverInit",
   description = paste(
-    "Generates some relevant statistics for each fire regime over a studyArea.",
-    "if scfm is being parameterized over a larger area (`studyAreaLarge`), then the",
+    "Generates some relevant statistics for each fire regime over a `studyArea`.",
+    "If scfm is being parameterized over a larger area (`studyAreaLarge`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
     "`studyArea`, `studyAreaLarge`, `rasterToMatch`, `rasterToMatchLarge.`",
     "The extent should differ between objects and their 'large' counterparts."
   ),
-  keywords = c("fire", "LCC2010", "land cover classification 2010", "BEACONs"),
+  keywords = c("fire", "land cover classification"),
   childModules = character(),
   authors = c(
     person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
@@ -15,7 +15,7 @@ defineModule(sim, list(
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
-  version = numeric_version("0.1.0"),
+  version = numeric_version("2.0.0"),
   timeframe = as.POSIXlt(c("2005-01-01", NA)),
   documentation = list("README.md", "scfmLandcoverInit.Rmd"), # same file
   loadOrder = list(after = c("Biomass_speciesData", "Biomass_borealDataPrep"),
@@ -50,8 +50,9 @@ defineModule(sim, list(
   ),
   inputObjects = bindrows(
     expectsInput("fireRegimePolys", "sf",
-                 desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
-                              "Must have numeric field 'PolyID' or it will be created for individual polygons")),
+                 desc = paste("Areas to calibrate individual fire regime parameters.",
+                              "Defaults to ecozones of Canada.",
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
     expectsInput("fireRegimePolysLarge", "sf",
                  desc = paste("if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
@@ -59,8 +60,8 @@ defineModule(sim, list(
                  desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
     expectsInput("flammableMapLarge", "SpatRaster",
                  desc = paste("binary flammability map - defaults to using `LandR::prepInputsLCC`.",
-                              "This is only necessary if passing studyAreaLarge OR running `scfmDriver`.",
-                              "It should match the extent of studyAreaLarge, and if running `scfmDriver`,",
+                              "This is only necessary if passing `studyAreaLarge` OR running `scfmDriver`.",
+                              "It should match the extent of `studyAreaLarge`, and if running `scfmDriver`,",
                               "it should extend by >= scfmDriver's `P(sim)$buffDist`.")),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user"),
@@ -71,8 +72,10 @@ defineModule(sim, list(
     expectsInput("studyAreaLarge", "sf", desc = "optional larger study area used for parameterization only")
   ),
   outputObjects = bindrows(
-    createsOutput("fireRegimePolys", "sf", desc = "fireRegimePolys with landcover attributes appended"),
-    createsOutput("fireRegimePolysLarge", "sf", desc = "fireRegimePolysLarge with landcover attributes appended"),
+    createsOutput("fireRegimePolys", "sf",
+                  desc = "`fireRegimePolys` with landcover attributes appended"),
+    createsOutput("fireRegimePolysLarge", "sf",
+                  desc = "`fireRegimePolysLarge` with landcover attributes appended"),
     createsOutput("fireRegimeRas", "SpatRaster",
                   desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
   )

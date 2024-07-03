@@ -13,11 +13,15 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
-  reqdPkgs = list("dplyr", "reproducible", "PredictiveEcology/scfmutils (>= 2.0.1)", "sf", "terra"),
+  reqdPkgs = list(
+    "dplyr", "reproducible", "sf", "terra",
+    "PredictiveEcology/scfmutils (>= 2.0.1)"
+  ),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
   parameters = rbind(
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10,
+                    desc = "scale `xMax` by this if HD estimator fails"),
     defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
@@ -34,12 +38,12 @@ defineModule(sim, list(
                     desc = paste("a named vector giving the proportional annual area burned of each fire regime polygon.",
                                  "These override the default estimate of scfm and are used to estimate a new mean",
                                  "fire size and ignition rate. Names should correspond to `PolyID`.",
-                                 "A partial set of polygons is allowed - missing polys are estimated from data")),
+                                 "A partial set of polygons is allowed - missing polys are estimated from data.")),
     defineParameter("targetMaxFireSize", "numeric", NA, 0, NA,
-                    desc = paste("a named vector giving the estimated max fire size in ha of each fire regime polygon.",
+                    desc = paste("a named vector giving the estimated max fire size (in $ha$) of each fire regime polygon.",
                                  "These will override the default estimate of scfm and will be used to estimate",
                                  "a new spread probability. Names should correspond to `PolyID`.",
-                                 "A partial set of polygons is allowed - missing polys are estimated from data")),
+                                 "A partial set of polygons is allowed - missing polys are estimated from data.")),
     defineParameter(".useCache", "logical", FALSE, NA, NA,
                     desc = "Internal. Can be names of events or the whole module name to be cached by SpaDES.")
   ),
@@ -53,9 +57,10 @@ defineModule(sim, list(
                               "Must have numeric field 'PolyID' or it will be created for individual polygons.",
                               "Must be a sf object.")),
     expectsInput("fireRegimePolysLarge", "sf",
-                 desc = paste("An sf object with field 'PolyID' describing unique fire regimes in a larger",
-                              "study area. Not required - but useful if the parameterization region is different",
-                              "from the simulation region. Must be an sf object")),
+                 desc = paste("`sf` polygons object with field 'PolyID' describing unique",
+                              " fire regimes in a larger study area.",
+                              "Not required - but useful if the parameterization region is different",
+                              "from the simulation region.")),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = paste("template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyArea`.")),
@@ -63,19 +68,19 @@ defineModule(sim, list(
                  desc = paste("large template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyAreaLarge`.")),
     expectsInput("studyArea", "sf",
-                 desc = "Polygon to use as the simulation study area. Can be a SpatVector.",
+                 desc = "Polygon to use as the simulation study area. Can be a `SpatVector`.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput("studyAreaLarge", "sf",
-                 desc = paste("Polygon to use as the parametrisation study area. Can be a SpatVector.",
+                 desc = paste("Polygon to use as the parametrisation study area. Can be a `SpatVector`.",
                               "Note that `studyAreaLarge` is only used for parameter estimation, and",
                               "can be larger than the actual study area used for simulations."),
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bindrows(
-    createsOutput("fireRegimePoints", "SpatialPointsDataFrame",
-                  desc = "Fire locations. Points outside studyArea are removed"),
-    createsOutput("fireRegimePolys", "sf", ## TODO: use sf object (#32)
-                  desc =  "list of fire regime parameters for each polygon")
+    createsOutput("fireRegimePoints", "sf",
+                  desc = "Fire locations. Points outside `studyArea` are removed"),
+    createsOutput("fireRegimePolys", "sf",
+                  desc = "`fireRegimePolys` with fire attributes appended.")
   )
 ))
 

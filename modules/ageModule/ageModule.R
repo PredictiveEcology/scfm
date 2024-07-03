@@ -1,6 +1,6 @@
 defineModule(sim, list(
   name = "ageModule",
-  description = "Creates and maintains a raster called ageMap",
+  description = "Creates and maintains a raster called `ageMap`.",
   keywords = c("forest age", "modelling course", "Lab 5"),
   authors = c(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
@@ -13,23 +13,29 @@ defineModule(sim, list(
   documentation = list("README.txt", "ageModule.Rmd"),
   reqdPkgs = list("RColorBrewer", "sf", "terra",
                   "PredictiveEcology/LandR@development",
-                  "PredictiveEcology/scfmutils@development (>= 0.0.13.9003)"),
+                  "PredictiveEcology/scfmutils (>= 2.0.1)"),
   parameters = rbind(
-    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
-    defineParameter("maxAge", "numeric", 200, 0, 2**16 - 1, desc = "maximum age for plotting"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging events"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
-    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", 10, NA, NA, "This describes the simulation time at which the first plot event should occur"),
+    defineParameter("initialAge", "numeric", 99.0, 0, 1e4,
+                    "initial age"),
+    defineParameter("maxAge", "numeric", 200, 0, 2**16 - 1,
+                    "maximum age for plotting"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA,
+                    "Time interval between aging events"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA,
+                    "Simulation time at which to initiate aging"),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 10, NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
-                    "Used by Plots function, which can be optionally used here")
+                    "Used by `Plots()`, which can be optionally used here")
   ),
   inputObjects = bindrows(
     expectsInput("ageMap", "SpatRaster",
                  desc = "stand age map in study area, default is Canada national stand age map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar"),
     expectsInput("studyArea", "sf",
-                 desc = "study area template",
+                 desc = "Polygon to use as the simulation study area.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user."),

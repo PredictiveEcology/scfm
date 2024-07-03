@@ -15,7 +15,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "scfmDriver.Rmd"),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
                    before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
-  reqdPkgs = list("fasterize", "parallel", "sf", "spatialEco", "stats",
+  reqdPkgs = list("parallel", "sf", "spatialEco", "stats", "terra",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
@@ -35,9 +35,9 @@ defineModule(sim, list(
                     "numerical optimization method used in fitting scam model; see `?scam`."),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
     defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
-                    "This describes the simulation time at which the first plot event should occur"),
+                    "simulation time at which the first plot event should occur"),
     defineParameter(".plotInterval", "numeric", 1, NA, NA,
-                    "This describes the simulation time at which the first plot event should occur"),
+                    "simulation time at which the first plot event should occur"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
                     "Used by Plots function, which can be optionally used here"),
     defineParameter(".useCache", "logical", FALSE, NA, NA,
@@ -56,12 +56,13 @@ defineModule(sim, list(
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
     expectsInput("flammableMapLarge", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
-                       "Defaults to LCC2010. Must be supplied by user if `flammableMap` is also supplied.")),
+                       "Must be supplied by user if `flammableMap` is also supplied.")),
     expectsInput("rasterToMatch", "SpatRaster",
                  "template raster for raster GIS operations. Must be supplied by user.")
   ),
   outputObjects = bindrows(
-    createsOutput("fireRegimePolys", "sf", "fireRegimePolys with driver attributes appended")
+    createsOutput("fireRegimePolys", "sf",
+                  "`fireRegimePolys` with driver attributes appended")
   )
 ))
 

@@ -17,11 +17,12 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmDiagnostics.Rmd"), ## same file
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
-  reqdPkgs = list("ggplot2", "gridExtra",
-                  "PredictiveEcology/scfmutils (>= 1.0.0.9002)",
-                  "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)",
-                  "PredictiveEcology/reproducible@development (>= 2.1.0)"
-                  ),
+  reqdPkgs = list(
+    "ggplot2", "gridExtra",
+    "PredictiveEcology/reproducible@development (>= 2.1.0)",
+    "PredictiveEcology/scfmutils (>= 2.0.1)",
+    "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"
+  ),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
                     paste("use 'single' to run part of an scfm simulation (i.e., along with other scfm modules);",
@@ -43,20 +44,26 @@ defineModule(sim, list(
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput("burnSummary", "data.table",
-                 "describes details of all burned pixels. Required in single mode.", sourceURL = NA),
-    expectsInput("burnMap", "SpatRaster", "cumulative burn map from simulation", sourceURL = NA),
+                 "describes details of all burned pixels. Required in single mode.",
+                 sourceURL = NA),
+    expectsInput("burnMap", "SpatRaster",
+                 "cumulative burn map from simulation",
+                 sourceURL = NA),
     expectsInput("fireRegimePoints", "sf",
-                 "Fire locations. Points outside studyArea are removed. Required in single mode.", sourceURL = NA),
+                 "Fire locations. Points outside `studyArea` are removed. Required in single mode.",
+                 sourceURL = NA),
     expectsInput("fireRegimePolys", "sf",
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.",
                        "Required in single mode."),
                  sourceURL = NA),
     expectsInput("flammableMap", "SpatRaster",
-                 desc = "binary flammability map. Required in single mode.", sourceURL = NA),
+                 "binary flammability map. Required in single mode.",
+                 sourceURL = NA),
     expectsInput("studyAreaReporting", "sf",
-                 paste("multipolygon (typically smaller/unbuffered than studyArea) to use for plotting/reporting.",
-                       "Required in single mode."))
+                 paste("multipolygon (typically smaller/unbuffered than `studyArea`) to use for plotting/reporting.",
+                       "Required in single mode."),
+                 sourceURL = NA)
   ),
   outputObjects = bindrows(
     createsOutput("scfmSummaryDT", "data.table",
@@ -77,8 +84,6 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
     },
     diagnosticPlotsSingle = {
-      # ! ----- EDIT BELOW ----- ! #
-
       dt <- diagnosticPlotsDT(sim)
 
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
@@ -90,14 +95,16 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
       ## NOTE: historical distribution is derived purely from historical data
-      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
-                                                         size = min(sim$fireRegimePolys$cellSize),
-                                                         burnSummary = sim$burnSummary)
-      #note that fireRegimePoints may include SAL but this figure only compares distribution
-      #so total area is irrelevant
+      gg_histDist <- scfmutils::comparePredictions_fireDistribution(
+        sim$fireRegimePoints,
+        size = min(sim$fireRegimePolys$cellSize),
+        burnSummary = sim$burnSummary
+      )
+      ## note that fireRegimePoints may include SAL but this figure only compares distribution
+      ## so total area is irrelevant
 
-      # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
-      # MAAB can still be calculated manually if a user desires ## TODO
+      ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
+      ## studyAreaLarge is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "FRI.png"), gg_fri, height = 8, width = 8)
@@ -115,12 +122,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
 
       sim$scfmSummaryDT <- dt
-
-      # ! ----- STOP EDITING ----- ! #
     },
     diagnosticPlotsMulti = {
-      # ! ----- EDIT BELOW ----- ! #
-
       allReps <- P(sim)$reps
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
 
@@ -161,15 +164,15 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT) +
         geom_smooth(method = lm)
 
-      # note historical distribution is derived purely from historical data
+      ## note historical distribution is derived purely from historical data
       gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
                                                          size = min(sim$fireRegimePolys$cellSize),
                                                          burnSummary = sim$burnSummary)
-      #note that fireRegimePoints may include SAL but this figure only compares distribution
-      #so total area is irrelevant
+      ## note that fireRegimePoints may include SAL but this figure only compares distribution
+      ## so total area is irrelevant
 
-      # removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
-      # MAAB can still be calculated manually if a user desires ## TODO
+      ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
+      ## studyAreaLarge is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "multi_FRI.png"), gg_fri, height = 8, width = 8)
@@ -187,8 +190,6 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
 
       sim$scfmSummaryDT <- summaryDT
-
-      # ! ----- STOP EDITING ----- ! #
     },
     warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
                   "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
@@ -207,7 +208,7 @@ diagnosticPlotsDT <- function(sim) {
 
   fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
 
-  #preserve columns from regime + driver
+  ## preserve columns from regime + driver
   colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
   colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
   fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]
