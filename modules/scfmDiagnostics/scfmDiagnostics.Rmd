@@ -57,15 +57,12 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 ### Module summary
 
-Provide a brief summary of what the module does / how to use the module.
-
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
-
+Produce diagnostic and summary plots for scfm runs.
+Can be run for a single simulation, as part of the main scfm run, or as part of postprocessing.
+Inputs objects will be loaded from saved simulation files when in 'multi' mode.
+                      
 ### Module inputs and parameters
 
-Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
-If `sourceURL` is specified, `downloadData("scfmDiagnostics", "..")` may be sufficient.
 Table \@ref(tab:moduleInputs-scfmDiagnostics) shows the full list of module inputs.
 
 ```{r moduleInputs-scfmDiagnostics, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
@@ -100,8 +97,16 @@ knitr::kable(df_outputs, caption = "List of (ref:scfmDiagnostics) outputs and th
 
 ### Links to other modules
 
-Intended to be run with the `scfm` suite of modules (i.e., `group_scfm`).
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDriver`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmLandcoverInit`
+- `scfmRegime`
+- `scfmSpread`
 
 ### Getting help
 
--   provide a way for people to obtain help (e.g., module repository issues page)
+<https://github.com/PredictiveEcology/scfm/issues>

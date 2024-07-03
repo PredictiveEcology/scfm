@@ -1,6 +1,6 @@
 defineModule(sim, list(
   name = "scfmRegime",
-  description = "estimates fire regime parameters for BEACONs a la Steve's method",
+  description = "estimates fire regime parameters for BEACONs à la Steve's method.",
   keywords = c("fire regime", "BEACONs"),
   authors = c(
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
@@ -8,7 +8,7 @@ defineModule(sim, list(
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
   childModules = character(),
-  version = numeric_version("2.0.0"),
+  version = list(scfmRegime = "2.0.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),

@@ -4,7 +4,7 @@ defineModule(sim, list(
     "Generates some relevant statistics for each fire regime over a `studyArea`.",
     "If scfm is being parameterized over a larger area (`studyAreaLarge`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
-    "`studyArea`, `studyAreaLarge`, `rasterToMatch`, `rasterToMatchLarge.`",
+    "`studyArea`, `studyAreaLarge`, `rasterToMatch`, `rasterToMatchLarge`.",
     "The extent should differ between objects and their 'large' counterparts."
   ),
   keywords = c("fire", "land cover classification"),

@@ -1,5 +1,3 @@
-# Everything in this file gets sourced during simInit, and all functions and objects
-# are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmIgnition",
   description = "start a random number of fires",

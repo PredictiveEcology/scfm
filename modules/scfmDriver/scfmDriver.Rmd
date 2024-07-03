@@ -1,6 +1,6 @@
 ---
-title: "scfmIgnition Manual"
-subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmIgnition', path = '..')$version`"
+title: "scfmDriver Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmDriver', path = '..')$version`"
 date: "Last updated: `r Sys.Date()`"
 output:
   bookdown::html_document2:
@@ -12,17 +12,17 @@ output:
     keep_md: yes
 editor_options:
   chunk_output_type: console
-  bibliography: citations/references_scfmIgnition.bib
+  bibliography: citations/references_scfmDriver.bib
 link-citations: true
 always_allow_html: true
 ---
 
-# scfmIgnition Module
+# scfmDriver Module
 
 <!-- the following are text references used in captions for LaTeX compatibility -->
-(ref:scfmIgnition) *scfmIgnition*
+(ref:scfmDriver) *scfmDriver*
 
-```{r setup-scfmIgnition, include=FALSE}
+```{r setup-scfmDriver, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
 
 dir.create("figures", showWarnings = FALSE)
@@ -38,42 +38,41 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 #### Authors:
 
-`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmIgnition", path = '..')$authors), sep = ', ')`
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmDriver", path = '..')$authors), sep = ', ')`
 <!-- ideally separate authors with new lines, '\n' not working -->
 
 ## Module Overview
 
 ### Module summary
 
-Starts random number of fires based on estimated ignition probabilities for the landscape.
+Estimates parameters for the generic percolation model.
 
 ### Module inputs and parameters
 
-Table \@ref(tab:moduleInputs-scfmIgnition) shows the full list of module inputs.
+Table \@ref(tab:moduleInputs-scfmDriver) shows the full list of module inputs.
 
-```{r moduleInputs-scfmIgnition, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("scfmIgnition", "..")
+```{r moduleInputs-scfmDriver, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("scfmDriver", "..")
 knitr::kable(df_inputs,
-             caption = "List of (ref:scfmIgnition) input objects and their description.") |>
+             caption = "List of (ref:scfmDriver) input objects and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
-Table \@ref(tab:moduleParams-scfmIgnition) shows the full list of module parameters.
+Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameters.
 
-
-```{r moduleParams-scfmIgnition, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("scfmIgnition", "..")
-knitr::kable(df_params, caption = "List of (ref:scfmIgnition) parameters and their description.") |>
+```{r moduleParams-scfmDriver, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("scfmDriver", "..")
+knitr::kable(df_params, caption = "List of (ref:scfmDriver) parameters and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
 ### Module outputs
 
-Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmIgnition)).
+Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDriver)).
 
-```{r moduleOutputs-scfmIgnition, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("scfmIgnition", "..")
-knitr::kable(df_outputs, caption = "List of (ref:scfmIgnition) outputs and their description.") |>
+```{r moduleOutputs-scfmDriver, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("scfmDriver", "..")
+knitr::kable(df_outputs, caption = "List of (ref:scfmDriver) outputs and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 

@@ -41,7 +41,7 @@ dir.create("figures", showWarnings = FALSE)
 
 download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
               destfile = "figures/markdownBadge.png",
-              mode = 'wb')
+              mode = "wb")
 ```
 
 [![made-with-Markdown](figures/markdownBadge.png)](http://commonmark.org)
@@ -57,58 +57,20 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 ### Module summary
 
-Provide a brief summary of what the module does / how to use the module.
+A module group to run the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+- `ageModule` (optional)
+- `scfmDriver`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmLandcoverInit`
+- `scfmRegime`
+- `scfmSpread`
 
-### Module inputs and parameters
+### Module parameters, inputs and outputs
 
-Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
-If `sourceURL` is specified, `downloadData("group_scfm", "..")` may be sufficient.
-Table \@ref(tab:moduleInputs-group_scfm) shows the full list of module inputs.
-
-```{r moduleInputs-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("group_scfm", "..")
-knitr::kable(df_inputs,
-             caption = "List of (ref:group_scfm) input objects and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
-
-Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-group_scfm))
-
-```{r moduleParams-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("group_scfm", "..")
-knitr::kable(df_params, caption = "List of (ref:group_scfm) parameters and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
-
-### Events
-
-Describe what happens for each event type.
-
-### Plotting
-
-Write what is plotted.
-
-### Saving
-
-Write what is saved.
-
-### Module outputs
-
-Description of the module outputs (Table \@ref(tab:moduleOutputs-group_scfm)).
-
-```{r moduleOutputs-group_scfm, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("group_scfm", "..")
-knitr::kable(df_outputs, caption = "List of (ref:group_scfm) outputs and their description.") %>%
-  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
-```
-
-### Links to other modules
-
-Describe any anticipated linkages to other modules, such as modules that supply input data or do post-hoc analysis.
+See documentation for individual modules.
 
 ### Getting help
 
--   provide a way for people to obtain help (e.g., module repository issues page)
+<https://github.com/PredictiveEcology/scfm/issues>

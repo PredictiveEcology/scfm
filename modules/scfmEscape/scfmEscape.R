@@ -2,7 +2,7 @@
 #  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmEscape",
-  description = paste("'Escapes' fire(s) from an initial set of loci returned by an ignition module,",
+  description = paste("'Escapes' fire(s) from an initial set of loci returned by `scfmIgnition`,",
                       "and prepares the results for use by `scfmSpread`."),
   keywords = c("fire escape", "BEACONs"),
   authors = c(

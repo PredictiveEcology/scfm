@@ -133,29 +133,29 @@ Init <- function(sim) {
 
   flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
   scfmDriverPars <- Cache(pemisc::Map2,
-                              cl = cl,
-                              cloudFolderID = sim$cloudFolderID,
-                              ## function-level cache is controlled by option("reproducible.useCache")
-                              useCloud = P(sim)$.useCloud,
-                              omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
-                              polygonType = unique(sim$fireRegimePolys$PolyID),
-                              MoreArgs = list(targetN = P(sim)$targetN,
-                                              fireRegimePolys = sim$fireRegimePolys,
-                                              buffDist = P(sim)$buffDist,
-                                              pJmp = P(sim)$pJmp,
-                                              pMin = P(sim)$pMin,
-                                              pMax = P(sim)$pMax,
-                                              flammableMap = flammableMapLarge,
-                                              plotPath = file.path(outputPath(sim), "figures"),
-                                              outputPath = file.path(outputPath(sim)),
-                                              optimizer = P(sim)$scamOptimizer
-                              ),
-                              f = scfmutils::calibrateFireRegimePolys,
-                              userTags = c("scfmDriver", "scfmDriverPars"))
+                          cl = cl,
+                          cloudFolderID = sim$cloudFolderID,
+                          ## function-level cache is controlled by option("reproducible.useCache")
+                          useCloud = P(sim)$.useCloud,
+                          omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
+                          polygonType = unique(sim$fireRegimePolys$PolyID),
+                          MoreArgs = list(targetN = P(sim)$targetN,
+                                          fireRegimePolys = sim$fireRegimePolys,
+                                          buffDist = P(sim)$buffDist,
+                                          pJmp = P(sim)$pJmp,
+                                          pMin = P(sim)$pMin,
+                                          pMax = P(sim)$pMax,
+                                          flammableMap = flammableMapLarge,
+                                          plotPath = file.path(outputPath(sim), "figures"),
+                                          outputPath = file.path(outputPath(sim)),
+                                          optimizer = P(sim)$scamOptimizer
+                          ),
+                          f = scfmutils::calibrateFireRegimePolys,
+                          userTags = c("scfmDriver", "scfmDriverPars"))
 
   scfmDriverPars <- rbindlist(scfmDriverPars)
 
-  #drop the attributes if they are present
+  ## drop the attributes if they are present
   colsToDrop <- c("pSpread", "p0", "naiveP0", "pIgnition", "maxBurnCells")
   colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
   sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
@@ -169,10 +169,10 @@ Init <- function(sim) {
   dPath <- asPath(inputPath(sim), 1)
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    ## it is impossible to get this behaviour correct without also testing for
+    ## rasterToMatch, studyArea, and then supplying artificial regime and landcover
+    ## attributes anyway.
     stop("fireRegimePolys unsupplied - please run scfmLandcoverInit and scfmRegime")
-    #it is impossible to get this behaviour correct without also testing for
-    #rasterToMatch, studyArea, and then supplying artificial regime and landcover
-    #attributes anyway.
   }
 
   if (!suppliedElsewhere("flammableMapLarge", sim)) {
