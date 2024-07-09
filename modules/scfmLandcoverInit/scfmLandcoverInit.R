@@ -120,22 +120,20 @@ Init <- function(sim) {
   }
 
   ## ensure flammability maps are integer ('binary') maps
+  if (!is.integer(sim$flammableMap[])) {
+    sim$flammableMap[] <- as.int(sim$flammableMap)
+  }
+
+  if (!is.integer(sim$flammableMapLarge[])) {
+    sim$flammableMapLarge <- as.int(sim$flammableMapLarge)
+  }
+
   stopifnot(
     all(unique(sim$flammableMap[]) %in% c(NA_integer_, 0L, 1L)),
     all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
   )
 
-  if (!is.integer(sim$flammableMap[])) {
-    sim$flammableMap[] <- as.integer(sim$flammableMap[])
-  }
-
-  if (!is.integer(sim$flammableMapLarge[])) {
-    sim$flammableMapLarge <- setValues(sim$flammableMapLarge,
-                                       as.integer(values(sim$flammableMapLarge,
-                                                         mat = FALSE)))
-  }
   message("checking sim$fireRegimePolys for sliver polygons...")
-
   # this only needs to be done on the larger area, if it is provided
   # doing so on larger and smaller has the potential to mismatch slivers between calibration/simulation
   if (!is.null(sim$fireRegimePolysLarge)) {
@@ -152,18 +150,18 @@ Init <- function(sim) {
       cacheTag = c("scfmLandcoverInit", "fireRegimePolysLarge")
     )
 
-    # now that slivers are removed, remake frp from the larger object
+    ## now that slivers are removed, remake frp from the larger object
     sim$fireRegimePolys <- postProcessTerra(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
-    #for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
+    ## for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
     if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
-      #this object may have empty geometries, which can occur when SAL and SA are both subsets of the same file
-      #the empty geometries will cause an error
-      sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0,]
+      ## this object may have empty geometries, which can occur when SAL and SA are both subsets
+      ## of the same file. the empty geometries will cause an error.
+      sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0, ]
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
-    sim$fireRegimePolysLarge <- sim$fireRegimePolysLarge[order(sim$fireRegimePolysLarge$PolyID),]
+    sim$fireRegimePolysLarge <- sim$fireRegimePolysLarge[order(sim$fireRegimePolysLarge$PolyID), ]
 
     sim$fireRegimePolysLarge <- Cache(genFireMapAttr,
       flammableMap = sim$flammableMapLarge,
@@ -190,10 +188,7 @@ Init <- function(sim) {
     userTags = c(currentModule(sim), "genFireMapAttr", "studyArea")
   )
 
-  ##############
-  # ONLY FOR SA
-
-  # doing this prevents fireRegimeRas from inheriting colormaps
+  ## doing this prevents fireRegimeRas from inheriting colormaps
   sim$fireRegimeRas <- rasterize(sim$fireRegimePolys, sim$rasterToMatch, fun = "max", field = "PolyID")
 
   return(invisible(sim))
