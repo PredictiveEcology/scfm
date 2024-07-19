@@ -38,9 +38,9 @@ Eliot J B McIntire <eliot.mcintire@nrcan-rncan.gc.ca> [aut, cre], Steve Cumming 
 ### Module summary
 
 Generates some relevant statistics for each fire regime over a `studyArea`.
-If scfm is being parameterized over a larger area (`studyAreaLarge`), then the following objects must be supplied with identical CRS and resolution, where applicable:
+If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
 
-- `studyArea` and `studyAreaLarge`;
+- `studyArea` and `studyAreaCalibration`;
 - `rasterToMatch` and `rasterToMatchLarge`.
 
 The extents should differ between objects and their 'large' counterparts.
@@ -69,7 +69,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
   <tr>
    <td style="text-align:left;"> fireRegimePolysLarge </td>
    <td style="text-align:left;"> sf </td>
-   <td style="text-align:left;"> if `studyAreaLarge` is supplied, the corresponding fire regime areas. Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`. </td>
+   <td style="text-align:left;"> if `studyAreaCalibration` is supplied, the corresponding fire regime areas. Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -81,7 +81,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
   <tr>
    <td style="text-align:left;"> flammableMapLarge </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> binary flammability map - defaults to using `LandR::prepInputsLCC`. This is only necessary if passing `studyAreaLarge` OR running `scfmDriver`. It should match the extent of `studyAreaLarge`, and if running `scfmDriver`, it should extend by &gt;= scfmDriver's `P(sim)$buffDist`. </td>
+   <td style="text-align:left;"> binary flammability map - defaults to using `LandR::prepInputsLCC`. This is only necessary if passing `studyAreaCalibration` OR running `scfmDriver`. It should match the extent of `studyAreaCalibration`, and if running `scfmDriver`, it should extend by &gt;= scfmDriver's `P(sim)$buffDist`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -93,7 +93,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
   <tr>
    <td style="text-align:left;"> rasterToMatchLarge </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed. Must be supplied by user. </td>
+   <td style="text-align:left;"> Template raster for raster GIS operations. Only necessary if `studyAreaCalibration` is passed. Must be supplied by user. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -103,7 +103,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> studyAreaLarge </td>
+   <td style="text-align:left;"> studyAreaCalibration </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> optional larger study area used for parameterization only </td>
    <td style="text-align:left;"> NA </td>

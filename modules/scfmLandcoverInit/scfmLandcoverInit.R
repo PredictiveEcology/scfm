@@ -2,9 +2,9 @@ defineModule(sim, list(
   name = "scfmLandcoverInit",
   description = paste(
     "Generates some relevant statistics for each fire regime over a `studyArea`.",
-    "If scfm is being parameterized over a larger area (`studyAreaLarge`), then the",
+    "If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
-    "`studyArea`, `studyAreaLarge`, `rasterToMatch`, `rasterToMatchLarge`.",
+    "`studyArea`, `studyAreaCalibration`, `rasterToMatch`, `rasterToMatchLarge`.",
     "The extent should differ between objects and their 'large' counterparts."
   ),
   keywords = c("fire", "land cover classification"),
@@ -54,22 +54,22 @@ defineModule(sim, list(
                               "Defaults to ecozones of Canada.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
     expectsInput("fireRegimePolysLarge", "sf",
-                 desc = paste("if `studyAreaLarge` is supplied, the corresponding fire regime areas.",
+                 desc = paste("if `studyAreaCalibration` is supplied, the corresponding fire regime areas.",
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
     expectsInput("flammableMapLarge", "SpatRaster",
                  desc = paste("binary flammability map - defaults to using `LandR::prepInputsLCC`.",
-                              "This is only necessary if passing `studyAreaLarge` OR running `scfmDriver`.",
-                              "It should match the extent of `studyAreaLarge`, and if running `scfmDriver`,",
+                              "This is only necessary if passing `studyAreaCalibration` OR running `scfmDriver`.",
+                              "It should match the extent of `studyAreaCalibration`, and if running `scfmDriver`,",
                               "it should extend by >= scfmDriver's `P(sim)$buffDist`.")),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user"),
     expectsInput("rasterToMatchLarge", "SpatRaster",
-                 desc = paste("Template raster for raster GIS operations. Only necessary if `studyAreaLarge` is passed.",
+                 desc = paste("Template raster for raster GIS operations. Only necessary if `studyAreaCalibration` is passed.",
                               "Must be supplied by user.")),
     expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
-    expectsInput("studyAreaLarge", "sf", desc = "optional larger study area used for parameterization only")
+    expectsInput("studyAreaCalibration", "sf", desc = "optional larger study area used for parameterization only")
   ),
   outputObjects = bindrows(
     createsOutput("fireRegimePolys", "sf",
@@ -143,7 +143,7 @@ Init <- function(sim) {
 
     sim$fireRegimePolysLarge <- checkForIssues(
       fireRegimePolys = sim$fireRegimePolysLarge,
-      studyArea = sim$studyAreaLarge,
+      studyArea = sim$studyAreaCalibration,
       rasterToMatch = sim$rasterToMatchLarge,
       flammableMap = sim$flammableMapLarge,
       sliverThresh = P(sim)$sliverThreshold,
@@ -167,7 +167,7 @@ Init <- function(sim) {
       flammableMap = sim$flammableMapLarge,
       fireRegimePolys = sim$fireRegimePolysLarge,
       neighbours = P(sim)$neighbours,
-      userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaLarge")
+      userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaCalibration")
     )
   }
 
@@ -200,7 +200,7 @@ Init <- function(sim) {
 
   # object check for SA/FRP/FRPL/SAL - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)
-  hasSAL <- suppliedElsewhere("studyAreaLarge", sim)
+  hasSAL <- suppliedElsewhere("studyAreaCalibration", sim)
   hasFRP <- suppliedElsewhere("fireRegimePolys", sim)
   hasFRPL <- suppliedElsewhere("fireRegimePolysLarge", sim)
 
@@ -209,7 +209,7 @@ Init <- function(sim) {
     message("study area not supplied. Using random polygon in Alberta")
     studyArea <- LandR::randomStudyArea(size = 15000000000, seed = 23654)
     sim$studyArea <- studyArea
-    sim$studyAreaLarge <- studyArea
+    sim$studyAreaCalibration <- studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
@@ -237,9 +237,9 @@ Init <- function(sim) {
     sim$rasterToMatchLarge <- LandR::prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
-      maskTo = sim$studyAreaLarge,
-      projectTo = sim$studyAreaLarge,
-      cropTo = sim$studyAreaLarge,
+      maskTo = sim$studyAreaCalibration,
+      projectTo = sim$studyAreaCalibration,
+      cropTo = sim$studyAreaCalibration,
       filename2 = NULL,
       overwrite = TRUE,
       userTags = c(cacheTags, "rasterToMatchLarge")
@@ -254,7 +254,7 @@ Init <- function(sim) {
     vegMap <- prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
-      maskTo = sim$studyAreaLarge,
+      maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchLarge,
       projectTo = sim$rasterToMatchLarge,
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
@@ -292,7 +292,7 @@ Init <- function(sim) {
   ## this is TRUE unless fireRegimePolysLarge is supplied, in which case we drop that object
   if (!hasFRP & !hasFRPL) {
     sa <- if (hasSAL) {
-      sim$studyAreaLarge
+      sim$studyAreaCalibration
     } else {
       sim$studyArea
     }

@@ -86,7 +86,7 @@ doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
 
 Init <- function(sim) {
   ## TODO: remove this workaround -- why isn't this 'being 'sticking' when done in .inputObjects??
-  #my hunch is that ageMap is studyAreaLarge sized if supplied in BBDP
+  #my hunch is that ageMap is studyAreaCalibration sized if supplied in BBDP
   if (!compareGeom(sim$rasterToMatch, sim$ageMap, stopOnError = FALSE)) {
     ## ensure ageMap matches rasterToMatch
     sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)

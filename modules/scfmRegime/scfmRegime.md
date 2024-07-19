@@ -81,7 +81,7 @@ Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
   <tr>
    <td style="text-align:left;"> rasterToMatchLarge </td>
    <td style="text-align:left;"> SpatRaster </td>
-   <td style="text-align:left;"> large template raster for raster GIS operations. Must be supplied by user with same CRS as `studyAreaLarge`. </td>
+   <td style="text-align:left;"> large template raster for raster GIS operations. Must be supplied by user with same CRS as `studyAreaCalibration`. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -91,9 +91,9 @@ Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
    <td style="text-align:left;"> http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> studyAreaLarge </td>
+   <td style="text-align:left;"> studyAreaCalibration </td>
    <td style="text-align:left;"> sf </td>
-   <td style="text-align:left;"> Polygon to use as the parametrisation study area. Can be a `SpatVector`. Note that `studyAreaLarge` is only used for parameter estimation, and can be larger than the actual study area used for simulations. </td>
+   <td style="text-align:left;"> Polygon to use as the parametrisation study area. Can be a `SpatVector`. Note that `studyAreaCalibration` is only used for parameter estimation, and can be larger than the actual study area used for simulations. </td>
    <td style="text-align:left;"> http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip </td>
   </tr>
 </tbody>

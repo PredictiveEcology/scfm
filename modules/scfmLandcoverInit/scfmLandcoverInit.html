@@ -2994,9 +2994,9 @@ border-radius: 0px;
 <div id="module-summary" class="section level3">
 <h3>Module summary</h3>
 <p>Generates some relevant statistics for each fire regime over a <code>studyArea</code>.
-If scfm is being parameterized over a larger area (<code>studyAreaLarge</code>), then the following objects must be supplied with identical CRS and resolution, where applicable:</p>
+If scfm is being parameterized over a larger area (<code>studyAreaCalibration</code>), then the following objects must be supplied with identical CRS and resolution, where applicable:</p>
 <ul>
-<li><code>studyArea</code> and <code>studyAreaLarge</code>;</li>
+<li><code>studyArea</code> and <code>studyAreaCalibration</code>;</li>
 <li><code>rasterToMatch</code> and <code>rasterToMatchLarge</code>.</li>
 </ul>
 <p>The extents should differ between objects and their ‘large’ counterparts.</p>
@@ -3047,7 +3047,7 @@ fireRegimePolysLarge
 sf
 </td>
 <td style="text-align:left;">
-if <code>studyAreaLarge</code> is supplied, the corresponding fire regime areas. Requires integer field <code>PolyID</code> if supplied. Uses same defaults as <code>fireRegimePolys</code>.
+if <code>studyAreaCalibration</code> is supplied, the corresponding fire regime areas. Requires integer field <code>PolyID</code> if supplied. Uses same defaults as <code>fireRegimePolys</code>.
 </td>
 <td style="text-align:left;">
 NA
@@ -3075,7 +3075,7 @@ flammableMapLarge
 SpatRaster
 </td>
 <td style="text-align:left;">
-binary flammability map - defaults to using <code>LandR::prepInputsLCC</code>. This is only necessary if passing <code>studyAreaLarge</code> OR running <code>scfmDriver</code>. It should match the extent of <code>studyAreaLarge</code>, and if running <code>scfmDriver</code>, it should extend by &gt;= scfmDriver’s <code>P(sim)$buffDist</code>.
+binary flammability map - defaults to using <code>LandR::prepInputsLCC</code>. This is only necessary if passing <code>studyAreaCalibration</code> OR running <code>scfmDriver</code>. It should match the extent of <code>studyAreaCalibration</code>, and if running <code>scfmDriver</code>, it should extend by &gt;= scfmDriver’s <code>P(sim)$buffDist</code>.
 </td>
 <td style="text-align:left;">
 NA
@@ -3103,7 +3103,7 @@ rasterToMatchLarge
 SpatRaster
 </td>
 <td style="text-align:left;">
-Template raster for raster GIS operations. Only necessary if <code>studyAreaLarge</code> is passed. Must be supplied by user.
+Template raster for raster GIS operations. Only necessary if <code>studyAreaCalibration</code> is passed. Must be supplied by user.
 </td>
 <td style="text-align:left;">
 NA
@@ -3125,7 +3125,7 @@ NA
 </tr>
 <tr>
 <td style="text-align:left;">
-studyAreaLarge
+studyAreaCalibration
 </td>
 <td style="text-align:left;">
 sf

@@ -84,6 +84,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
     },
     diagnosticPlotsSingle = {
+
       dt <- diagnosticPlotsDT(sim)
 
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
@@ -104,7 +105,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       ## so total area is irrelevant
 
       ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
-      ## studyAreaLarge is supplied; MAAB can still be calculated manually if needed by user ## TODO
+      ## studyAreaCalibration is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "FRI.png"), gg_fri, height = 8, width = 8)
@@ -172,7 +173,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       ## so total area is irrelevant
 
       ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
-      ## studyAreaLarge is supplied; MAAB can still be calculated manually if needed by user ## TODO
+      ## studyAreaCalibration is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "multi_FRI.png"), gg_fri, height = 8, width = 8)

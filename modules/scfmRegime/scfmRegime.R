@@ -66,13 +66,13 @@ defineModule(sim, list(
                               "Must be supplied by user with same CRS as `studyArea`.")),
     expectsInput("rasterToMatchLarge", "SpatRaster",
                  desc = paste("large template raster for raster GIS operations.",
-                              "Must be supplied by user with same CRS as `studyAreaLarge`.")),
+                              "Must be supplied by user with same CRS as `studyAreaCalibration`.")),
     expectsInput("studyArea", "sf",
                  desc = "Polygon to use as the simulation study area. Can be a `SpatVector`.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput("studyAreaLarge", "sf",
+    expectsInput("studyAreaCalibration", "sf",
                  desc = paste("Polygon to use as the parametrisation study area. Can be a `SpatVector`.",
-                              "Note that `studyAreaLarge` is only used for parameter estimation, and",
+                              "Note that `studyAreaCalibration` is only used for parameter estimation, and",
                               "can be larger than the actual study area used for simulations."),
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
@@ -177,8 +177,8 @@ Init <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
-  if (!suppliedElsewhere("studyAreaLarge", sim)) {
-    sim$studyAreaLarge <- sim$studyArea
+  if (!suppliedElsewhere("studyAreaCalibration", sim)) {
+    sim$studyAreaCalibration <- sim$studyArea
   }
 
   if (!suppliedElsewhere("rasterToMatchLarge", sim)) {
@@ -199,14 +199,14 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("fireRegimePolysLarge", sim) & !is.null(sim$studyAreaLarge)) {
+  if (!suppliedElsewhere("fireRegimePolysLarge", sim) & !is.null(sim$studyAreaCalibration)) {
     message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
     sim$fireRegimePolysLarge <- Cache(
       scfmutils::prepInputsFireRegimePolys,
       url = NULL,
       destinationPath = dPath,
-      studyArea = sim$studyAreaLarge,
+      studyArea = sim$studyAreaCalibration,
       rasterToMatch = sim$rasterToMatchLarge,
       type = P(sim)$fireRegimePolysType,
       userTags = c(cacheTags, "fireRegimePolys")

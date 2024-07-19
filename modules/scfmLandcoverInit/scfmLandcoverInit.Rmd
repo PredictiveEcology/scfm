@@ -46,9 +46,9 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 ### Module summary
 
 Generates some relevant statistics for each fire regime over a `studyArea`.
-If scfm is being parameterized over a larger area (`studyAreaLarge`), then the following objects must be supplied with identical CRS and resolution, where applicable:
+If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
 
-- `studyArea` and `studyAreaLarge`;
+- `studyArea` and `studyAreaCalibration`;
 - `rasterToMatch` and `rasterToMatchLarge`.
 
 The extents should differ between objects and their 'large' counterparts.

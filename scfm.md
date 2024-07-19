@@ -74,13 +74,13 @@ Users are recommended to identify the scenario that best fits their use case, an
 ### Scenario 1: no prior knowledge of fire regimes
 
 In this scenario, some or all of the fire regime polygons (`fireRegimePolys`) may be too geographically limited to include historical fire data sufficient for calibration.
-The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (`studyAreaLarge`).
+The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (`studyAreaCalibration`).
 In this case, `scfmLandcoverInit` will calculate fire regime attributes for the larger area (`fireRegimePolysLarge`), `scfmRegime` will estimate fire regime parameters using the larger region, but `scfmDriver` will calibrate spread probability for the smaller region only.
 This ensures the simulated fires achieve the correct mean fire size. 
 
 **Additional objects needed:**
 
-- `studyAreaLarge` and `rasterToMatchLarge`;
+- `studyAreaCalibration` and `rasterToMatchLarge`;
 - if `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapLarge`, `fireRegimePolysLarge`, respectively). 
 
 ### Scenario 2: *a priori* knowledge of fire regimes
@@ -187,24 +187,24 @@ center <- SpatialPoints(coords = data.frame(x = c(-1209980),
             "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
 studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = center, seed = 1001)
 
-studyAreaLarge <- buffer(studyArea, 50000)
+studyAreaCalibration <- buffer(studyArea, 50000)
 
-rasterToMatchLarge <- raster(extent(studyAreaLarge), res = c(250, 250))
-crs(rasterToMatchLarge) <- crs(studyAreaLarge)
+rasterToMatchLarge <- raster(extent(studyAreaCalibration), res = c(250, 250))
+crs(rasterToMatchLarge) <- crs(studyAreaCalibration)
 rasterToMatchLarge[] <- 1
-rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaLarge)
+rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaCalibration)
 rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
 
-studyAreaLarge$name <- "SAL" #make SPDF
+studyAreaCalibration$name <- "SAL" #make SPDF
 
 studyArea <- st_as_sf(studyArea)
-studyAreaLarge <- st_as_sf(studyAreaLarge)
+studyAreaCalibration <- st_as_sf(studyAreaCalibration)
 # rasterToMatchLarge <- terra::rast(rasterToMatchLarge)
 # rastertoMatch <- terra::rast(rasterToMatch)
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
-  studyAreaLarge = studyAreaLarge,
+  studyAreaCalibration = studyAreaCalibration,
   rasterToMatch = rasterToMatch,
   rasterToMatchLarge = rasterToMatchLarge
 )
