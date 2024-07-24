@@ -56,7 +56,7 @@ defineModule(sim, list(
                  desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons.",
                               "Must be a sf object.")),
-    expectsInput("fireRegimePolysLarge", "sf",
+    expectsInput("fireRegimePolysCalibration", "sf",
                  desc = paste("`sf` polygons object with field 'PolyID' describing unique",
                               " fire regimes in a larger study area.",
                               "Not required - but useful if the parameterization region is different",
@@ -64,7 +64,7 @@ defineModule(sim, list(
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = paste("template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyArea`.")),
-    expectsInput("rasterToMatchLarge", "SpatRaster",
+    expectsInput("rasterToMatchCalibration", "SpatRaster",
                  desc = paste("large template raster for raster GIS operations.",
                               "Must be supplied by user with same CRS as `studyAreaCalibration`.")),
     expectsInput("studyArea", "sf",
@@ -139,11 +139,11 @@ Init <- function(sim) {
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
-  if (sf::st_crs(tmp) != sf::st_crs(sim$fireRegimePolysLarge)) {
-    tmp <- sf::st_transform(tmp, crs = sf::st_crs(sim$fireRegimePolysLarge))
+  if (sf::st_crs(tmp) != sf::st_crs(sim$fireRegimePolysCalibration)) {
+    tmp <- sf::st_transform(tmp, crs = sf::st_crs(sim$fireRegimePolysCalibration))
   }
 
-  tmp <- sf::st_intersection(tmp, sim$fireRegimePolysLarge) ## gives studyArea colnames to points
+  tmp <- sf::st_intersection(tmp, sim$fireRegimePolysCalibration) ## gives studyArea colnames to points
 
   if (any(is.na(tmp$PolyID))) {
     tmp <- tmp[!is.na(tmp$PolyID), ] ## need to remove NA points
@@ -151,9 +151,9 @@ Init <- function(sim) {
   sim$fireRegimePoints <- tmp
 
   ## this function estimates the ignition probability and escape probability based on NFDB
-  scfmRegimePars <- rbindlist(lapply(unique(sim$fireRegimePolysLarge$PolyID),
+  scfmRegimePars <- rbindlist(lapply(unique(sim$fireRegimePolysCalibration$PolyID),
                                      FUN = calcZonalRegimePars,
-                                     firePolys = sim$fireRegimePolysLarge,
+                                     firePolys = sim$fireRegimePolysCalibration,
                                      firePoints = sim$fireRegimePoints,
                                      epochLength = epochLength,
                                      maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
@@ -181,8 +181,8 @@ Init <- function(sim) {
     sim$studyAreaCalibration <- sim$studyArea
   }
 
-  if (!suppliedElsewhere("rasterToMatchLarge", sim)) {
-    sim$rasterToMatchLarge <- sim$rasterToMatch
+  if (!suppliedElsewhere("rasterToMatchCalibration", sim)) {
+    sim$rasterToMatchCalibration <- sim$rasterToMatch
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
@@ -199,29 +199,29 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("fireRegimePolysLarge", sim) & !is.null(sim$studyAreaCalibration)) {
+  if (!suppliedElsewhere("fireRegimePolysCalibration", sim) & !is.null(sim$studyAreaCalibration)) {
     message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
 
-    sim$fireRegimePolysLarge <- Cache(
+    sim$fireRegimePolysCalibration <- Cache(
       scfmutils::prepInputsFireRegimePolys,
       url = NULL,
       destinationPath = dPath,
       studyArea = sim$studyAreaCalibration,
-      rasterToMatch = sim$rasterToMatchLarge,
+      rasterToMatch = sim$rasterToMatchCalibration,
       type = P(sim)$fireRegimePolysType,
       userTags = c(cacheTags, "fireRegimePolys")
     )
   } else {
-    sim$fireRegimePolysLarge <- sim$fireRegimePolys
+    sim$fireRegimePolysCalibration <- sim$fireRegimePolys
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {
     ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
     sim$firePoints <- getFirePoints_NFDB_scfm(
-      studyArea = sim$fireRegimePolysLarge,
+      studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysLarge)
+    sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 
   return(invisible(sim))

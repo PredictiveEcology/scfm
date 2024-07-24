@@ -4,7 +4,7 @@ defineModule(sim, list(
     "Generates some relevant statistics for each fire regime over a `studyArea`.",
     "If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
-    "`studyArea`, `studyAreaCalibration`, `rasterToMatch`, `rasterToMatchLarge`.",
+    "`studyArea`, `studyAreaCalibration`, `rasterToMatch`, `rasterToMatchCalibration`.",
     "The extent should differ between objects and their 'large' counterparts."
   ),
   keywords = c("fire", "land cover classification"),
@@ -53,7 +53,7 @@ defineModule(sim, list(
                  desc = paste("Areas to calibrate individual fire regime parameters.",
                               "Defaults to ecozones of Canada.",
                               "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
-    expectsInput("fireRegimePolysLarge", "sf",
+    expectsInput("fireRegimePolysCalibration", "sf",
                  desc = paste("if `studyAreaCalibration` is supplied, the corresponding fire regime areas.",
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
@@ -65,7 +65,7 @@ defineModule(sim, list(
                               "it should extend by >= scfmDriver's `P(sim)$buffDist`.")),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user"),
-    expectsInput("rasterToMatchLarge", "SpatRaster",
+    expectsInput("rasterToMatchCalibration", "SpatRaster",
                  desc = paste("Template raster for raster GIS operations. Only necessary if `studyAreaCalibration` is passed.",
                               "Must be supplied by user.")),
     expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
@@ -74,8 +74,8 @@ defineModule(sim, list(
   outputObjects = bindrows(
     createsOutput("fireRegimePolys", "sf",
                   desc = "`fireRegimePolys` with landcover attributes appended"),
-    createsOutput("fireRegimePolysLarge", "sf",
-                  desc = "`fireRegimePolysLarge` with landcover attributes appended"),
+    createsOutput("fireRegimePolysCalibration", "sf",
+                  desc = "`fireRegimePolysCalibration` with landcover attributes appended"),
     createsOutput("fireRegimeRas", "SpatRaster",
                   desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
   )
@@ -136,22 +136,22 @@ Init <- function(sim) {
   message("checking sim$fireRegimePolys for sliver polygons...")
   # this only needs to be done on the larger area, if it is provided
   # doing so on larger and smaller has the potential to mismatch slivers between calibration/simulation
-  if (!is.null(sim$fireRegimePolysLarge)) {
-    if (is(sim$fireRegimePolysLarge, "SpatialPolygonsDataFrame")) {
-      sim$fireRegimePolysLarge <- sf::st_as_sf(sim$fireRegimePolysLarge)
+  if (!is.null(sim$fireRegimePolysCalibration)) {
+    if (is(sim$fireRegimePolysCalibration, "SpatialPolygonsDataFrame")) {
+      sim$fireRegimePolysCalibration <- sf::st_as_sf(sim$fireRegimePolysCalibration)
     }
 
-    sim$fireRegimePolysLarge <- checkForIssues(
-      fireRegimePolys = sim$fireRegimePolysLarge,
+    sim$fireRegimePolysCalibration <- checkForIssues(
+      fireRegimePolys = sim$fireRegimePolysCalibration,
       studyArea = sim$studyAreaCalibration,
-      rasterToMatch = sim$rasterToMatchLarge,
+      rasterToMatch = sim$rasterToMatchCalibration,
       flammableMap = sim$flammableMapLarge,
       sliverThresh = P(sim)$sliverThreshold,
-      cacheTag = c("scfmLandcoverInit", "fireRegimePolysLarge")
+      cacheTag = c("scfmLandcoverInit", "fireRegimePolysCalibration")
     )
 
     ## now that slivers are removed, remake frp from the larger object
-    sim$fireRegimePolys <- postProcessTerra(sim$fireRegimePolysLarge, studyArea = sim$studyArea)
+    sim$fireRegimePolys <- postProcessTerra(sim$fireRegimePolysCalibration, studyArea = sim$studyArea)
     ## for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
     if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
@@ -161,11 +161,11 @@ Init <- function(sim) {
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
-    sim$fireRegimePolysLarge <- sim$fireRegimePolysLarge[order(sim$fireRegimePolysLarge$PolyID), ]
+    sim$fireRegimePolysCalibration <- sim$fireRegimePolysCalibration[order(sim$fireRegimePolysCalibration$PolyID), ]
 
-    sim$fireRegimePolysLarge <- Cache(genFireMapAttr,
+    sim$fireRegimePolysCalibration <- Cache(genFireMapAttr,
       flammableMap = sim$flammableMapLarge,
-      fireRegimePolys = sim$fireRegimePolysLarge,
+      fireRegimePolys = sim$fireRegimePolysCalibration,
       neighbours = P(sim)$neighbours,
       userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaCalibration")
     )
@@ -202,7 +202,7 @@ Init <- function(sim) {
   hasSA <- suppliedElsewhere("studyArea", sim)
   hasSAL <- suppliedElsewhere("studyAreaCalibration", sim)
   hasFRP <- suppliedElsewhere("fireRegimePolys", sim)
-  hasFRPL <- suppliedElsewhere("fireRegimePolysLarge", sim)
+  hasFRPL <- suppliedElsewhere("fireRegimePolysCalibration", sim)
 
   # supply objects
   if (!hasSA & !hasSAL) {
@@ -229,12 +229,12 @@ Init <- function(sim) {
     )
   }
 
-  if (hasSAL & !suppliedElsewhere("rasterToMatchLarge", sim)) {
+  if (hasSAL & !suppliedElsewhere("rasterToMatchCalibration", sim)) {
     message(paste(
       "rasterToMatch not supplied. generating from NTEMS LCC using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"
     ))
-    sim$rasterToMatchLarge <- LandR::prepInputs_NTEMS_LCC_FAO(
+    sim$rasterToMatchCalibration <- LandR::prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
@@ -242,7 +242,7 @@ Init <- function(sim) {
       cropTo = sim$studyAreaCalibration,
       filename2 = NULL,
       overwrite = TRUE,
-      userTags = c(cacheTags, "rasterToMatchLarge")
+      userTags = c(cacheTags, "rasterToMatchCalibration")
     )
   }
 
@@ -255,13 +255,13 @@ Init <- function(sim) {
       year = P(sim)$dataYear,
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
-      cropTo = sim$rasterToMatchLarge,
-      projectTo = sim$rasterToMatchLarge,
+      cropTo = sim$rasterToMatchCalibration,
+      projectTo = sim$rasterToMatchCalibration,
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMapLarge <- defineFlammable(vegMap,
-                                             mask = sim$rasterToMatchLarge,
+                                             mask = sim$rasterToMatchCalibration,
                                              nonFlammClasses = c(20, 31, 32, 33)
     )
   }
@@ -289,7 +289,7 @@ Init <- function(sim) {
     }
   }
 
-  ## this is TRUE unless fireRegimePolysLarge is supplied, in which case we drop that object
+  ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
   if (!hasFRP & !hasFRPL) {
     sa <- if (hasSAL) {
       sim$studyAreaCalibration
@@ -304,7 +304,7 @@ Init <- function(sim) {
       st_transform(., st_crs(sa))
 
     if (hasSAL) {
-      sim$fireRegimePolysLarge <- fireRegimePolys
+      sim$fireRegimePolysCalibration <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,
                                          studyArea = sim$studyArea
       )

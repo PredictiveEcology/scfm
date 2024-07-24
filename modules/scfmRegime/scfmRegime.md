@@ -67,7 +67,7 @@ Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> fireRegimePolysLarge </td>
+   <td style="text-align:left;"> fireRegimePolysCalibration </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> `sf` polygons object with field 'PolyID' describing unique fire regimes in a larger study area. Not required - but useful if the parameterization region is different from the simulation region. </td>
    <td style="text-align:left;"> NA </td>
@@ -79,7 +79,7 @@ Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> rasterToMatchLarge </td>
+   <td style="text-align:left;"> rasterToMatchCalibration </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> large template raster for raster GIS operations. Must be supplied by user with same CRS as `studyAreaCalibration`. </td>
    <td style="text-align:left;"> NA </td>

@@ -80,13 +80,13 @@ Users are recommended to identify the scenario that best fits their use case, an
 
 In this scenario, some or all of the fire regime polygons (`fireRegimePolys`) may be too geographically limited to include historical fire data sufficient for calibration.
 The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (`studyAreaCalibration`).
-In this case, `scfmLandcoverInit` will calculate fire regime attributes for the larger area (`fireRegimePolysLarge`), `scfmRegime` will estimate fire regime parameters using the larger region, but `scfmDriver` will calibrate spread probability for the smaller region only.
+In this case, `scfmLandcoverInit` will calculate fire regime attributes for the larger area (`fireRegimePolysCalibration`), `scfmRegime` will estimate fire regime parameters using the larger region, but `scfmDriver` will calibrate spread probability for the smaller region only.
 This ensures the simulated fires achieve the correct mean fire size. 
 
 **Additional objects needed:**
 
-- `studyAreaCalibration` and `rasterToMatchLarge`;
-- if `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapLarge`, `fireRegimePolysLarge`, respectively). 
+- `studyAreaCalibration` and `rasterToMatchCalibration`;
+- if `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapLarge`, `fireRegimePolysCalibration`, respectively). 
 
 ### Scenario 2: *a priori* knowledge of fire regimes
 
@@ -110,8 +110,8 @@ The parameterized maximum fire size, in hectares, can be verified in `scfmRegime
 
 2. 'Sliver polygons', i.e., polygons that are smaller than the sliver threshold parameter (default $100 km^2$), are joined with their nearest non-sliver neighbour.
 This prevents any areas that have too little fire data from being *de facto* nonflammable.
-If a larger parameterization area is supplied (`fireRegimePolysLarge`), slivers are identified and merged only in the larger area.
-The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying `fireRegimePolys` is unnecessary when `fireRegimePolysLarge` is also supplied, as the former is overwritten by the latter.
+If a larger parameterization area is supplied (`fireRegimePolysCalibration`), slivers are identified and merged only in the larger area.
+The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying `fireRegimePolys` is unnecessary when `fireRegimePolysCalibration` is also supplied, as the former is overwritten by the latter.
 
 ## References
 
@@ -192,24 +192,24 @@ studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = center,
 
 studyAreaCalibration <- buffer(studyArea, 50000)
 
-rasterToMatchLarge <- raster(extent(studyAreaCalibration), res = c(250, 250))
-crs(rasterToMatchLarge) <- crs(studyAreaCalibration)
-rasterToMatchLarge[] <- 1
-rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaCalibration)
-rasterToMatch <- postProcess(rasterToMatchLarge, studyArea = studyArea)
+rasterToMatchCalibration <- raster(extent(studyAreaCalibration), res = c(250, 250))
+crs(rasterToMatchCalibration) <- crs(studyAreaCalibration)
+rasterToMatchCalibration[] <- 1
+rasterToMatchCalibration <- mask(rasterToMatchCalibration, studyAreaCalibration)
+rasterToMatch <- postProcess(rasterToMatchCalibration, studyArea = studyArea)
 
 studyAreaCalibration$name <- "SAL" #make SPDF
 
 studyArea <- st_as_sf(studyArea)
 studyAreaCalibration <- st_as_sf(studyAreaCalibration)
-# rasterToMatchLarge <- terra::rast(rasterToMatchLarge)
+# rasterToMatchCalibration <- terra::rast(rasterToMatchCalibration)
 # rastertoMatch <- terra::rast(rasterToMatch)
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
   studyAreaCalibration = studyAreaCalibration,
   rasterToMatch = rasterToMatch,
-  rasterToMatchLarge = rasterToMatchLarge
+  rasterToMatchCalibration = rasterToMatchCalibration
 )
 
 #Run module

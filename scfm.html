@@ -2799,12 +2799,12 @@ Users are recommended to identify the scenario that best fits their use case, an
 <h3>Scenario 1: no prior knowledge of fire regimes</h3>
 <p>In this scenario, some or all of the fire regime polygons (<code>fireRegimePolys</code>) may be too geographically limited to include historical fire data sufficient for calibration.
 The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (<code>studyAreaCalibration</code>).
-In this case, <code>scfmLandcoverInit</code> will calculate fire regime attributes for the larger area (<code>fireRegimePolysLarge</code>), <code>scfmRegime</code> will estimate fire regime parameters using the larger region, but <code>scfmDriver</code> will calibrate spread probability for the smaller region only.
+In this case, <code>scfmLandcoverInit</code> will calculate fire regime attributes for the larger area (<code>fireRegimePolysCalibration</code>), <code>scfmRegime</code> will estimate fire regime parameters using the larger region, but <code>scfmDriver</code> will calibrate spread probability for the smaller region only.
 This ensures the simulated fires achieve the correct mean fire size.</p>
 <p><strong>Additional objects needed:</strong></p>
 <ul>
-<li><code>studyAreaCalibration</code> and <code>rasterToMatchLarge</code>;</li>
-<li>if <code>flammableMap</code> or <code>fireRegimePolys</code> is supplied, the large counterpart should also be supplied (<code>flammableMapLarge</code>, <code>fireRegimePolysLarge</code>, respectively).</li>
+<li><code>studyAreaCalibration</code> and <code>rasterToMatchCalibration</code>;</li>
+<li>if <code>flammableMap</code> or <code>fireRegimePolys</code> is supplied, the large counterpart should also be supplied (<code>flammableMapLarge</code>, <code>fireRegimePolysCalibration</code>, respectively).</li>
 </ul>
 </div>
 <div id="scenario-2-a-priori-knowledge-of-fire-regimes" class="section level3">
@@ -2830,8 +2830,8 @@ This is not typically very consequential, as simulated fires are unlikely to rea
 The parameterized maximum fire size, in hectares, can be verified in <code>scfmRegimePars$&lt;PolyID&gt;emfs_ha</code>.</p></li>
 <li><p>‘Sliver polygons’, i.e., polygons that are smaller than the sliver threshold parameter (default <span class="math inline">\(100 km^2\)</span>), are joined with their nearest non-sliver neighbour.
 This prevents any areas that have too little fire data from being <em>de facto</em> nonflammable.
-If a larger parameterization area is supplied (<code>fireRegimePolysLarge</code>), slivers are identified and merged only in the larger area.
-The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying <code>fireRegimePolys</code> is unnecessary when <code>fireRegimePolysLarge</code> is also supplied, as the former is overwritten by the latter.</p></li>
+If a larger parameterization area is supplied (<code>fireRegimePolysCalibration</code>), slivers are identified and merged only in the larger area.
+The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying <code>fireRegimePolys</code> is unnecessary when <code>fireRegimePolysCalibration</code> is also supplied, as the former is overwritten by the latter.</p></li>
 </ol>
 </div>
 <div id="references" class="section level2">
@@ -2910,24 +2910,24 @@ studyArea &lt;- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = cent
 
 studyAreaCalibration &lt;- buffer(studyArea, 50000)
 
-rasterToMatchLarge &lt;- raster(extent(studyAreaCalibration), res = c(250, 250))
-crs(rasterToMatchLarge) &lt;- crs(studyAreaCalibration)
-rasterToMatchLarge[] &lt;- 1
-rasterToMatchLarge &lt;- mask(rasterToMatchLarge, studyAreaCalibration)
-rasterToMatch &lt;- postProcess(rasterToMatchLarge, studyArea = studyArea)
+rasterToMatchCalibration &lt;- raster(extent(studyAreaCalibration), res = c(250, 250))
+crs(rasterToMatchCalibration) &lt;- crs(studyAreaCalibration)
+rasterToMatchCalibration[] &lt;- 1
+rasterToMatchCalibration &lt;- mask(rasterToMatchCalibration, studyAreaCalibration)
+rasterToMatch &lt;- postProcess(rasterToMatchCalibration, studyArea = studyArea)
 
 studyAreaCalibration$name &lt;- &quot;SAL&quot; #make SPDF
 
 studyArea &lt;- st_as_sf(studyArea)
 studyAreaCalibration &lt;- st_as_sf(studyAreaCalibration)
-# rasterToMatchLarge &lt;- terra::rast(rasterToMatchLarge)
+# rasterToMatchCalibration &lt;- terra::rast(rasterToMatchCalibration)
 # rastertoMatch &lt;- terra::rast(rasterToMatch)
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects &lt;- list(
   studyArea = studyArea,
   studyAreaCalibration = studyAreaCalibration,
   rasterToMatch = rasterToMatch,
-  rasterToMatchLarge = rasterToMatchLarge
+  rasterToMatchCalibration = rasterToMatchCalibration
 )
 
 #Run module

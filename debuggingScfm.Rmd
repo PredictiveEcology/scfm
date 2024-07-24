@@ -105,12 +105,12 @@ studyAreaReporting <- terra::vect(cbind(-1209980, 7586865), crs = targetCRS) |>
 studyArea <- st_buffer(studyAreaReporting, 5000)
 studyAreaCalibration <- st_buffer(studyArea, 20000)
 
-rasterToMatchLarge <- rast(ext(studyAreaCalibration), res = c(250, 250))
-crs(rasterToMatchLarge) <- crs(studyAreaCalibration)
-rasterToMatchLarge[] <- 1
-rasterToMatchLarge <- mask(rasterToMatchLarge, studyAreaCalibration)
+rasterToMatchCalibration <- rast(ext(studyAreaCalibration), res = c(250, 250))
+crs(rasterToMatchCalibration) <- crs(studyAreaCalibration)
+rasterToMatchCalibration[] <- 1
+rasterToMatchCalibration <- mask(rasterToMatchCalibration, studyAreaCalibration)
 
-rasterToMatch <- crop(rasterToMatchLarge, studyArea)
+rasterToMatch <- crop(rasterToMatchCalibration, studyArea)
 rasterToMatch <- mask(rasterToMatch, studyArea)
 
 if (FALSE) {
@@ -127,7 +127,7 @@ if (FALSE) {
   rasterToMatch <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
                                  studyArea = studyArea) |>
     disagg(fact = 2)
-  rasterToMatchLarge <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
+  rasterToMatchCalibration <- prepInputsLCC(year = 2005, destinationPath = paths$inputPath,
                                       studyArea = studyAreaCalibration) |>
     disagg(fact = 2)
 
@@ -141,8 +141,8 @@ fireRegimePolys <- prepInputsFireRegimePolys(studyArea = studyArea,
                                              destinationPath = paths[["inputPath"]],
                                              type = "FRT")
 
-fireRegimePolysLarge <- prepInputsFireRegimePolys(studyArea = studyAreaCalibration, 
-                                                  rasterToMatch = rasterToMatchLarge,
+fireRegimePolysCalibration <- prepInputsFireRegimePolys(studyArea = studyAreaCalibration, 
+                                                  rasterToMatch = rasterToMatchCalibration,
                                                   destinationPath = paths[["inputPath"]],
                                                   type = "FRT")
 
@@ -151,9 +151,9 @@ objects <- list(
   studyAreaCalibration = studyAreaCalibration,
   studyAreaReporting = studyAreaReporting,
   rasterToMatch = rasterToMatch,
-  rasterToMatchLarge = rasterToMatchLarge,
+  rasterToMatchCalibration = rasterToMatchCalibration,
   fireRegimePolys = fireRegimePolys,
-  fireRegimePolysLarge = fireRegimePolysLarge
+  fireRegimePolysCalibration = fireRegimePolysCalibration
 )
 
 outSim <- simInitAndSpades(times = list(start = 1, end = 1000), 

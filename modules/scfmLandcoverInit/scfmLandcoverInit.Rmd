@@ -49,7 +49,7 @@ Generates some relevant statistics for each fire regime over a `studyArea`.
 If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
 
 - `studyArea` and `studyAreaCalibration`;
-- `rasterToMatch` and `rasterToMatchLarge`.
+- `rasterToMatch` and `rasterToMatchCalibration`.
 
 The extents should differ between objects and their 'large' counterparts.
 

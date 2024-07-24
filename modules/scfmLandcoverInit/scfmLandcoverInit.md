@@ -41,7 +41,7 @@ Generates some relevant statistics for each fire regime over a `studyArea`.
 If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
 
 - `studyArea` and `studyAreaCalibration`;
-- `rasterToMatch` and `rasterToMatchLarge`.
+- `rasterToMatch` and `rasterToMatchCalibration`.
 
 The extents should differ between objects and their 'large' counterparts.
 
@@ -67,7 +67,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> fireRegimePolysLarge </td>
+   <td style="text-align:left;"> fireRegimePolysCalibration </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> if `studyAreaCalibration` is supplied, the corresponding fire regime areas. Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`. </td>
    <td style="text-align:left;"> NA </td>
@@ -91,7 +91,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> rasterToMatchLarge </td>
+   <td style="text-align:left;"> rasterToMatchCalibration </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> Template raster for raster GIS operations. Only necessary if `studyAreaCalibration` is passed. Must be supplied by user. </td>
    <td style="text-align:left;"> NA </td>
@@ -230,9 +230,9 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmLandcoverIn
    <td style="text-align:left;"> `fireRegimePolys` with landcover attributes appended </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> fireRegimePolysLarge </td>
+   <td style="text-align:left;"> fireRegimePolysCalibration </td>
    <td style="text-align:left;"> sf </td>
-   <td style="text-align:left;"> `fireRegimePolysLarge` with landcover attributes appended </td>
+   <td style="text-align:left;"> `fireRegimePolysCalibration` with landcover attributes appended </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireRegimeRas </td>
