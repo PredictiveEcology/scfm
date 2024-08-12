@@ -121,7 +121,7 @@ Init <- function(sim) {
 
   ## ensure flammability maps are integer ('binary') maps
   if (!is.integer(sim$flammableMap[])) {
-    sim$flammableMap[] <- as.int(sim$flammableMap)
+    sim$flammableMap <- as.int(sim$flammableMap)
   }
 
   if (!is.integer(sim$flammableMapLarge[])) {
