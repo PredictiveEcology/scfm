@@ -36,8 +36,8 @@ defineModule(sim, list(
                     paste("Polygon type to use for scfm `fireRegimePolys`:",
                           "see `?scfmutils::prepInputsFireRegimePolys` for allowed types.")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
-    defineParameter("sliverThreshold", "numeric", 1e8, NA, NA,
-                    paste("fire regime polygons with area less than this number will be merged",
+    defineParameter("sliverThreshold", "numeric", 6.25e8, NA, NA,
+                    paste("fire regime polygons with area (in m2) less than this number will be merged",
                           "with their closest non-sliver neighbour using `sf::st_nearest_feature`.")),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
@@ -58,7 +58,7 @@ defineModule(sim, list(
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
                  desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
-    expectsInput("flammableMapLarge", "SpatRaster",
+    expectsInput("flammableMapCalibration", "SpatRaster",
                  desc = paste("binary flammability map - defaults to using `LandR::prepInputsLCC`.",
                               "This is only necessary if passing `studyAreaCalibration` OR running `scfmDriver`.",
                               "It should match the extent of `studyAreaCalibration`, and if running `scfmDriver`,",
@@ -120,17 +120,17 @@ Init <- function(sim) {
   }
 
   ## ensure flammability maps are integer ('binary') maps
-  if (!is.integer(sim$flammableMap[])) {
-    sim$flammableMap <- as.int(sim$flammableMap)
+  if (!LandR::isInt(sim$flammableMap)) {
+    sim$flammableMap <- LandR::asInt(sim$flammableMap)
   }
 
-  if (!is.integer(sim$flammableMapLarge[])) {
-    sim$flammableMapLarge <- as.int(sim$flammableMapLarge)
+  if (!is.integer(sim$flammableMapCalibration[])) {
+    sim$flammableMapCalibration <- LandR::asInt(sim$flammableMapCalibration)
   }
 
   stopifnot(
     all(unique(sim$flammableMap[]) %in% c(NA_integer_, 0L, 1L)),
-    all(unique(sim$flammableMapLarge[]) %in% c(NA_integer_, 0L, 1L))
+    all(unique(sim$flammableMapCalibration[]) %in% c(NA_integer_, 0L, 1L))
   )
 
   message("checking sim$fireRegimePolys for sliver polygons...")
@@ -145,7 +145,7 @@ Init <- function(sim) {
       fireRegimePolys = sim$fireRegimePolysCalibration,
       studyArea = sim$studyAreaCalibration,
       rasterToMatch = sim$rasterToMatchCalibration,
-      flammableMap = sim$flammableMapLarge,
+      flammableMap = sim$flammableMapCalibration,
       sliverThresh = P(sim)$sliverThreshold,
       cacheTag = c("scfmLandcoverInit", "fireRegimePolysCalibration")
     )
@@ -155,7 +155,7 @@ Init <- function(sim) {
     ## for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
     if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
-      ## this object may have empty geometries, which can occur when SAL and SA are both subsets
+      ## this object may have empty geometries, which can occur when SAC and SA are both subsets
       ## of the same file. the empty geometries will cause an error.
       sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0, ]
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
@@ -164,7 +164,7 @@ Init <- function(sim) {
     sim$fireRegimePolysCalibration <- sim$fireRegimePolysCalibration[order(sim$fireRegimePolysCalibration$PolyID), ]
 
     sim$fireRegimePolysCalibration <- Cache(genFireMapAttr,
-      flammableMap = sim$flammableMapLarge,
+      flammableMap = sim$flammableMapCalibration,
       fireRegimePolys = sim$fireRegimePolysCalibration,
       neighbours = P(sim)$neighbours,
       userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaCalibration")
@@ -198,14 +198,14 @@ Init <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
-  # object check for SA/FRP/FRPL/SAL - better to be strict with stops
+  # object check for SA/FRP/FRPC/SAC - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)
-  hasSAL <- suppliedElsewhere("studyAreaCalibration", sim)
+  hasSAC <- suppliedElsewhere("studyAreaCalibration", sim)
   hasFRP <- suppliedElsewhere("fireRegimePolys", sim)
-  hasFRPL <- suppliedElsewhere("fireRegimePolysCalibration", sim)
+  hasFRPC <- suppliedElsewhere("fireRegimePolysCalibration", sim)
 
   # supply objects
-  if (!hasSA & !hasSAL) {
+  if (!hasSA & !hasSAC) {
     message("study area not supplied. Using random polygon in Alberta")
     studyArea <- LandR::randomStudyArea(size = 15000000000, seed = 23654)
     sim$studyArea <- studyArea
@@ -229,7 +229,7 @@ Init <- function(sim) {
     )
   }
 
-  if (hasSAL & !suppliedElsewhere("rasterToMatchCalibration", sim)) {
+  if (hasSAC & !suppliedElsewhere("rasterToMatchCalibration", sim)) {
     message(paste(
       "rasterToMatch not supplied. generating from NTEMS LCC using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"
@@ -246,9 +246,9 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("flammableMapLarge", sim) & hasSAL) {
+  if (!suppliedElsewhere("flammableMapCalibration", sim) & hasSAC) {
     if (!is.null(sim$flammableMap)) {
-      stop("flammableMap was supplied but not flammableMapLarge. Please supply neither or both")
+      stop("flammableMap was supplied but not flammableMapCalibration. Please supply neither or both")
     }
 
     vegMap <- prepInputs_NTEMS_LCC_FAO(
@@ -260,17 +260,17 @@ Init <- function(sim) {
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
-    sim$flammableMapLarge <- defineFlammable(vegMap,
+    sim$flammableMapCalibration <- defineFlammable(vegMap,
                                              mask = sim$rasterToMatchCalibration,
                                              nonFlammClasses = c(20, 31, 32, 33)
     )
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    if (hasSAL) {
+    if (hasSAC) {
       useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
       options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-      sim$flammableMap <- postProcess(sim$flammableMapLarge, rasterToMatch = sim$rasterToMatch)
+      sim$flammableMap <- postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
       options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
       vegMap <- prepInputs_NTEMS_LCC_FAO(
@@ -290,8 +290,8 @@ Init <- function(sim) {
   }
 
   ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
-  if (!hasFRP & !hasFRPL) {
-    sa <- if (hasSAL) {
+  if (!hasFRP & !hasFRPC) {
+    sa <- if (hasSAC) {
       sim$studyAreaCalibration
     } else {
       sim$studyArea
@@ -303,7 +303,7 @@ Init <- function(sim) {
                              studyArea = sa, type = P(sim)$fireRegimePolysType) %>%
       st_transform(., st_crs(sa))
 
-    if (hasSAL) {
+    if (hasSAC) {
       sim$fireRegimePolysCalibration <- fireRegimePolys
       sim$fireRegimePolys <- postProcess(fireRegimePolys,
                                          studyArea = sim$studyArea
