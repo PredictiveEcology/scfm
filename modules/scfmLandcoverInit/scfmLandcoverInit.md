@@ -79,7 +79,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> flammableMapLarge </td>
+   <td style="text-align:left;"> flammableMapCalibration </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> binary flammability map - defaults to using `LandR::prepInputsLCC`. This is only necessary if passing `studyAreaCalibration` OR running `scfmDriver`. It should match the extent of `studyAreaCalibration`, and if running `scfmDriver`, it should extend by &gt;= scfmDriver's `P(sim)$buffDist`. </td>
    <td style="text-align:left;"> NA </td>

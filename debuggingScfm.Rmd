@@ -184,7 +184,7 @@ newFireRegimeRas <- newFlamArea
 newFireRegimeRas[!is.na(newFireRegimeRas)] <- 139
 
 newObjects <- list("fireRegimePolys" = newLandscape, 
-                   "flammableMapLarge" = newFlamAreaLarge,
+                   "flammableMapCalibration" = newFlamAreaLarge,
                    "flammableMap" = newFlamArea,
                    "fireRegimeRas" = newFireRegimeRas,
                    "rasterToMatch" = newFlamArea, 

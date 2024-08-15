@@ -81,7 +81,7 @@ This ensures the simulated fires achieve the correct mean fire size.
 **Additional objects needed:**
 
 - `studyAreaCalibration` and `rasterToMatchCalibration`;
-- if `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapLarge`, `fireRegimePolysCalibration`, respectively). 
+- if `flammableMap` or `fireRegimePolys` is supplied, the large counterpart should also be supplied (`flammableMapCalibration`, `fireRegimePolysCalibration`, respectively). 
 
 ### Scenario 2: *a priori* knowledge of fire regimes
 

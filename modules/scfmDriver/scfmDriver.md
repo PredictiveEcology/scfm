@@ -67,7 +67,7 @@ Table \@ref(tab:moduleInputs-scfmDriver) shows the full list of module inputs.
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
-   <td style="text-align:left;"> flammableMapLarge </td>
+   <td style="text-align:left;"> flammableMapCalibration </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> a flammable map of study area after buffering by `P(sim)$buffDist`. Must be supplied by user if `flammableMap` is also supplied. </td>
    <td style="text-align:left;"> NA </td>
@@ -118,7 +118,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 2011 </td>
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
-   <td style="text-align:left;"> used to select the year of landcover data used to create flammableMapLarge if the object is unsupplied </td>
+   <td style="text-align:left;"> used to select the year of landcover data used to create flammableMapCalibration if the object is unsupplied </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pJmp </td>
