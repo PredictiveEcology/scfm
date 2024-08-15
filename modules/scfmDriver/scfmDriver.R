@@ -27,7 +27,7 @@ defineModule(sim, list(
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
-                                 "flammableMapLarge if the object is unsupplied")),
+                                 "flammableMapCalibration if the object is unsupplied")),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
     defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
@@ -54,7 +54,7 @@ defineModule(sim, list(
     expectsInput("fireRegimePolys", "sf",
                  paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
                        "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
-    expectsInput("flammableMapLarge", "SpatRaster",
+    expectsInput("flammableMapCalibration", "SpatRaster",
                  paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
                        "Must be supplied by user if `flammableMap` is also supplied.")),
     expectsInput("rasterToMatch", "SpatRaster",
@@ -99,7 +99,7 @@ Init <- function(sim) {
         pJmp = P(sim)$pJmp,
         pMin = P(sim)$pMin,
         pMax = P(sim)$pMax,
-        flammableMap = sim$flammableMapLarge
+        flammableMap = sim$flammableMapCalibration
       ),
       f = calibrateFireRegimePolys ## scfmutils
     )
@@ -125,13 +125,13 @@ Init <- function(sim) {
     cl <- NULL
   }
 
-  if (!compareGeom(sim$flammableMap, sim$flammableMapLarge, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
   message("Running calibrateFireRegimePolys()...")
 
-  flammableMapLarge <- terra::wrap(sim$flammableMapLarge)
+  flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
   scfmDriverPars <- Cache(pemisc::Map2,
                           cl = cl,
                           cloudFolderID = sim$cloudFolderID,
@@ -145,7 +145,7 @@ Init <- function(sim) {
                                           pJmp = P(sim)$pJmp,
                                           pMin = P(sim)$pMin,
                                           pMax = P(sim)$pMax,
-                                          flammableMap = flammableMapLarge,
+                                          flammableMap = flammableMapCalibration,
                                           plotPath = file.path(outputPath(sim), "figures"),
                                           outputPath = file.path(outputPath(sim)),
                                           optimizer = P(sim)$scamOptimizer
@@ -175,7 +175,7 @@ Init <- function(sim) {
     stop("fireRegimePolys unsupplied - please run scfmLandcoverInit and scfmRegime")
   }
 
-  if (!suppliedElsewhere("flammableMapLarge", sim)) {
+  if (!suppliedElsewhere("flammableMapCalibration", sim)) {
     bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
     bufferedPoly <- fixErrors(bufferedPoly)
     landscapeLCC <- prepInputs_NTEMS_LCC_FAO(
@@ -199,7 +199,7 @@ Init <- function(sim) {
 
     landscapeLCC <- LandR::asInt(landscapeLCC)
 
-    sim$flammableMapLarge <- defineFlammable(landscapeLCC,
+    sim$flammableMapCalibration <- defineFlammable(landscapeLCC,
                                              nonFlammClasses = c(20, 31, 32, 33))
   }
 
