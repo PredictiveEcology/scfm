@@ -199,20 +199,20 @@ Init <- function(sim) {
     )
   }
 
-  if (!suppliedElsewhere("fireRegimePolysLarge", sim)) {
-    message("fireRegimePolysLarge not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
+  if (!suppliedElsewhere("fireRegimePolysCalibration", sim)) {
+    message("fireRegimePolysCalibration not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
     if (!is.null(sim$studyAreaLarge)) {
-      sim$fireRegimePolysLarge <- Cache(
+      sim$fireRegimePolysCalibration <- Cache(
         scfmutils::prepInputsFireRegimePolys,
         url = NULL,
         destinationPath = dPath,
         studyArea = sim$studyAreaLarge,
         rasterToMatch = sim$rasterToMatchLarge,
         type = P(sim)$fireRegimePolysType,
-        userTags = c(cacheTags, "fireRegimePolysLarge")
+        userTags = c(cacheTags, "fireRegimePolysCalibration")
       )
     } else {
-      sim$fireRegimePolysLarge <- sim$fireRegimePolys
+      sim$fireRegimePolysCalibration <- sim$fireRegimePolys
     }
   }
 
