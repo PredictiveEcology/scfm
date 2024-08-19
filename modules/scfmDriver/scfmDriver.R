@@ -101,7 +101,7 @@ Init <- function(sim) {
         pMax = P(sim)$pMax,
         flammableMap = sim$flammableMapLarge
       ),
-      f = calibrateFireRegimePolys ## scfmutils
+      f = scfmutils::calibrateFireRegimePolys
     )
   )
 
@@ -146,8 +146,8 @@ Init <- function(sim) {
                                           pMin = P(sim)$pMin,
                                           pMax = P(sim)$pMax,
                                           flammableMap = flammableMapLarge,
-                                          plotPath = file.path(outputPath(sim), "figures"),
-                                          outputPath = file.path(outputPath(sim)),
+                                          plotPath = figurePath(sim),
+                                          outputPath = outputPath(sim),
                                           optimizer = P(sim)$scamOptimizer
                           ),
                           f = scfmutils::calibrateFireRegimePolys,
