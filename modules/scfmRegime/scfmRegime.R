@@ -201,12 +201,12 @@ Init <- function(sim) {
 
   if (!suppliedElsewhere("fireRegimePolysCalibration", sim)) {
     message("fireRegimePolysCalibration not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
-    if (!is.null(sim$studyAreaLarge)) {
+    if (!is.null(sim$studyAreaCalibration)) {
       sim$fireRegimePolysCalibration <- Cache(
         scfmutils::prepInputsFireRegimePolys,
         url = NULL,
         destinationPath = dPath,
-        studyArea = sim$studyAreaLarge,
+        studyArea = sim$studyAreaCalibration,
         rasterToMatch = sim$rasterToMatchLarge,
         type = P(sim)$fireRegimePolysType,
         userTags = c(cacheTags, "fireRegimePolysCalibration")
