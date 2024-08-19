@@ -207,7 +207,7 @@ Init <- function(sim) {
         url = NULL,
         destinationPath = dPath,
         studyArea = sim$studyAreaCalibration,
-        rasterToMatch = sim$rasterToMatchLarge,
+        rasterToMatch = sim$rasterToMatchCalibration,
         type = P(sim)$fireRegimePolysType,
         userTags = c(cacheTags, "fireRegimePolysCalibration")
       )
