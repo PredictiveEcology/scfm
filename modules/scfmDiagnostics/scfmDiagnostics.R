@@ -201,6 +201,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 diagnosticPlotsDT <- function(sim) {
 
   sAR <- sim$studyAreaReporting |>
+    sf::st_as_sf() |> #in case it is terra
     sf::st_union() |>
     sf::st_make_valid() |>
     sf::st_as_sf()
