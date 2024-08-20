@@ -19,7 +19,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/pemisc@development",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils (>= 2.0.1)",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.3)",
                   "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
@@ -101,7 +101,7 @@ Init <- function(sim) {
         pMax = P(sim)$pMax,
         flammableMap = sim$flammableMapCalibration
       ),
-      f = calibrateFireRegimePolys ## scfmutils
+      f = scfmutils::calibrateFireRegimePolys
     )
   )
 
@@ -146,8 +146,8 @@ Init <- function(sim) {
                                           pMin = P(sim)$pMin,
                                           pMax = P(sim)$pMax,
                                           flammableMap = flammableMapCalibration,
-                                          plotPath = file.path(outputPath(sim), "figures"),
-                                          outputPath = file.path(outputPath(sim)),
+                                          plotPath = figurePath(sim),
+                                          outputPath = outputPath(sim),
                                           optimizer = P(sim)$scamOptimizer
                           ),
                           f = scfmutils::calibrateFireRegimePolys,
