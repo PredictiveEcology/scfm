@@ -19,7 +19,7 @@ defineModule(sim, list(
   reqdPkgs = list("data.table",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils (>= 2.0.1)",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)",
                   "sf",
                   "PredictiveEcology/SpaDES.tools@development",
                   "terra"),

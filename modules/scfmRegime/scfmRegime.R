@@ -15,7 +15,7 @@ defineModule(sim, list(
   documentation = list("README.md", "scfmRegime.Rmd"), ## same file
   reqdPkgs = list(
     "dplyr", "reproducible", "sf", "terra",
-    "PredictiveEcology/scfmutils (>= 2.0.1)"
+    "PredictiveEcology/scfmutils@development (>= 2.0.1)"
   ),
   loadOrder = list(after = c("scfmLandcoverInit"),
                    before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),

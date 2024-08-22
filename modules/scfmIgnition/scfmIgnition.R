@@ -14,7 +14,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "sf", "SpaDES.tools", "terra",
     "PredictiveEcology/LandR (>= 1.1.1)",
-    "PredictiveEcology/scfmutils (>= 2.0.1)"
+    "PredictiveEcology/scfmutils@development (>= 2.0.1)"
   ),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
                    before = c("scfmEscape", "scfmSpread")),

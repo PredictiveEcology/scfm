@@ -19,7 +19,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/SpaDES.tools (>= 2.0.7)",
-                  "PredictiveEcology/scfmutils (>= 2.0.1)"),
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)"),
   parameters = rbind(
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
