@@ -22,7 +22,7 @@ defineModule(sim, list(
     ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     paste("used to select the year of landcover data used to create",
-                          "`flammableMap` if the obejct is unsupplied")),
+                          "`flammableMap` if the object is unsupplied")),
     defineParameter("pIgnition", "numeric", 0.001, 0, 1,
                     "default per-cell and time ignition probability if unsupplied."),
     defineParameter("startTime", "numeric", start(sim), NA, NA,
