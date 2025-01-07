@@ -151,12 +151,12 @@ Init <- function(sim) {
     )
 
     ## now that slivers are removed, remake frp from the larger object
-    sim$fireRegimePolys <- postProcessTerra(sim$fireRegimePolysCalibration, studyArea = sim$studyArea)
+    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration, studyArea = sim$studyArea)
     ## for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
     if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
-      ## this object may have empty geometries, which can occur when SAC and SA are both subsets
-      ## of the same file. the empty geometries will cause an error.
+      # this object may have empty geometries, which can occur when SAC and SA are both subsets
+      # of the same file. the empty geometries will cause an error.
       sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0, ]
       #in the event this results in LINESTRING or POINT objects,remove them to prevent error
       sim$fireRegimePolys <- st_collection_extract(sim$fireRegimePolys, "POLYGON")
