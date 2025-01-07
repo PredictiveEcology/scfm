@@ -158,6 +158,8 @@ Init <- function(sim) {
       ## this object may have empty geometries, which can occur when SAC and SA are both subsets
       ## of the same file. the empty geometries will cause an error.
       sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0, ]
+      #in the event this results in LINESTRING or POINT objects,remove them to prevent error
+      sim$fireRegimePolys <- st_collection_extract(sim$fireRegimePolys, "POLYGON")
       sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
     }
 
