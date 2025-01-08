@@ -258,14 +258,17 @@ Init <- function(sim) {
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchCalibration,
-      projectTo = sim$rasterToMatchCalibration,
+      # projectTo = sim$rasterToMatchCalibration, #should be done after defineFlammable
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMapCalibration <- defineFlammable(vegMap,
-                                             mask = sim$rasterToMatchCalibration,
                                              nonFlammClasses = c(20, 31, 32, 33)
     )
+    sim$flammableMapCalibration <- postProcess(sim$flammableMapCalibration,
+                                               to = sim$rasterToMatchCalibration,
+                                               method = "mode")
+
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
@@ -280,14 +283,15 @@ Init <- function(sim) {
         destinationPath = dPath,
         maskTo = sim$studyArea,
         cropTo = sim$rasterToMatch,
-        projectTo = sim$rasterToMatch,
+        # projectTo = sim$rasterToMatch, don't do this yet
         userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
       )
       vegMap[] <- asInteger(vegMap[])
       sim$flammableMap <- defineFlammable(vegMap,
-        mask = sim$rasterToMatch,
-        nonFlammClasses = c(20, 31, 32, 33)
+                                          nonFlammClasses = c(20, 31, 32, 33)
       )
+      sim$flammableMap <- postProcess(sim$flammableMap, to = sim$rasterToMatch,
+                                      method = "mode")
     }
   }
 
