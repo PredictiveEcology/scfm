@@ -268,10 +268,10 @@ Init <- function(sim) {
     sim$flammableMapCalibration <- defineFlammable(vegMap,
                                              nonFlammClasses = c(20, 31, 32, 33)
     )
-    sim$flammableMapCalibration <- postProcess(sim$flammableMapCalibration,
+    sim$flammableMapCalibration <- reproducible::postProcess(sim$flammableMapCalibration,
                                                to = sim$rasterToMatchCalibration,
                                                method = "average")
-    sim$flammableMapCalibration[] <- LandR::asInteger(sim$flammableMapCalibration >
+    sim$flammableMapCalibration[] <- LandR::asInteger(sim$flammableMapCalibration[] >
                                                         P(sim)$flammabilityThreshold)
   }
 
@@ -279,7 +279,7 @@ Init <- function(sim) {
     if (hasSAC) {
       useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
       options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-      sim$flammableMap <- postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
+      sim$flammableMap <- reproducible::postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
       options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
       vegMap <- prepInputs_NTEMS_LCC_FAO(
@@ -294,9 +294,9 @@ Init <- function(sim) {
       sim$flammableMap <- defineFlammable(vegMap,
                                           nonFlammClasses = c(20, 31, 32, 33)
       )
-      sim$flammableMap <- postProcess(sim$flammableMap, to = sim$rasterToMatch,
+      sim$flammableMap <- reproducible::postProcess(sim$flammableMap, to = sim$rasterToMatch,
                                       method = "average")
-      sim$flammableMap[] <- LandR::asInteger(sim$flammableMap > P(sim)$flammabilityThreshold)
+      sim$flammableMap[] <- LandR::asInteger(sim$flammableMap[] > P(sim)$flammabilityThreshold)
     }
   }
 
@@ -316,7 +316,7 @@ Init <- function(sim) {
 
     if (hasSAC) {
       sim$fireRegimePolysCalibration <- fireRegimePolys
-      sim$fireRegimePolys <- postProcess(fireRegimePolys,
+      sim$fireRegimePolys <- reproducible::postProcess(fireRegimePolys,
                                          studyArea = sim$studyArea
       )
     } else {
