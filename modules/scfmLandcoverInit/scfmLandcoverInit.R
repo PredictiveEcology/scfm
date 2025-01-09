@@ -39,6 +39,9 @@ defineModule(sim, list(
     defineParameter("sliverThreshold", "numeric", 6.25e8, NA, NA,
                     paste("fire regime polygons with area (in m2) less than this number will be merged",
                           "with their closest non-sliver neighbour using `sf::st_nearest_feature`.")),
+    defineParameter("flammabilityThreshold", "numeric", 0.25, 0, 1,
+                    paste("Minimum proportion of flammable old pixel needed to define a new pixel
+                          as flammable when upscaling the default flammable maps`.")),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
@@ -265,17 +268,18 @@ Init <- function(sim) {
     sim$flammableMapCalibration <- defineFlammable(vegMap,
                                              nonFlammClasses = c(20, 31, 32, 33)
     )
-    sim$flammableMapCalibration <- postProcess(sim$flammableMapCalibration,
+    sim$flammableMapCalibration <- reproducible::postProcess(sim$flammableMapCalibration,
                                                to = sim$rasterToMatchCalibration,
-                                               method = "mode")
-
+                                               method = "average")
+    sim$flammableMapCalibration[] <- LandR::asInteger(sim$flammableMapCalibration[] >
+                                                        P(sim)$flammabilityThreshold)
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
     if (hasSAC) {
       useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
       options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-      sim$flammableMap <- postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
+      sim$flammableMap <- reproducible::postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
       options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
       vegMap <- prepInputs_NTEMS_LCC_FAO(
@@ -290,8 +294,9 @@ Init <- function(sim) {
       sim$flammableMap <- defineFlammable(vegMap,
                                           nonFlammClasses = c(20, 31, 32, 33)
       )
-      sim$flammableMap <- postProcess(sim$flammableMap, to = sim$rasterToMatch,
-                                      method = "mode")
+      sim$flammableMap <- reproducible::postProcess(sim$flammableMap, to = sim$rasterToMatch,
+                                      method = "average")
+      sim$flammableMap[] <- LandR::asInteger(sim$flammableMap[] > P(sim)$flammabilityThreshold)
     }
   }
 
@@ -311,7 +316,7 @@ Init <- function(sim) {
 
     if (hasSAC) {
       sim$fireRegimePolysCalibration <- fireRegimePolys
-      sim$fireRegimePolys <- postProcess(fireRegimePolys,
+      sim$fireRegimePolys <- reproducible::postProcess(fireRegimePolys,
                                          studyArea = sim$studyArea
       )
     } else {
