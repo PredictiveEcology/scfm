@@ -266,9 +266,9 @@ Init <- function(sim) {
     )
     vegMap[] <- asInteger(vegMap[])
     sim$flammableMapCalibration <- defineFlammable(vegMap,
-                                             nonFlammClasses = c(20, 31, 32, 33)
+                                                   nonFlammClasses = c(20, 31, 32, 33)
     )
-    sim$flammableMapCalibration <- reproducible::postProcess(sim$flammableMapCalibration,
+    sim$flammableMapCalibration <- postProcess(sim$flammableMapCalibration,
                                                to = sim$rasterToMatchCalibration,
                                                method = "average")
     sim$flammableMapCalibration[] <- LandR::asInteger(sim$flammableMapCalibration[] >
@@ -279,7 +279,7 @@ Init <- function(sim) {
     if (hasSAC) {
       useTerra <- getOption("reproducible.useTerra") ## TODO: reproducible#242
       options(reproducible.useTerra = FALSE) ## TODO: reproducible#242
-      sim$flammableMap <- reproducible::postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
+      sim$flammableMap <- postProcess(sim$flammableMapCalibration, rasterToMatch = sim$rasterToMatch)
       options(reproducible.useTerra = useTerra) ## TODO: reproducible#242
     } else {
       vegMap <- prepInputs_NTEMS_LCC_FAO(
@@ -294,7 +294,7 @@ Init <- function(sim) {
       sim$flammableMap <- defineFlammable(vegMap,
                                           nonFlammClasses = c(20, 31, 32, 33)
       )
-      sim$flammableMap <- reproducible::postProcess(sim$flammableMap, to = sim$rasterToMatch,
+      sim$flammableMap <- postProcess(sim$flammableMap, to = sim$rasterToMatch,
                                       method = "average")
       sim$flammableMap[] <- LandR::asInteger(sim$flammableMap[] > P(sim)$flammabilityThreshold)
     }
@@ -316,9 +316,8 @@ Init <- function(sim) {
 
     if (hasSAC) {
       sim$fireRegimePolysCalibration <- fireRegimePolys
-      sim$fireRegimePolys <- reproducible::postProcess(fireRegimePolys,
-                                         studyArea = sim$studyArea
-      )
+      sim$fireRegimePolys <- postProcess(fireRegimePolys,
+                                         studyArea = sim$studyArea)
     } else {
       sim$fireRegimePolys <- fireRegimePolys
     }
