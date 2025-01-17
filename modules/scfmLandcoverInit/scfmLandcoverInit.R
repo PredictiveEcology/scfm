@@ -226,7 +226,7 @@ Init <- function(sim) {
       year = P(sim)$dataYear,
       destinationPath = dPath,
       cropTo = sim$studyArea,
-      maskTo= sim$studyArea,
+      maskTo = sim$studyArea,
       projectTo = sim$studyArea,
       filename2 = NULL,
       overwrite = TRUE,
