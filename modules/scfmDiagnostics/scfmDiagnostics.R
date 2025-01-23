@@ -199,18 +199,24 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 }
 
 diagnosticPlotsDT <- function(sim) {
-
   sAR <- sim$studyAreaReporting |>
     sf::st_as_sf() |> #in case it is terra
     sf::st_union() |>
     sf::st_make_valid() |>
-    sf::st_as_sf()
+    terra::vect()
 
-  fireRegimePointsReporting <- sf::st_intersection(sim$fireRegimePoints, sAR)
+  fireRegimePointsReporting <- postProcess(sim$fireRegimePoints, to = sAR)
+  #avoid geometry objects
+  frpr <- postProcess(terra::vect(sim$fireRegimePolys),
+                                          to = sAR)
+  #drop true slivers, not ecological slivers
+  frpr <- frpr[expanse(frpr) > res(sim$flammableMap[]),]
+  fireRegimePolysReporting <- sf::st_as_sf(frpr)
 
-  fireRegimePolysReporting <- sf::st_intersection(sim$fireRegimePolys, sAR)
+  # fireRegimePolysReporting <- sf::st_cast(fireRegimePolysReporting, "MULTIPOLYGON")
 
-  ## preserve columns from regime + driver
+  #do not collection extract - it breaks.
+
   colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
   colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
   fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]
