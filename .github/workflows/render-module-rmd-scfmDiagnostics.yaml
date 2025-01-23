@@ -62,7 +62,7 @@ jobs:
 
       - name: Render module Rmd
         run: |
-          rmarkdown::render("Biomass_borealDataPrep.Rmd", encoding = "UTF-8")
+          rmarkdown::render("modules/scfmDiagnostics/scfmDiagnostics.Rmd", encoding = "UTF-8")
         shell: Rscript {0}
 
       - name: Commit results
