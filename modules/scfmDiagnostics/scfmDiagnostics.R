@@ -210,7 +210,7 @@ diagnosticPlotsDT <- function(sim) {
   frpr <- postProcess(terra::vect(sim$fireRegimePolys),
                                           to = sAR)
   #drop true slivers, not ecological slivers
-  frpr <- frpr[expanse(frpr) > res(sim$flammableMap[]),]
+  frpr <- frpr[expanse(frpr) > res(sim$flammableMap)[1],]
   fireRegimePolysReporting <- sf::st_as_sf(frpr)
 
   # fireRegimePolysReporting <- sf::st_cast(fireRegimePolysReporting, "MULTIPOLYGON")
