@@ -95,10 +95,9 @@ doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-
   tmp <- sim$firePoints
-  ## extract and validate fireCause spec
 
+  ## extract and validate fireCause spec
   fc <- P(sim)$fireCause
 
   ## review that sf can be used like this.
@@ -130,8 +129,9 @@ Init <- function(sim) {
 
   #extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
-  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
+  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2]) {
     stop("illegal fireEpoch: ", epoch)
+  }
 
   quotes <- paste0("tmp$", paste(eval(P(sim)$fireYearColumnName)))
   tmp <- subset(tmp, get(P(sim)$fireYearColumnName) >= epoch[1] &
@@ -151,17 +151,20 @@ Init <- function(sim) {
   sim$fireRegimePoints <- tmp
 
   ## this function estimates the ignition probability and escape probability based on NFDB
-  scfmRegimePars <- rbindlist(lapply(unique(sim$fireRegimePolysCalibration$PolyID),
-                                     FUN = calcZonalRegimePars,
-                                     firePolys = sim$fireRegimePolysCalibration,
-                                     firePoints = sim$fireRegimePoints,
-                                     epochLength = epochLength,
-                                     maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
-                                     fireSizeColumnName = P(sim)$fireSizeColumnName,
-                                     targetBurnRate = P(sim)$targetBurnRate,
-                                     targetMaxFireSize = P(sim)$targetMaxFireSize),
-                              fill = TRUE)
-  #drop the attributes if they are present
+  scfmRegimePars <- unique(sim$fireRegimePolysCalibration$PolyID) |>
+    lapply(
+      FUN = calcZonalRegimePars,
+      firePolys = sim$fireRegimePolysCalibration,
+      firePoints = sim$fireRegimePoints,
+      epochLength = epochLength,
+      maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+      fireSizeColumnName = P(sim)$fireSizeColumnName,
+      targetBurnRate = P(sim)$targetBurnRate,
+      targetMaxFireSize = P(sim)$targetMaxFireSize
+    ) |>
+    rbindlist(fill = TRUE)
+
+  ## drop the attributes if they are present
   colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
                   "xMax", "emfs_ha", "empiricalBurnRate")
   colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
