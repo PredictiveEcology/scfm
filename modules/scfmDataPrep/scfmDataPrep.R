@@ -523,5 +523,15 @@ prepare_scfmDriver <- function(sim) {
       sf::st_as_sf()
   }
 
+  if (!suppliedElsewhere("firePoints", sim)) {
+    ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
+    sim$firePoints <- getFirePoints_NFDB_scfm(
+      studyArea = sim$fireRegimePolysCalibration,
+      NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
+    )
+    sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
+  }
+
+
   return(invisible(sim))
 }
