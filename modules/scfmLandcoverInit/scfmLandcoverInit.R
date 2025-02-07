@@ -219,7 +219,7 @@ Init <- function(sim) {
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     message(paste(
-      "rasterToMatch not supplied. generating from LCC2010 using studyArea CRS",
+      "rasterToMatch not supplied. generating from NTEMS LCC using studyArea CRS",
       " - It is strongly recommended to supply a rasterToMatch"
     ))
     sim$rasterToMatch <- LandR::prepInputs_NTEMS_LCC_FAO(
