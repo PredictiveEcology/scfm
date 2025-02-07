@@ -259,10 +259,6 @@ prepare_scfmRegime <- function(sim) {
 
   ## review that sf can be used like this.
   ## should verify CAUSE is a column in the table...
-  if (!P(sim)$fireCauseColumnName %in% names(tmp)) {
-    stop("The column ", P(sim)$fireCauseColumnName, " does not exist in the fire database used. ",
-         "Please pass the correct column name for the fire cause.")
-  }
   if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
     causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])
   } else {
@@ -417,6 +413,7 @@ prepare_scfmDriver <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
+
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
