@@ -48,7 +48,7 @@ defineModule(sim, list(
                           "and generate landscape stats regarding flammability in each fire regime poly;",
                           "scfmRegime will prepare fire regime attributes inc. mean fire size and ignition rate;",
                           "scfmDriver will estimate the spread probability of flammable pixels")),
-    defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
+    defineParameter("fireCause", "character", c("N", "L"), NA_character_, NA_character_,
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
@@ -521,6 +521,7 @@ prepare_scfmDriver <- function(sim) {
 
   if (!hasFRP) {
     #avoid GIS issue with sf
+    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
                                        to = sim$studyArea) |>
       sf::st_as_sf()
   }
