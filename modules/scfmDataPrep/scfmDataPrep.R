@@ -12,7 +12,7 @@ defineModule(sim, list(
                       "is that all spatial objects must share the same CRS and resolution, where relevant,",
                       "and they must utilize a crs projected in metres"),
   keywords =  c("fire regime", "fire percolation model", "National Fire Data Base (NFBD)"),
-  authors = authors = c(
+  authors =  c(
     person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
@@ -43,6 +43,11 @@ defineModule(sim, list(
                                  "flammableMap if the obejct is unsupplied")),
     defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10,
                     desc = "scale `xMax` by this if HD estimator fails"),
+    defineParameter("eventsToPrepare", "character", c("scfmLandcoverInit", "scfmRegime", "scfmDriver"), NA, NA,
+                    paste("which of three possible dataPrep steps to run? scfmLandcoverInit will clean GIS",
+                          "and generate landscape stats regarding flammability in each fire regime poly;",
+                          "scfmRegime will prepare fire regime attributes inc. mean fire size and ignition rate;",
+                          "scfmDriver will estimate the spread probability of flammable pixels")),
     defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
@@ -156,6 +161,12 @@ Init <- function(sim) {
   if ("scfmLandcoverInit" %in% P(sim)$eventsToPrepare){
     sim <- prepare_scfmLandcoverInit(sim)
   }
+  if ("scfmRegime" %in% P(sim)$eventsToPrepare){
+    sim <- prepare_scfmLandcoverInit(sim)
+  }
+  if ("scfmDriver" %in% P(sim)$eventsToPrepare){
+    sim <- prepare_scfmLandcoverInit(sim)
+  }
   return(invisible(sim))
 }
 
@@ -241,8 +252,170 @@ prepare_scfmlandcoverInit <- function(sim) {
 
 prepare_scfmRegime <- function(sim) {
 
+  tmp <- sim$firePoints
+
+  ## extract and validate fireCause spec
+  fc <- P(sim)$fireCause
+
+  ## review that sf can be used like this.
+  ## should verify CAUSE is a column in the table...
+  if (!P(sim)$fireCauseColumnName %in% names(tmp)) {
+    stop("The column ", P(sim)$fireCauseColumnName, " does not exist in the fire database used. ",
+         "Please pass the correct column name for the fire cause.")
+  }
+  if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
+    causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])
+  } else {
+    causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
+  }
+
+  if ("N" %in% fc & "L" %in% causeSet) fc[fc == "N"] <- "L"
+  if ("L" %in% fc & "N" %in% causeSet) fc[fc == "L"] <- "N"
+
+  if (all(!(fc %in% causeSet))) {
+    notPresent <- fc[!fc %in% causeSet]
+    warning(paste0("This firecause is not present: ", notPresent,
+                   " The following are the fire causes: ",
+                   paste(causeSet, collapse = ", "),
+                   ". Original cause will be replaced by ",
+                   paste(causeSet, collapse = ", ")), immediate. = TRUE)
+    fc <- causeSet
+  }
+
+  tmp <- subset(tmp, get(P(sim)$fireCauseColumnName) %in% fc)
+
+  #extract and validate fireEpoch
+  epoch <- P(sim)$fireEpoch
+  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2]) {
+    stop("illegal fireEpoch: ", epoch)
+  }
+
+  quotes <- paste0("tmp$", paste(eval(P(sim)$fireYearColumnName)))
+  tmp <- subset(tmp, get(P(sim)$fireYearColumnName) >= epoch[1] &
+                  get(P(sim)$fireYearColumnName) <= epoch[2])
+
+  epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
+
+  if (sf::st_crs(tmp) != sf::st_crs(sim$fireRegimePolysCalibration)) {
+    tmp <- sf::st_transform(tmp, crs = sf::st_crs(sim$fireRegimePolysCalibration))
+  }
+
+  tmp <- sf::st_intersection(tmp, sim$fireRegimePolysCalibration) ## gives studyArea colnames to points
+
+  if (any(is.na(tmp$PolyID))) {
+    tmp <- tmp[!is.na(tmp$PolyID), ] ## need to remove NA points
+  }
+  sim$fireRegimePoints <- tmp
+
+  ## this function estimates the ignition probability and escape probability based on NFDB
+  scfmRegimePars <- unique(sim$fireRegimePolysCalibration$PolyID) |>
+    lapply(
+      FUN = calcZonalRegimePars,
+      firePolys = sim$fireRegimePolysCalibration,
+      firePoints = sim$fireRegimePoints,
+      epochLength = epochLength,
+      maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+      fireSizeColumnName = P(sim)$fireSizeColumnName,
+      targetBurnRate = P(sim)$targetBurnRate,
+      targetMaxFireSize = P(sim)$targetMaxFireSize
+    ) |>
+    rbindlist(fill = TRUE)
+
+  ## drop the attributes if they are present
+  colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
+                  "xMax", "emfs_ha", "empiricalBurnRate")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
+
+  ## only keep the attributes that are in study area
+  sim$fireRegimePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
+
   return(invisible(sim))
 }
+
+prepare_scfmDriver <- function(sim) {
+  if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
+    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
+  }
+
+  ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
+  seeIfItHasRun <- CacheDigest(
+    list(
+      Map2,
+      polygonType = unique(sim$fireRegimePolys$PolyID),
+      MoreArgs = list(
+        targetN = P(sim)$targetN,
+        fireRegimePolys = sim$fireRegimePolys,
+        buffDist = P(sim)$buffDist,
+        pJmp = P(sim)$pJmp,
+        pMin = P(sim)$pMin,
+        pMax = P(sim)$pMax,
+        flammableMap = sim$flammableMapCalibration
+      ),
+      f = scfmutils::calibrateFireRegimePolys
+    )
+  )
+
+  if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
+    cl <- pemisc::makeOptimalCluster(
+      useParallel = P(sim)$.useParallelFireRegimePolys,
+      ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
+      MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
+      maxNumClusters = length(unique(sim$fireRegimePolys$PolyID)),
+      outfile = file.path(outputPath(sim), "log", "scfm.log"),
+      objects = c(), envir = environment(),
+      libraries = c("scfmutils")
+    )
+
+    on.exit({
+      if (!is.null(cl)) {
+        parallel::stopCluster(cl)
+      }
+    })
+  } else {
+    cl <- NULL
+  }
+
+  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+    stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
+  }
+
+  message("Running calibrateFireRegimePolys()...")
+
+  flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
+  scfmDriverPars <- Cache(pemisc::Map2,
+                          cl = cl,
+                          cloudFolderID = sim$cloudFolderID,
+                          ## function-level cache is controlled by option("reproducible.useCache")
+                          useCloud = P(sim)$.useCloud,
+                          omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
+                          polygonType = unique(sim$fireRegimePolys$PolyID),
+                          MoreArgs = list(targetN = P(sim)$targetN,
+                                          fireRegimePolys = sim$fireRegimePolys,
+                                          buffDist = P(sim)$buffDist,
+                                          pJmp = P(sim)$pJmp,
+                                          pMin = P(sim)$pMin,
+                                          pMax = P(sim)$pMax,
+                                          flammableMap = flammableMapCalibration,
+                                          plotPath = figurePath(sim),
+                                          outputPath = outputPath(sim),
+                                          optimizer = P(sim)$scamOptimizer
+                          ),
+                          f = scfmutils::calibrateFireRegimePolys,
+                          userTags = c("scfmDriver", "scfmDriverPars"))
+
+  scfmDriverPars <- rbindlist(scfmDriverPars)
+
+  ## drop the attributes if they are present
+  colsToDrop <- c("pSpread", "p0", "naiveP0", "pIgnition", "maxBurnCells")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
+
+  sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
+
+  return(invisible(sim))
+}
+
 .inputObjects <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
