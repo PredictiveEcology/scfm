@@ -485,7 +485,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFMC) {
-    vegMap <- prepInputs_NTEMS_LCC_FAO(
+    fmc <- prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
@@ -493,17 +493,18 @@ prepare_scfmDriver <- function(sim) {
       #projectTo = sim$rasterToMatchCalibration, #should be done after defineFlammable
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
-    vegMap[] <- asInteger(vegMap[])
-    fmc <- defineFlammable(vegMap,
+    fmc[] <- asInteger(fmc[])
+    fmc <- defineFlammable(fmc,
                            nonFlammClasses = c(20, 31, 32, 33))
 
-    sim$flammableMapCalibration <- postProcess(sim$flammableMapCalibration,
+    sim$flammableMapCalibration <- postProcess(fmc,
                                                to = sim$rasterToMatchCalibration,
                                                method = "mode")
   }
 
   if (!hasFM) {
-    sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch)
+    sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch,
+                                    method = "near")
   }
 
   ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
@@ -519,7 +520,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFRP) {
-    sim$fireRegimePolys <- postProcess(terra::vect(fireRegimePolys), #avoid GIS issue with sf
+    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolys), #avoid GIS issue with sf
                                        to = sim$studyArea) |>
       sf::st_as_sf()
   }
