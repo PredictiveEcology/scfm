@@ -162,16 +162,16 @@ Init <- function(sim) {
     sim <- prepare_scfmLandcoverInit(sim)
   }
   if ("scfmRegime" %in% P(sim)$eventsToPrepare){
-    sim <- prepare_scfmLandcoverInit(sim)
+    sim <- prepare_scfmRegime(sim)
   }
   if ("scfmDriver" %in% P(sim)$eventsToPrepare){
-    sim <- prepare_scfmLandcoverInit(sim)
+    sim <- prepare_scfmDriver(sim)
   }
   return(invisible(sim))
 }
 
 
-prepare_scfmlandcoverInit <- function(sim) {
+prepare_scfmLandcoverInit <- function(sim) {
 
   ## ensure flammability maps are integer ('binary') maps
   if (!LandR::isInt(sim$flammableMap)) {
@@ -520,7 +520,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFRP) {
-    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolys), #avoid GIS issue with sf
+    #avoid GIS issue with sf
                                        to = sim$studyArea) |>
       sf::st_as_sf()
   }
