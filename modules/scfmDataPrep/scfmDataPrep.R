@@ -25,7 +25,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("NEWS.md", "README.md", "scfmDataPrep.Rmd"),
   reqdPkgs = list(
-    "ggplot2", "parallel",
+    "dplyr", "ggplot2", "parallel",
     "PredictiveEcology/LandR (>= 1.1.1)",
     "PredictiveEcology/pemisc@development",
     "PredictiveEcology/scfmutils@development (>= 2.0.7)",
@@ -64,6 +64,9 @@ defineModule(sim, list(
                     paste("Minimum proportion of flammable old pixel needed to define a new pixel
                           as flammable when upscaling the default flammable maps`.")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
+    defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
+    defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
+    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
     defineParameter("scamOptimizer", "character", "bfgs", NA, NA,
                     "numerical optimization method used in fitting scam model; see `?scam`."),
     defineParameter("sliverThreshold", "numeric", 6.25e8, NA, NA,
@@ -330,9 +333,6 @@ prepare_scfmRegime <- function(sim) {
 }
 
 prepare_scfmDriver <- function(sim) {
-  if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
-    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
-  }
 
   ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
   seeIfItHasRun <- CacheDigest(
