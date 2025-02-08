@@ -529,6 +529,7 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
+    #TODO: why is this necessary?
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 

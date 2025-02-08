@@ -140,12 +140,13 @@ times <- list(start = 1, end = 250)
 defaultPlotInterval <- 50
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- c('.inputObjects')  #don't cache the init event - it is too prone to false positives
+globCache <- NA  #don't cache the init event - it is too prone to false positives
 
 parameters <- list(
-  scfmLandcoverInit = list(
-    useCache = globCache,
-    sliverThreshold = 1e8), #polygons <100 km2 are merged with closest non-sliver neighbour
+  scfmDataPrep = list(
+    sliverThreshold = 1e8, 
+    targetN = 1000, 
+    fireCause = "N"), #polygons <100 km2 are merged with closest non-sliver neighbour
   scfmIgnition = list(
     .useCache = globCache
   ),
@@ -155,20 +156,12 @@ parameters <- list(
   scfmSpread = list(
     .useCache = globCache,
     .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval),
-  scfmRegime = list(
-    .useCache = ".inputObjects",
-    fireCause=c("L")
-  ),
-  scfmDriver = list(
-    .useCache = '.inputObjects',
-    targetN = 4000 #increase targetN for more robust estimates, longer run-time
-  )# default targetN = 4000, for reference. 
+    .plotInterval = defaultPlotInterval)
 ) 
 
 
 modules <- list(
-  "scfmLandcoverInit", "scfmRegime", "scfmDriver",
+  "scfmDataPrep",
   "scfmIgnition", "scfmEscape",
   "scfmSpread", "scfmDiagnostics"
   , "ageModule"
@@ -185,25 +178,17 @@ paths <- list(
 )
 #if you supply studyArea you should supply rtm to make sure the crs are identical. 
 
-center <- SpatialPoints(coords = data.frame(x = c(-1209980), 
-            y = c(7586895)), proj4string = CRS(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0", 
-            "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")))
-studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = center, seed = 1001)
+targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0",
+                       "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+sa <- terra::vect(cbind(-1209980, 7586865), crs = targetCRS)
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = sa, seed = 1001)
 
 studyAreaCalibration <- buffer(studyArea, 50000)
 
-rasterToMatchCalibration <- raster(extent(studyAreaCalibration), res = c(250, 250))
-crs(rasterToMatchCalibration) <- crs(studyAreaCalibration)
-rasterToMatchCalibration[] <- 1
-rasterToMatchCalibration <- mask(rasterToMatchCalibration, studyAreaCalibration)
+rasterToMatchCalibration <- rast(studyAreaCalibration, res = c(250, 250), vals = 1) |>
+  mask(mask = studyAreaCalibration)
 rasterToMatch <- postProcess(rasterToMatchCalibration, studyArea = studyArea)
 
-studyAreaCalibration$name <- "SAL" #make SPDF
-
-studyArea <- st_as_sf(studyArea)
-studyAreaCalibration <- st_as_sf(studyAreaCalibration)
-# rasterToMatchCalibration <- terra::rast(rasterToMatchCalibration)
-# rastertoMatch <- terra::rast(rasterToMatch)
 #if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
   studyArea = studyArea,
