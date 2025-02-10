@@ -60,7 +60,9 @@ defineModule(sim, list(
     createsOutput("burnMap", "SpatRaster", desc = "cumulative burn map"),
     createsOutput("burnSummary", "data.table", desc = "describes details of all burned pixels"),
     createsOutput("pSpread", "SpatRaster", desc = "spread probability applied to flammability map"),
-    createsOutput("rstCurrentBurn", "SpatRaster", desc = "annual burn map")
+    createsOutput("rstCurrentBurn", "SpatRaster", desc = "annual burn map"),
+    createsOutput("timeSinceDisturbance", "SpatRaster",
+                  "map of time since last burn - with pixels that never burn receiving NA")
   )
 ))
 
@@ -126,6 +128,7 @@ Init <- function(sim) {
   sim$burnMap <- rast(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
   sim$burnMap[sim$flammableMap[] %==% 0] <- NA
+  sim$timeSinceDisturbance <- rast(sim$burnMap)
 
   if (!is.null(sim$fireRegimePolys$pSpread)) {
     sprValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
@@ -213,6 +216,14 @@ Burnemup <- function(sim) {
   tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+
+  if (length(sim$burnDT$pixels) > 0 ){
+  #terra will error if performing arithmetic on a raster with all NAs,
+  #so do this instead (alternatively, treat year 1 differently from subsequent years)
+  sim$timeSinceDisturbance[sim$burnDT$pixels] <- -1
+  sim$timeSinceDisturbance <- sim$timeSinceDisturbance + 1
+  }
+
   return(invisible(sim))
 }
 
