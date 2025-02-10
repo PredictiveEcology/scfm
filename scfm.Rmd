@@ -14,12 +14,10 @@ editor_options:
   chunk_output_type: console
   bibliography:
     - modules/ageModule/citations/references_ageModule.bib
+    - modules/scfmDataPrep/citations/references_scfmDataPrep.bib
     - modules/scfmDiagnostics/citations/references_scfmDiagnostics.bib
-    - modules/scfmDriver/citations/references_scfmDriver.bib
     - modules/scfmEscape/citations/references_scfmEscape
     - modules/scfmIgnition/citations/references_scfmIgnition.bib
-    - modules/scfmLandcoverInit/citations/references_scfmLandcoverInit.bib
-    - modules/scfmRegime/citations/references_scfmRegime
     - modules/scfmSpread/citations/references_scfmSpread.bib
 link-citations: true
 always_allow_html: true
@@ -83,7 +81,7 @@ While the default `fireRegimePolys` object is created from the ecoregions of Can
 ### Scenario 2: *a priori* knowledge of fire regimes
 
 In this scenario, a user may have *a priori* knowledge of the maximum fire size and/or the fire return interval for one or more fire regime areas.
-These parameters can be passed to override the estimate provided by `scfmRegime`.
+These parameters can be passed to override the estimate provided by `scfmDataPrep`.
 
 **Additional objects needed:**
 
@@ -91,14 +89,14 @@ These parameters can be passed to override the estimate provided by `scfmRegime`
 
 **Additional parameters needed:**
 
-- `scfmRegime` requires `targetBurnRate` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known fire return interval (i.e., $1 / fireReturnInterval$);
-- `scfmRegime` requires `targetMaxFireSize` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known maximum fire size.
+- `scfmDataPrep` requires `targetBurnRate` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known fire return interval (i.e., $1 / fireReturnInterval$);
+- `scfmDataPrep` also requires `targetMaxFireSize` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known maximum fire size.
 
 ## Technical notes
 
 1. the parameter most likely to be underestimated is the maximum fire size (`maxFireSize`).
-This is not typically very consequential, as simulated fires are unlikely to reach the maximum size unless it is drastically underestimated. The suggested solution is to pass pre-defined maximums to `scfmRegime` (`targetMaxFireSize`).
-The parameterized maximum fire size, in hectares, can be verified in `scfmRegimePars$<PolyID>emfs_ha`. 
+This is not typically very consequential, as simulated fires are unlikely to reach the maximum size unless it is drastically underestimated. The suggested solution is to pass pre-defined maximums to `scfmDataPrep` (`targetMaxFireSize`).
+The parameterized maximum fire size, in hectares, can be verified in `sim$fireRegimePolys$<PolyID>emfs_ha`. 
 
 2. 'Sliver polygons', i.e., polygons that are smaller than the sliver threshold parameter (default $100 km^2$), are joined with their nearest non-sliver neighbour.
 This prevents any areas that have too little fire data from being *de facto* nonflammable.
@@ -132,7 +130,7 @@ times <- list(start = 1, end = 250)
 defaultPlotInterval <- 50
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
-globCache <- NA  #don't cache the init event - it is too prone to false positives
+globCache <- ".inputObjects"  #don't cache the init event - it is too prone to false positives
 
 parameters <- list(
   scfmDataPrep = list(
@@ -158,8 +156,7 @@ modules <- list(
   "scfmSpread", "scfmDiagnostics"
   , "ageModule"
 )
-## NOTE: replace modules with "group_scfm" to include ageModule;
-##       ageModule isn't necessary to run and download of `ageMap` takes time
+
 
 #Paths
 paths <- list(

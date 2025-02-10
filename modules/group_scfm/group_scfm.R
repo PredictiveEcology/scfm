@@ -7,8 +7,8 @@ defineModule(sim, list(
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = "aut"),
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
-  childModules = c("ageModule", "scfmDiagnostics", "scfmDriver", "scfmEscape", "scfmIgnition",
-                   "scfmLandcoverInit", "scfmRegime", "scfmSpread"),
+  childModules = c("ageModule", "scfmDataPrep", "scfmDiagnostics",
+                   "scfmEscape", "scfmIgnition", "scfmSpread"),
   version = list(group_scfm = "2.0.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
