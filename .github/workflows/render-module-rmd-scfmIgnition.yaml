@@ -55,7 +55,7 @@ jobs:
 
       - name: Install module package and other dependencies
         run: |
-          pkgs <- SpaDES.core::packages(modules = "scfmIgnition", paths = "..")
+          pkgs <- SpaDES.core::packages(modules = "scfmIgnition", paths = "modules")
           Require::Require(pkgs[[1]], require = FALSE)
         shell: Rscript {0}
 

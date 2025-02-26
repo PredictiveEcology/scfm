@@ -55,7 +55,7 @@ jobs:
 
       - name: Install module package and other dependencies
         run: |
-          pkgs <- SpaDES.core::packages(modules = "group_scfm", paths = "..")[[1]]
+          pkgs <- SpaDES.core::packages(modules = "group_scfm", paths = "modules")[[1]]
           Require::Require(pkgs[[1]], require = FALSE)
         shell: Rscript {0}
 
