@@ -65,7 +65,7 @@ jobs:
       - name: Install module package dependencies
         run: |
           pkgs <- SpaDES.core::packages(modules = "scfmDataPrep", paths = "..")
-          Require::Require(pkgs)
+          Require::Require(pkgs[[1]], require = FALSE)
         shell: Rscript {0}
 
       - name: Render module Rmd
