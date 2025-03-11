@@ -39,7 +39,7 @@ defineModule(sim, list(
     defineParameter("sliverThreshold", "numeric", 6.25e8, NA, NA,
                     paste("fire regime polygons with area (in m2) less than this number will be merged",
                           "with their closest non-sliver neighbour using `sf::st_nearest_feature`.")),
-    defineParameter("flammabilityThreshold", "numeric", 0.25, 0, 1,
+    defineParameter("flammabilityThreshold", "numeric", 0.05, 0, 1,
                     paste("Minimum proportion of flammable old pixel needed to define a new pixel
                           as flammable when upscaling the default flammable maps`.")),
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
