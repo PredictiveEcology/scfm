@@ -28,7 +28,7 @@ defineModule(sim, list(
     "dplyr", "ggplot2", "parallel",
     "PredictiveEcology/LandR (>= 1.1.1)",
     "PredictiveEcology/pemisc@development",
-    "PredictiveEcology/scfmutils@development (>= 2.0.7)",
+    "PredictiveEcology/scfmutils@sfContains (>= 2.0.8.9002)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
     "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)",
     "purrr", "reproducible", "sf", "stats", "terra"),
@@ -446,14 +446,27 @@ prepare_scfmDriver <- function(sim) {
 
   }
 
-  if (!hasSAC){
+  if (!hasSAC & !hasFRPC){
     # buffDist is necessary only to ensure fires aren't extinguished from edges
     # during the spread calibration - whereas the buffer distance here is to establish
     # studyAreaCalibration, whihc is intended to provide additional fire data for
     # fire regime polygons that are otherwise too small after intersecting with studyArea.
     # however - this distance must logically exceed P(sim)$buffDist
     #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
-    sim$studyAreaCalibration <- buffer(sim$studyArea, P(sim)$buffDist * 2)
+    fireRegimePolysCalibration <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
+                                                          projectTo = sim$studyArea,
+                                                          destinationPath = dPath,
+                                                          subsetType = "contains")
+
+    #TODO: make decision  probably want to keep this separate from scfmDriver's buffDist
+
+    # sim$studyAreaCalibration <- buffer(sim$studyArea, P(sim)$buffDist * 2)
+    #TODO: put convex hull
+    sim$fireRegimePolysCalibration <- fireRegimePolysCalibration
+
+    sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration,
+                                         by_feature = FALSE) |>
+      st_as_sf() #converts from geometry to sf
   }
   if (hasRTM & !hasRTMC) {
     warning("rasterToMatchCalibration not supplied")
@@ -511,13 +524,16 @@ prepare_scfmDriver <- function(sim) {
   ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
   if (!hasFRPC) {
 
+
     message("fireRegimePolys not supplied. Using default ecoregions of Canada")
     # cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
 
     sim$fireRegimePolysCalibration <- Cache(prepInputsFireRegimePolys, url = NULL,
                                             destinationPath = dPath,
-                                            studyArea = sim$studyAreaCalibration,
-                                            type = P(sim)$fireRegimePolysType)
+                                            projectTo = studyArea,
+                                            type = P(sim)$fireRegimePolysType,
+                                            cropToStudyArea = FALSE
+                                            )
   }
 
   if (!hasFRP) {
@@ -533,7 +549,7 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    #TODO: why is this necessary?
+    #TODO: should this occur?
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 
