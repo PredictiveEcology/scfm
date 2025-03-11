@@ -26,7 +26,7 @@ defineModule(sim, list(
                     desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
     defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
                     desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
-    defineParameter("fireEpoch", "numeric", c(1971, 2000), NA, NA, "start of normal period"),
+    defineParameter("fireEpoch", "numeric", c(1971, 2020), NA, NA, "start of normal period"),
     defineParameter("fireRegimePolysType", "character", "ECOREGION", NA, NA,
                     paste("Polygon type to use for scfm `fireRegimePolys`:",
                           "see `?scfmutils::prepInputsFireRegimePolys` for allowed types.")),
