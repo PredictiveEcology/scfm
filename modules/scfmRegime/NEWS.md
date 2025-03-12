@@ -1,3 +1,7 @@
+# scfmRegime (development version)
+
+- changed `fireEpoch` from 1970-2020 in order to expand input data so that more wildfire is detected on the landscape
+
 # scfmRegime 2.0.0
 
 - completed conversion to using `terra` instead of `raster` objects;
