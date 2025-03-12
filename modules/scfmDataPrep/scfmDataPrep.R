@@ -453,21 +453,37 @@ prepare_scfmDriver <- function(sim) {
     # fire regime polygons that are otherwise too small after intersecting with studyArea.
     # however - this distance must logically exceed P(sim)$buffDist
     #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
-    fireRegimePolysCalibration <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
-                                                          projectTo = sim$studyArea,
-                                                          destinationPath = dPath,
-                                                          subsetType = "contains")
+    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
+                                      projectTo = sim$studyArea,
+                                      destinationPath = dPath,
+                                      subsetType = "contains")
 
-    #TODO: make decision  probably want to keep this separate from scfmDriver's buffDist
+    #TODO: probably want to keep this separate from scfmDriver's buffDist
+    # alternatively, the driver buffDist can be gleamed from res of rasterToMatch.
+    #it just needs to be about 15-20 pixels
 
     # sim$studyAreaCalibration <- buffer(sim$studyArea, P(sim)$buffDist * 2)
     #TODO: put convex hull
-    sim$fireRegimePolysCalibration <- fireRegimePolysCalibration
+    sim$fireRegimePolysCalibration <- frpc
 
     sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration,
                                          by_feature = FALSE) |>
       st_as_sf() #converts from geometry to sf
+  } else if (hasSAC & !hasFRPC) {
+    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
+                                      projectTo = sim$studyArea,
+                                      destinationPath = dPath)
+    sim$fireRegimePolysCalibration <- frpc
   }
+
+  if (!hasFRP) {
+    #avoid GIS issue with sf
+    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
+                                       to = sim$studyArea) |>
+      sf::st_as_sf()
+  }
+
+
   if (hasRTM & !hasRTMC) {
     warning("rasterToMatchCalibration not supplied")
     sim$rasterToMatchCalibration <- terra::extend(sim$rasterToMatch,
@@ -519,28 +535,6 @@ prepare_scfmDriver <- function(sim) {
   if (!hasFM) {
     sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch,
                                     method = "near")
-  }
-
-  ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
-  if (!hasFRPC) {
-
-
-    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-    # cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
-
-    sim$fireRegimePolysCalibration <- Cache(prepInputsFireRegimePolys, url = NULL,
-                                            destinationPath = dPath,
-                                            projectTo = studyArea,
-                                            type = P(sim)$fireRegimePolysType,
-                                            cropToStudyArea = FALSE
-                                            )
-  }
-
-  if (!hasFRP) {
-    #avoid GIS issue with sf
-    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
-                                       to = sim$studyArea) |>
-      sf::st_as_sf()
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {
