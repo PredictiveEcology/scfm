@@ -453,9 +453,9 @@ prepare_scfmDriver <- function(sim) {
     # fire regime polygons that are otherwise too small after intersecting with studyArea.
     # however - this distance must logically exceed P(sim)$buffDist
     #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
-     if(inherits(sim$studyArea, "SpatVector")) {
-       buffFun <- terra::buffer {
-     } else {
+    if(inherits(sim$studyArea, "SpatVector")) {
+      buffFun <- terra::buffer
+    } else {
        buffFun <- sf::st_buffer
      }
     sim$studyAreaCalibration <- buffFun(sim$studyArea, P(sim)$buffDist * 2)
