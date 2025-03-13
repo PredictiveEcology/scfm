@@ -485,7 +485,6 @@ prepare_scfmDriver <- function(sim) {
 
 
   if (hasRTM & !hasRTMC) {
-    warning("rasterToMatchCalibration not supplied")
     sim$rasterToMatchCalibration <- terra::extend(sim$rasterToMatch,
                                                   sim$studyAreaCalibration,
                                                   fill = 1L)
