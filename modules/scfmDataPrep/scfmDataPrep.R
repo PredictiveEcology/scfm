@@ -454,7 +454,7 @@ prepare_scfmDriver <- function(sim) {
     # however - this distance must logically exceed P(sim)$buffDist
     #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
-                                      projectTo = sim$studyArea,
+                                      studyArea = sim$studyArea,
                                       destinationPath = dPath,
                                       subsetType = "contains")
 
@@ -471,7 +471,7 @@ prepare_scfmDriver <- function(sim) {
       st_as_sf() #converts from geometry to sf
   } else if (hasSAC & !hasFRPC) {
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
-                                      projectTo = sim$studyArea,
+                                      studyArea = sim$studyArea,
                                       destinationPath = dPath)
     sim$fireRegimePolysCalibration <- frpc
   }
