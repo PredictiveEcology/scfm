@@ -426,7 +426,7 @@ prepare_scfmDriver <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
-  # object check for SA/FRP/FRPC/SAC - better to be strict with stops
+  ## object check for SA/FRP/FRPC/SAC - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)
   hasSAC <- suppliedElsewhere("studyAreaCalibration", sim)
   hasFRP <- suppliedElsewhere("fireRegimePolys", sim)
@@ -441,39 +441,38 @@ prepare_scfmDriver <- function(sim) {
          "the equivalent calibration-sized object must also be provided")
   }
 
-  # supply objects
+  ## supply objects
   if (!hasSA) {
     message("study area not supplied. Using random polygon in Alberta")
     sim$studyArea <- LandR::randomStudyArea(size = 1500000* 1000, seed = 23654)
     sim$studyArea <- terra::project(sim$studyArea, y = "EPSG:3348")
-    #this is 1,500,000 km2 - somewhere in eastern Rockies
-    #the crs is Canada equal alberts - unfortunately there is no way to set
+    ## this is 1,500,000 km2 - somewhere in eastern Rockies
+    ## the crs is Canada equal alberts - unfortunately there is no way to set
 
   }
 
-  if (!hasSAC & !hasFRPC){
-    # buffDist is necessary only to ensure fires aren't extinguished from edges
-    # during the spread calibration - whereas the buffer distance here is to establish
-    # studyAreaCalibration, whihc is intended to provide additional fire data for
-    # fire regime polygons that are otherwise too small after intersecting with studyArea.
-    # however - this distance must logically exceed P(sim)$buffDist
-    #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
+  if (!hasSAC & !hasFRPC) {
+    ## buffDist is necessary only to ensure fires aren't extinguished from edges
+    ## during the spread calibration - whereas the buffer distance here is to establish
+    ## studyAreaCalibration, whihc is intended to provide additional fire data for
+    ## fire regime polygons that are otherwise too small after intersecting with studyArea.
+    ## however - this distance must logically exceed P(sim)$buffDist
+    ## ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
                                       studyArea = sim$studyArea,
                                       destinationPath = dPath,
                                       subsetType = "contains")
 
-    #TODO: probably want to keep this separate from scfmDriver's buffDist
-    # alternatively, the driver buffDist can be gleamed from res of rasterToMatch.
-    #it just needs to be about 15-20 pixels
+    ## TODO: probably want to keep this separate from scfmDriver's buffDist
+    ## alternatively, the driver buffDist can be gleaned from res of rasterToMatch.
+    ## it just needs to be about 15-20 pixels
 
     # sim$studyAreaCalibration <- buffer(sim$studyArea, P(sim)$buffDist * 2)
-    #TODO: put convex hull
+    ## TODO: put convex hull
     sim$fireRegimePolysCalibration <- frpc
 
-    sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration,
-                                         by_feature = FALSE) |>
-      st_as_sf() #converts from geometry to sf
+    sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration, by_feature = FALSE) |>
+      sf::st_as_sf() ## converts from geometry to sf
   } else if (hasSAC & !hasFRPC) {
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
                                       studyArea = sim$studyArea,
@@ -482,7 +481,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFRP) {
-    #avoid GIS issue with sf
+    ## avoid GIS issue with sf
     sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
                                        to = sim$studyArea) |>
       sf::st_as_sf()
@@ -524,7 +523,7 @@ prepare_scfmDriver <- function(sim) {
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchCalibration,
-      #projectTo = sim$rasterToMatchCalibration, #should be done after defineFlammable
+      # projectTo = sim$rasterToMatchCalibration, ## should be done after defineFlammable
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
     fmc[] <- asInteger(fmc[])
@@ -547,10 +546,9 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    #TODO: should this occur?
+    ## TODO: should this occur?
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
-
 
   return(invisible(sim))
 }
