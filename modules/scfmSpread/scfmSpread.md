@@ -1,7 +1,7 @@
 ---
 title: "scfmSpread Manual"
 subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+date: "Last updated: 2025-03-17"
 output:
   bookdown::html_document2:
     toc: true
@@ -221,6 +221,11 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmSpread)).
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> annual burn map </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> timeSinceFire </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> map of time since last burn - with pixels that never burn receiving NA </td>
+  </tr>
 </tbody>
 </table>
 
@@ -229,11 +234,9 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmSpread)).
 Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Getting help

@@ -1,7 +1,7 @@
 ---
 title: "scfmRegime Manual"
 subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+date: "Last updated: 2025-03-17"
 output:
   bookdown::html_document2:
     toc: true

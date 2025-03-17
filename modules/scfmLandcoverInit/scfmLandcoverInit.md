@@ -1,7 +1,7 @@
 ---
 title: "scfmLandcoverInit Manual"
 subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+date: "Last updated: 2025-03-17"
 output:
   bookdown::html_document2:
     toc: true
@@ -154,10 +154,18 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
   <tr>
    <td style="text-align:left;"> sliverThreshold </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 1e+08 </td>
+   <td style="text-align:left;"> 6.25e+08 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
-   <td style="text-align:left;"> fire regime polygons with area less than this number will be merged with their closest non-sliver neighbour using `sf::st_nearest_feature`. </td>
+   <td style="text-align:left;"> fire regime polygons with area (in m2) less than this number will be merged with their closest non-sliver neighbour using `sf::st_nearest_feature`. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flammabilityThreshold </td>
+   <td style="text-align:left;"> numeric </td>
+   <td style="text-align:left;"> 0.25 </td>
+   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Minimum proportion of flammable old pixel needed to define a new pixel as flammable when upscaling the default flammable maps`. </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInitialTime </td>
@@ -247,11 +255,9 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmLandcoverIn
 Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Getting help

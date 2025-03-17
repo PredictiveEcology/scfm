@@ -24,12 +24,14 @@ always_allow_html: true
 (ref:group_scfm) *group_scfm*
 
 ```{r setup-group_scfm, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+## change to eval = TRUE if all chunks are to be evaluated
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold")
 
 ## get citation style
 if (!file.exists("citations/ecology-letters.csl")) {
   dir.create("citations", showWarnings = FALSE)
-  download.file("https://www.zotero.org/styles/ecology-letters", destfile = "citations/ecology-letters.csl")
+  download.file("https://www.zotero.org/styles/ecology-letters",
+                destfile = "citations/ecology-letters.csl")
 }
 
 if (!require(dplyr)) {
@@ -60,11 +62,9 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 A module group to run the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Module parameters, inputs and outputs

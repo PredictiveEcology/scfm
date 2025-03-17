@@ -1,7 +1,7 @@
 ---
 title: "group_scfm Manual"
 subtitle: "v."
-date: "Last updated: 2024-07-03"
+date: "Last updated: 2025-03-17"
 output:
   bookdown::html_document2:
     toc: true
@@ -41,11 +41,9 @@ always_allow_html: true
 A module group to run the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Module parameters, inputs and outputs

@@ -45,19 +45,23 @@ download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.pn
 
 ### Module summary
 
-Provide a brief summary of what the module does / how to use the module.
+Generates relevant statistics and estimates parameters for a generic percolation model to simulate fire regime parameters for a given landscape (`studyArea`).
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+If `scfm` is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
+
+- `studyArea` and `studyAreaCalibration`;
+- `rasterToMatch` and `rasterToMatchCalibration`.
+
+The extents should differ between objects and their larger `*Calibration` counterparts.
 
 ### Module inputs and parameters
 
 Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
-If `sourceURL` is specified, `downloadData("scfmDataPrep", "C:/Ian/Git/scfm/modules")` may be sufficient.
+If `sourceURL` is specified, `downloadData("scfmDataPrep", "..")` may be sufficient.
 Table \@ref(tab:moduleInputs-scfmDataPrep) shows the full list of module inputs.
 
 ```{r moduleInputs-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_inputs <- SpaDES.core::moduleInputs("scfmDataPrep", "C:/Ian/Git/scfm/modules")
+df_inputs <- SpaDES.core::moduleInputs("scfmDataPrep", "..")
 knitr::kable(df_inputs,
              caption = "List of (ref:scfmDataPrep) input objects and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
@@ -67,7 +71,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
 
 
 ```{r moduleParams-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_params <- SpaDES.core::moduleParams("scfmDataPrep", "C:/Ian/Git/scfm/modules")
+df_params <- SpaDES.core::moduleParams("scfmDataPrep", "..")
 knitr::kable(df_params, caption = "List of (ref:scfmDataPrep) parameters and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
@@ -89,14 +93,23 @@ Write what is saved.
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDataPrep)).
 
 ```{r moduleOutputs-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
-df_outputs <- SpaDES.core::moduleOutputs("scfmDataPrep", "C:/Ian/Git/scfm/modules")
+df_outputs <- SpaDES.core::moduleOutputs("scfmDataPrep", "..")
 knitr::kable(df_outputs, caption = "List of (ref:scfmDataPrep) outputs and their description.") |>
   kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
 ### Links to other modules
 
-Describe any anticipated linkages to other modules, such as modules that supply input data or do post-hoc analysis.
+### Links to other modules
+
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDataPrep`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmSpread`
+
 
 ### Getting help
 

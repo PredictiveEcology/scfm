@@ -1,21 +1,23 @@
 defineModule(sim, list(
   name = "scfmDataPrep",
-  description = paste("This module first generates some relevant fire regime statistics for each fire regime over
-                      `studyAreaCalibration` then filters the fire regime polys to those inside studyArea.",
-                      "It will combine fire regime polys with smaller area than that denoted by the `sliverThreshold`",
-                      "param before calculating the flammable area, mean fire size, maximum fire size,",
-                      "number of flammable neighbouring pixels from 0-8, and lastly, the ignition rate, escape rate,
-                      and spread rate in each polygon. By default these estimates are based on lightning-caused fires",
-                      "from 1970-2000 in the NFDB dataset. However, these params can be overriden by a user.",
-                      "The FRI can be set using the `targetBurnRate` param, in which case the mean fire size, ignition rate",
-                      "and escape rate will be incrementally adjusted to match the target FRI. An important limitation",
-                      "is that all spatial objects must share the same CRS and resolution, where relevant,",
-                      "and they must utilize a crs projected in metres"),
+  description = paste(
+    "This module first generates some relevant fire regime statistics for each fire regime over
+    `studyAreaCalibration` then filters the fire regime polys to those inside studyArea.",
+    "It will combine fire regime polys with smaller area than that denoted by the `sliverThreshold`",
+    "param before calculating the flammable area, mean fire size, maximum fire size,",
+    "number of flammable neighbouring pixels from 0-8, and lastly, the ignition rate, escape rate,
+    and spread rate in each polygon. By default these estimates are based on lightning-caused fires",
+    "from 1970-2000 in the NFDB dataset. However, these params can be overriden by a user.",
+    "The FRI can be set using the `targetBurnRate` param, in which case the mean fire size, ignition rate",
+    "and escape rate will be incrementally adjusted to match the target FRI. An important limitation",
+    "is that all spatial objects must share the same CRS and resolution, where relevant,",
+    "and they must utilize a crs projected in metres."
+  ),
   keywords =  c("fire regime", "fire percolation model", "National Fire Data Base (NFBD)"),
   authors =  c(
-    person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = "aut"),
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut", "cre")),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
   childModules = character(0),
@@ -31,7 +33,8 @@ defineModule(sim, list(
     "PredictiveEcology/scfmutils@sfContains (>= 2.0.8.9002)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
     "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)",
-    "purrr", "reproducible", "sf", "stats", "terra"),
+    "purrr", "reproducible", "sf", "stats", "terra"
+  ),
   parameters = rbind(
     defineParameter("buffDist", "numeric", 2e4, 1, 1e5,
                     paste("Buffer width to mitigate edge effects in fire landscape calibration.",
@@ -62,7 +65,7 @@ defineModule(sim, list(
                     desc = "Name of the column that has fire size"),
     defineParameter("flammabilityThreshold", "numeric", 0.25, 0, 1,
                     paste("Minimum proportion of flammable old pixel needed to define a new pixel
-                          as flammable when upscaling the default flammable maps`.")),
+                          as flammable when upscaling the default flammable maps.")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
@@ -83,7 +86,6 @@ defineModule(sim, list(
                                  "a new spread probability. Names should correspond to `PolyID`.",
                                  "A partial set of polygons is allowed - missing polys are estimated from data.")),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
@@ -113,17 +115,20 @@ defineModule(sim, list(
                  desc = paste("if `studyAreaCalibration` is supplied, the corresponding fire regime areas.",
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
-                 desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
+                 desc = "binary flammability map - defaults to using `LandR::prepInputsLCC`"),
     expectsInput("flammableMapCalibration", "SpatRaster",
                  desc = paste("binary flammability map corresponding to `rasterToMatchCalibration`.",
-                              "It should extent from studyArea by >= scfmDriver's `P(sim)$buffDist`.",
-                              "and if unsupplied, will be created using `LandR::prepInputs_NTEMS_LCC_FAO")),
+                              "It should extent from `studyArea` by >= scfmDriver's `P(sim)$buffDist`.",
+                              "and if unsupplied, will be created using `LandR::prepInputs_NTEMS_LCC_FAO`")),
     expectsInput("rasterToMatch", "SpatRaster",
-                 desc = "template raster for raster GIS operations. Must be supplied by user"),
+                 desc = "template raster for raster GIS operations. Must be supplied by user."),
     expectsInput("rasterToMatchCalibration", "SpatRaster",
-                 desc = paste("Template raster for studyAreaCalibration - will be created based on rasterToMatch if unsupplied")),
-    expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
-    expectsInput("studyAreaCalibration", "sf", desc = "optional larger study area used for parameterization only")
+                 desc = paste("Template raster for `studyAreaCalibration`.",
+                              "Will be created based on `rasterToMatch` if unsupplied.")),
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area (typically buffered)."),
+    expectsInput("studyAreaCalibration", "sf",
+                 desc = "optional larger study area used for parameterization only")
   ),
   outputObjects = bindrows(
     createsOutput("fireRegimePoints", "sf",
