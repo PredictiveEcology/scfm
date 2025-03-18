@@ -28,7 +28,7 @@ defineModule(sim, list(
   documentation = list("NEWS.md", "README.md", "scfmDataPrep.Rmd"),
   reqdPkgs = list(
     "dplyr", "ggplot2", "parallel",
-    "PredictiveEcology/LandR (>= 1.1.1)",
+    "PredictiveEcology/LandR (>= 1.1.5.9038)",
     "PredictiveEcology/pemisc@development",
     "PredictiveEcology/scfmutils@sfContains (>= 2.0.8.9002)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
@@ -36,10 +36,9 @@ defineModule(sim, list(
     "purrr", "reproducible", "sf", "stats", "terra"
   ),
   parameters = rbind(
-    defineParameter("buffDist", "numeric", 2e4, 1, 1e5,
-                    paste("Buffer width to mitigate edge effects in fire landscape calibration.",
-                          "If studyAreaCalibration is not supplied, this parameter will also be",
-                          "used to create it via buffering studyArea")),
+    defineParameter("buffDist", "numeric", 2e5, 1, 1e6,
+                    paste("If studyAreaCalibration is not supplied, this parameter will be",
+                          "used to buffer the fireRegimePolys via buffering studyArea")),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
@@ -388,6 +387,11 @@ prepare_scfmDriver <- function(sim) {
   message("Running calibrateFireRegimePolys()...")
 
   flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
+
+  #this only needs to account for edge effects of a polygon
+  #it doesn't need to be as large as P(sim)$buffDist (the calibration buffer)
+  bufferDist <- res(sim$rasterToMatch)[1] * 20
+
   scfmDriverPars <- Cache(pemisc::Map2,
                           cl = cl,
                           cloudFolderID = sim$cloudFolderID,
@@ -397,7 +401,7 @@ prepare_scfmDriver <- function(sim) {
                           polygonType = unique(sim$fireRegimePolys$PolyID),
                           MoreArgs = list(targetN = P(sim)$targetN,
                                           fireRegimePolys = sim$fireRegimePolys,
-                                          buffDist = P(sim)$buffDist,
+                                          buffDist = bufferDist,
                                           pJmp = P(sim)$pJmp,
                                           pMin = P(sim)$pMin,
                                           pMax = P(sim)$pMax,
@@ -462,17 +466,18 @@ prepare_scfmDriver <- function(sim) {
                                       studyArea = sim$studyArea,
                                       destinationPath = dPath,
                                       subsetType = "contains")
+    sa <- sim$studyArea
+    if (!inherits(sa, "sf")) {
+      sa <- sf::st_as_sf(sa)
+    }
+    sac <- sf::st_union(sa) |>
+      sf::st_buffer(P(sim)$buffDist) |>
+      sf::st_convex_hull() |>
+      sf::st_as_sf()
 
-    ## TODO: probably want to keep this separate from scfmDriver's buffDist
-    ## alternatively, the driver buffDist can be gleaned from res of rasterToMatch.
-    ## it just needs to be about 15-20 pixels
+    sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
+    sim$studyAreaCalibration <- sac
 
-    # sim$studyAreaCalibration <- buffer(sim$studyArea, P(sim)$buffDist * 2)
-    ## TODO: put convex hull
-    sim$fireRegimePolysCalibration <- frpc
-
-    sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration, by_feature = FALSE) |>
-      sf::st_as_sf() ## converts from geometry to sf
   } else if (hasSAC & !hasFRPC) {
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
                                       studyArea = sim$studyArea,
