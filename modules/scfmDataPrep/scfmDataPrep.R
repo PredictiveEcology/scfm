@@ -38,7 +38,7 @@ defineModule(sim, list(
   parameters = rbind(
     defineParameter("buffDist", "numeric", 2e5, 1, 1e6,
                     paste("If studyAreaCalibration is not supplied, this parameter will be",
-                          "used to buffer the fireRegimePolys via buffering studyArea")),
+                          "used to buffer create it via buffering studyArea")),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
@@ -65,6 +65,10 @@ defineModule(sim, list(
     defineParameter("flammabilityThreshold", "numeric", 0.25, 0, 1,
                     paste("Minimum proportion of flammable old pixel needed to define a new pixel
                           as flammable when upscaling the default flammable maps.")),
+    defineParameter("limitRAMuse", "logical", FALSE, 0, 1,
+                    paste("Limit RAM use during reprojection of landcover rasters during",
+                    "creation of flammableMap. Ideally this operation is performed at 30 metres",
+                    "resolution, to correctly incorporate the param flammmabilityThreshold")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
@@ -460,7 +464,7 @@ prepare_scfmDriver <- function(sim) {
     ## during the spread calibration - whereas the buffer distance here is to establish
     ## studyAreaCalibration, whihc is intended to provide additional fire data for
     ## fire regime polygons that are otherwise too small after intersecting with studyArea.
-    ## however - this distance must logically exceed P(sim)$buffDist
+    ## however - this distance must exceed P(sim)$buffDist
     ## ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
                                       studyArea = sim$studyArea,
@@ -476,13 +480,27 @@ prepare_scfmDriver <- function(sim) {
       sf::st_as_sf()
 
     sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
-    sim$studyAreaCalibration <- sac
 
+    sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration) %>%
+      sf::st_as_sf()
+
+    resRTM <- if (hasRTM) {
+      res(sim$rasterToMatch)
+    } else {
+      c(250, 250)
+    }
+    sim$rasterToMatchCalibration <- terra::rast(sim$studyAreaCalibration,
+                                                res = resRTM,
+                                                vals = 1)
+    hasRTMC <- TRUE
+    hasSAC <- TRUE
+    hasFRPC <- TRUE
   } else if (hasSAC & !hasFRPC) {
     frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
                                       studyArea = sim$studyArea,
                                       destinationPath = dPath)
     sim$fireRegimePolysCalibration <- frpc
+    hasFRPC <- TRUE
   }
 
   if (!hasFRP) {
@@ -490,31 +508,13 @@ prepare_scfmDriver <- function(sim) {
     sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
                                        to = sim$studyArea) |>
       sf::st_as_sf()
+    hasFRP <- TRUE
   }
 
-
-  if (hasRTM & !hasRTMC) {
-    sim$rasterToMatchCalibration <- terra::extend(sim$rasterToMatch,
-                                                  sim$studyAreaCalibration,
-                                                  fill = 1L)
-  }
-
-  if (!hasRTM & !hasRTMC) {
-    warning(paste(
-      "rasterToMatch not supplied. generating from NTEMS LCC",
-      " - It is strongly recommended to supply a rasterToMatch"
-    ))
-    sim$rasterToMatchCalibration <- LandR::prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      cropTo = sim$studyAreaCalibration,
-      projectTo = sim$studyAreaCalibration,
-      maskTo= sim$studyAreaCalibration,
-      overwrite = TRUE,
-      userTags = c(cacheTags, "rasterToMatchCalibration")
-    )
+  if (!hasRTM) {
     sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
                                      to = sim$studyArea)
+    hasRTM <- TRUE
   }
 
   if (!hasRTM & hasRTMC) {
@@ -523,18 +523,24 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFMC) {
+    #need memory safe option here
+    projectToArg <- NULL
+    if (P(sim)$limitRAMuse) {
+      projectToArg <- sim$rasterToMatchCalibration
+    }
+
     fmc <- prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchCalibration,
-      # projectTo = sim$rasterToMatchCalibration, ## should be done after defineFlammable
+      projectTo = projectToArg, ## should be done after defineFlammable
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
-    fmc[] <- asInteger(fmc[])
-    fmc <- defineFlammable(fmc,
-                           nonFlammClasses = c(20, 31, 32, 33))
 
+    fmc <- setValues(fmc, asInteger(values(fmc)))
+    fmc <- defineFlammable(fmc, nonFlammClasses = c(20, 31, 32, 33))
+    gc()
     sim$flammableMapCalibration <- postProcess(fmc,
                                                to = sim$rasterToMatchCalibration,
                                                method = "mode")
