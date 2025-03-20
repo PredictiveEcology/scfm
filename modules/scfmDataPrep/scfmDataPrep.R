@@ -28,7 +28,7 @@ defineModule(sim, list(
   documentation = list("NEWS.md", "README.md", "scfmDataPrep.Rmd"),
   reqdPkgs = list(
     "dplyr", "ggplot2", "parallel",
-    "PredictiveEcology/LandR (>= 1.1.5.9038)",
+    "PredictiveEcology/LandR@development (>= 1.1.5.9038)",
     "PredictiveEcology/pemisc@development",
     "PredictiveEcology/scfmutils@development (>= 2.0.8.9002)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
