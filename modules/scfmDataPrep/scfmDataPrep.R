@@ -95,6 +95,8 @@ defineModule(sim, list(
                     "Used by `Plots` function, which can be optionally used here."),
     defineParameter(".saveInitialTime", "numeric", NA_real_, NA, NA, "Initial time for saving"),
     defineParameter(".saveInterval", "numeric", NA_real_, NA, NA, "Interval between save events"),
+    defineParameter(".studyAreaName", "character", NA, NA, NA,
+                    "Human-readable name for the study area used. If `NA`, a hash of studyArea will be used."),
     defineParameter(".useCache", "character", ".inputObjects", NA, NA,
                     "Use caching of events - not recommended as of 10/05/2023"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
@@ -522,6 +524,12 @@ prepare_scfmDriver <- function(sim) {
                                      to = sim$studyArea)
   }
 
+  #now that calibration objects are sure to exist
+  if (is.na(P(sim)$.studyAreaName)) {
+    params(sim)[[currentModule(sim)]][[".studyAreaName"]] <- studyAreaName(sim$studyAreaCalibration,
+                                                                           sim$rasterToMatchCalibration)
+  }
+
   if (!hasFMC) {
     #need memory safe option here
     projectToArg <- NULL
@@ -532,9 +540,12 @@ prepare_scfmDriver <- function(sim) {
     fmc <- prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
+      overwrite = TRUE,
       maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchCalibration,
       projectTo = projectToArg, ## should be done after defineFlammable
+      writeTo = .suffix("rstLCC.tif",
+                        paste0("_", P(sim)$.studyAreaName, P(sim)$dataYear)),
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
 
