@@ -1,21 +1,23 @@
 defineModule(sim, list(
   name = "scfmDataPrep",
-  description = paste("This module first generates some relevant fire regime statistics for each fire regime over
-                      `studyAreaCalibration` then filters the fire regime polys to those inside studyArea.",
-                      "It will combine fire regime polys with smaller area than that denoted by the `sliverThreshold`",
-                      "param before calculating the flammable area, mean fire size, maximum fire size,",
-                      "number of flammable neighbouring pixels from 0-8, and lastly, the ignition rate, escape rate,
-                      and spread rate in each polygon. By default these estimates are based on lightning-caused fires",
-                      "from 1970-2000 in the NFDB dataset. However, these params can be overriden by a user.",
-                      "The FRI can be set using the `targetBurnRate` param, in which case the mean fire size, ignition rate",
-                      "and escape rate will be incrementally adjusted to match the target FRI. An important limitation",
-                      "is that all spatial objects must share the same CRS and resolution, where relevant,",
-                      "and they must utilize a crs projected in metres"),
+  description = paste(
+    "This module first generates some relevant fire regime statistics for each fire regime over
+    `studyAreaCalibration` then filters the fire regime polys to those inside studyArea.",
+    "It will combine fire regime polys with smaller area than that denoted by the `sliverThreshold`",
+    "param before calculating the flammable area, mean fire size, maximum fire size,",
+    "number of flammable neighbouring pixels from 0-8, and lastly, the ignition rate, escape rate,
+    and spread rate in each polygon. By default these estimates are based on lightning-caused fires",
+    "from 1970-2000 in the NFDB dataset. However, these params can be overriden by a user.",
+    "The FRI can be set using the `targetBurnRate` param, in which case the mean fire size, ignition rate",
+    "and escape rate will be incrementally adjusted to match the target FRI. An important limitation",
+    "is that all spatial objects must share the same CRS and resolution, where relevant,",
+    "and they must utilize a crs projected in metres."
+  ),
   keywords =  c("fire regime", "fire percolation model", "National Fire Data Base (NFBD)"),
   authors =  c(
-    person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = c("aut", "cre")),
+    person(c("Eliot", "J", "B"), "McIntire", email = "eliot.mcintire@nrcan-rncan.gc.ca", role = "aut"),
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut", "cre")),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
   childModules = character(0),
@@ -26,17 +28,17 @@ defineModule(sim, list(
   documentation = list("NEWS.md", "README.md", "scfmDataPrep.Rmd"),
   reqdPkgs = list(
     "dplyr", "ggplot2", "parallel",
-    "PredictiveEcology/LandR (>= 1.1.1)",
+    "PredictiveEcology/LandR (>= 1.1.5.9038)",
     "PredictiveEcology/pemisc@development",
-    "PredictiveEcology/scfmutils@development (>= 2.0.7)",
+    "PredictiveEcology/scfmutils@development (>= 2.0.8.9002)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
     "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)",
-    "purrr", "reproducible", "sf", "stats", "terra"),
+    "purrr", "reproducible", "sf", "stats", "terra"
+  ),
   parameters = rbind(
-    defineParameter("buffDist", "numeric", 2e4, 1, 1e5,
-                    paste("Buffer width to mitigate edge effects in fire landscape calibration.",
-                          "If studyAreaCalibration is not supplied, this parameter will also be",
-                          "used to create it via buffering studyArea")),
+    defineParameter("buffDist", "numeric", 2e5, 1, 1e6,
+                    paste("If studyAreaCalibration is not supplied, this parameter will be",
+                          "used to buffer create it via buffering studyArea")),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
@@ -62,7 +64,11 @@ defineModule(sim, list(
                     desc = "Name of the column that has fire size"),
     defineParameter("flammabilityThreshold", "numeric", 0.25, 0, 1,
                     paste("Minimum proportion of flammable old pixel needed to define a new pixel
-                          as flammable when upscaling the default flammable maps`.")),
+                          as flammable when upscaling the default flammable maps.")),
+    defineParameter("limitRAMuse", "logical", FALSE, 0, 1,
+                    paste("Limit RAM use during reprojection of landcover rasters during",
+                    "creation of flammableMap. Ideally this operation is performed at 30 metres",
+                    "resolution, to correctly incorporate the param flammmabilityThreshold")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
@@ -83,7 +89,6 @@ defineModule(sim, list(
                                  "a new spread probability. Names should correspond to `PolyID`.",
                                  "A partial set of polygons is allowed - missing polys are estimated from data.")),
     defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-
     defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "Initial time for plotting"),
     defineParameter(".plotInterval", "numeric", NA_real_, NA, NA, "Interval between plotting"),
     defineParameter(".plots", "character", c("screen", "png"), NA, NA,
@@ -113,17 +118,20 @@ defineModule(sim, list(
                  desc = paste("if `studyAreaCalibration` is supplied, the corresponding fire regime areas.",
                               "Requires integer field `PolyID` if supplied. Uses same defaults as `fireRegimePolys`.")),
     expectsInput("flammableMap", "SpatRaster",
-                 desc = "binary flammability map - defaults to using LandR::prepInputsLCC"),
+                 desc = "binary flammability map - defaults to using `LandR::prepInputsLCC`"),
     expectsInput("flammableMapCalibration", "SpatRaster",
                  desc = paste("binary flammability map corresponding to `rasterToMatchCalibration`.",
-                              "It should extent from studyArea by >= scfmDriver's `P(sim)$buffDist`.",
-                              "and if unsupplied, will be created using `LandR::prepInputs_NTEMS_LCC_FAO")),
+                              "It should extent from `studyArea` by >= scfmDriver's `P(sim)$buffDist`.",
+                              "and if unsupplied, will be created using `LandR::prepInputs_NTEMS_LCC_FAO`")),
     expectsInput("rasterToMatch", "SpatRaster",
-                 desc = "template raster for raster GIS operations. Must be supplied by user"),
+                 desc = "template raster for raster GIS operations. Must be supplied by user."),
     expectsInput("rasterToMatchCalibration", "SpatRaster",
-                 desc = paste("Template raster for studyAreaCalibration - will be created based on rasterToMatch if unsupplied")),
-    expectsInput("studyArea", "sf", desc = "Polygon to use as the simulation study area (typically buffered)."),
-    expectsInput("studyAreaCalibration", "sf", desc = "optional larger study area used for parameterization only")
+                 desc = paste("Template raster for `studyAreaCalibration`.",
+                              "Will be created based on `rasterToMatch` if unsupplied.")),
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area (typically buffered)."),
+    expectsInput("studyAreaCalibration", "sf",
+                 desc = "optional larger study area used for parameterization only")
   ),
   outputObjects = bindrows(
     createsOutput("fireRegimePoints", "sf",
@@ -383,6 +391,11 @@ prepare_scfmDriver <- function(sim) {
   message("Running calibrateFireRegimePolys()...")
 
   flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
+
+  #this only needs to account for edge effects of a polygon
+  #it doesn't need to be as large as P(sim)$buffDist (the calibration buffer)
+  bufferDist <- res(sim$rasterToMatch)[1] * 20
+
   scfmDriverPars <- Cache(pemisc::Map2,
                           cl = cl,
                           cloudFolderID = sim$cloudFolderID,
@@ -392,7 +405,7 @@ prepare_scfmDriver <- function(sim) {
                           polygonType = unique(sim$fireRegimePolys$PolyID),
                           MoreArgs = list(targetN = P(sim)$targetN,
                                           fireRegimePolys = sim$fireRegimePolys,
-                                          buffDist = P(sim)$buffDist,
+                                          buffDist = bufferDist,
                                           pJmp = P(sim)$pJmp,
                                           pMin = P(sim)$pMin,
                                           pMax = P(sim)$pMax,
@@ -421,7 +434,7 @@ prepare_scfmDriver <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
-  # object check for SA/FRP/FRPC/SAC - better to be strict with stops
+  ## object check for SA/FRP/FRPC/SAC - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)
   hasSAC <- suppliedElsewhere("studyAreaCalibration", sim)
   hasFRP <- suppliedElsewhere("fireRegimePolys", sim)
@@ -436,48 +449,72 @@ prepare_scfmDriver <- function(sim) {
          "the equivalent calibration-sized object must also be provided")
   }
 
-  # supply objects
+  ## supply objects
   if (!hasSA) {
     message("study area not supplied. Using random polygon in Alberta")
     sim$studyArea <- LandR::randomStudyArea(size = 1500000* 1000, seed = 23654)
     sim$studyArea <- terra::project(sim$studyArea, y = "EPSG:3348")
-    #this is 1,500,000 km2 - somewhere in eastern Rockies
-    #the crs is Canada equal alberts - unfortunately there is no way to set
+    ## this is 1,500,000 km2 - somewhere in eastern Rockies
+    ## the crs is Canada equal alberts - unfortunately there is no way to set
 
   }
 
-  if (!hasSAC){
-    # buffDist is necessary only to ensure fires aren't extinguished from edges
-    # during the spread calibration - whereas the buffer distance here is to establish
-    # studyAreaCalibration, whihc is intended to provide additional fire data for
-    # fire regime polygons that are otherwise too small after intersecting with studyArea.
-    # however - this distance must logically exceed P(sim)$buffDist
-    #ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
-    buffFun <- ifelse(inherits(sim$studyArea, "SpatVector"), terra::buffer, sf::st_buffer)
-    sim$studyAreaCalibration <- buffFun(sim$studyArea, P(sim)$buffDist * 2)
-  }
-  if (hasRTM & !hasRTMC) {
-    sim$rasterToMatchCalibration <- terra::extend(sim$rasterToMatch,
-                                                  sim$studyAreaCalibration,
-                                                  fill = 1L)
+  if (!hasSAC & !hasFRPC) {
+    ## buffDist is necessary only to ensure fires aren't extinguished from edges
+    ## during the spread calibration - whereas the buffer distance here is to establish
+    ## studyAreaCalibration, whihc is intended to provide additional fire data for
+    ## fire regime polygons that are otherwise too small after intersecting with studyArea.
+    ## however - this distance must exceed P(sim)$buffDist
+    ## ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
+    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
+                                      studyArea = sim$studyArea,
+                                      destinationPath = dPath,
+                                      subsetType = "contains")
+    sa <- sim$studyArea
+    if (!inherits(sa, "sf")) {
+      sa <- sf::st_as_sf(sa)
+    }
+    sac <- sf::st_union(sa) |>
+      sf::st_buffer(P(sim)$buffDist) |>
+      sf::st_convex_hull() |>
+      sf::st_as_sf()
+
+    sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
+
+    sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration) %>%
+      sf::st_as_sf()
+
+    resRTM <- if (hasRTM) {
+      res(sim$rasterToMatch)
+    } else {
+      c(250, 250)
+    }
+    sim$rasterToMatchCalibration <- terra::rast(sim$studyAreaCalibration,
+                                                res = resRTM,
+                                                vals = 1)
+    hasRTMC <- TRUE
+    hasSAC <- TRUE
+    hasFRPC <- TRUE
+  } else if (hasSAC & !hasFRPC) {
+    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
+                                      studyArea = sim$studyArea,
+                                      destinationPath = dPath)
+    sim$fireRegimePolysCalibration <- frpc
+    hasFRPC <- TRUE
   }
 
-  if (!hasRTM & !hasRTMC) {
-    warning(paste(
-      "rasterToMatch not supplied. generating from NTEMS LCC",
-      " - It is strongly recommended to supply a rasterToMatch"
-    ))
-    sim$rasterToMatchCalibration <- LandR::prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      cropTo = sim$studyAreaCalibration,
-      projectTo = sim$studyAreaCalibration,
-      maskTo= sim$studyAreaCalibration,
-      overwrite = TRUE,
-      userTags = c(cacheTags, "rasterToMatchCalibration")
-    )
+  if (!hasFRP) {
+    ## avoid GIS issue with sf
+    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
+                                       to = sim$studyArea) |>
+      sf::st_as_sf()
+    hasFRP <- TRUE
+  }
+
+  if (!hasRTM) {
     sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
                                      to = sim$studyArea)
+    hasRTM <- TRUE
   }
 
   if (!hasRTM & hasRTMC) {
@@ -486,18 +523,24 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFMC) {
+    #need memory safe option here
+    projectToArg <- NULL
+    if (P(sim)$limitRAMuse) {
+      projectToArg <- sim$rasterToMatchCalibration
+    }
+
     fmc <- prepInputs_NTEMS_LCC_FAO(
       year = P(sim)$dataYear,
       destinationPath = dPath,
       maskTo = sim$studyAreaCalibration,
       cropTo = sim$rasterToMatchCalibration,
-      #projectTo = sim$rasterToMatchCalibration, #should be done after defineFlammable
+      projectTo = projectToArg, ## should be done after defineFlammable
       userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
     )
-    fmc[] <- asInteger(fmc[])
-    fmc <- defineFlammable(fmc,
-                           nonFlammClasses = c(20, 31, 32, 33))
 
+    fmc <- setValues(fmc, asInteger(values(fmc)))
+    fmc <- defineFlammable(fmc, nonFlammClasses = c(20, 31, 32, 33))
+    gc()
     sim$flammableMapCalibration <- postProcess(fmc,
                                                to = sim$rasterToMatchCalibration,
                                                method = "mode")
@@ -508,35 +551,15 @@ prepare_scfmDriver <- function(sim) {
                                     method = "near")
   }
 
-  ## this is TRUE unless fireRegimePolysCalibration is supplied, in which case we drop that object
-  if (!hasFRPC) {
-
-    message("fireRegimePolys not supplied. Using default ecoregions of Canada")
-    # cannot use prepInputs with a vector for prepInputs - unreliable w/ GDAL
-
-    sim$fireRegimePolysCalibration <- Cache(prepInputsFireRegimePolys, url = NULL,
-                                            destinationPath = dPath,
-                                            studyArea = sim$studyAreaCalibration,
-                                            type = P(sim)$fireRegimePolysType)
-  }
-
-  if (!hasFRP) {
-    #avoid GIS issue with sf
-    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
-                                       to = sim$studyArea) |>
-      sf::st_as_sf()
-  }
-
   if (!suppliedElsewhere("firePoints", sim)) {
     ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
     sim$firePoints <- getFirePoints_NFDB_scfm(
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    #TODO: why is this necessary?
+    ## TODO: should this occur?
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
-
 
   return(invisible(sim))
 }

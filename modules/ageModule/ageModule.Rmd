@@ -23,7 +23,8 @@ always_allow_html: true
 (ref:ageModule) *ageModule*
 
 ```{r setup-ageModule, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+## change to eval = TRUE if all chunks are to be evaluated
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold")
 
 dir.create("figures", showWarnings = FALSE)
 
@@ -83,11 +84,9 @@ knitr::kable(df_outputs, caption = "List of (ref:ageModule) outputs and their de
 Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Getting help

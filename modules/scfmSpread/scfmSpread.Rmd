@@ -82,11 +82,9 @@ knitr::kable(df_outputs, caption = "List of (ref:scfmSpread) outputs and their d
 Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
 - `ageModule` (optional)
-- `scfmDriver`
+- `scfmDataPrep`
 - `scfmEscape`
 - `scfmIgnition`
-- `scfmLandcoverInit`
-- `scfmRegime`
 - `scfmSpread`
 
 ### Getting help
