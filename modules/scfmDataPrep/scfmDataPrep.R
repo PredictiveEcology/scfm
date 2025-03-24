@@ -468,10 +468,12 @@ prepare_scfmDriver <- function(sim) {
     ## fire regime polygons that are otherwise too small after intersecting with studyArea.
     ## however - this distance must exceed P(sim)$buffDist
     ## ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
-    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
-                                      studyArea = sim$studyArea,
-                                      destinationPath = dPath,
-                                      subsetType = "contains")
+    frpc <- Cache(prepInputsFireRegimePolys,
+                  type = P(sim)$fireRegimePolysType,
+                  studyArea = sim$studyArea,
+                  destinationPath = dPath,
+                  subsetType = "contains",
+                  userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
     sa <- sim$studyArea
     if (!inherits(sa, "sf")) {
       sa <- sf::st_as_sf(sa)
@@ -498,9 +500,12 @@ prepare_scfmDriver <- function(sim) {
     hasSAC <- TRUE
     hasFRPC <- TRUE
   } else if (hasSAC & !hasFRPC) {
-    frpc <- prepInputsFireRegimePolys(type = P(sim)$fireRegimePolysType,
-                                      studyArea = sim$studyArea,
-                                      destinationPath = dPath)
+    frpc <- Cache(prepInputsFireRegimePolys,
+                  type = P(sim)$fireRegimePolysType,
+                  studyArea = sim$studyArea,
+                  destinationPath = dPath,
+                  userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
+
     sim$fireRegimePolysCalibration <- frpc
     hasFRPC <- TRUE
   }
