@@ -496,10 +496,7 @@ prepare_scfmDriver <- function(sim) {
     sim$rasterToMatchCalibration <- terra::rast(sim$studyAreaCalibration,
                                                 res = resRTM,
                                                 vals = 1)
-    hasRTMC <- TRUE
-    hasSAC <- TRUE
-    hasFRPC <- TRUE
-  } else if (hasSAC & !hasFRPC) {
+   } else if (hasSAC & !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
                   studyArea = sim$studyArea,
@@ -507,24 +504,15 @@ prepare_scfmDriver <- function(sim) {
                   userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
 
     sim$fireRegimePolysCalibration <- frpc
-    hasFRPC <- TRUE
   }
 
   if (!hasFRP) {
     ## avoid GIS issue with sf
-    sim$fireRegimePolys <- postProcess(terra::vect(sim$fireRegimePolysCalibration),
-                                       to = sim$studyArea) |>
-      sf::st_as_sf()
-    hasFRP <- TRUE
+    sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration,
+                                       to = sim$studyArea)
   }
 
   if (!hasRTM) {
-    sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
-                                     to = sim$studyArea)
-    hasRTM <- TRUE
-  }
-
-  if (!hasRTM & hasRTMC) {
     sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
                                      to = sim$studyArea)
   }
