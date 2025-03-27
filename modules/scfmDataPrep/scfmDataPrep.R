@@ -493,7 +493,8 @@ prepare_scfmDriver <- function(sim) {
     } else {
       c(250, 250)
     }
-    sim$rasterToMatchCalibration <- terra::rast(sim$studyAreaCalibration,
+
+    sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
                                                 res = resRTM,
                                                 vals = 1)
    } else if (hasSAC & !hasFRPC) {
