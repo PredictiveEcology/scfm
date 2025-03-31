@@ -30,7 +30,7 @@ defineModule(sim, list(
     "dplyr", "ggplot2", "parallel",
     "PredictiveEcology/LandR@development (>= 1.1.5.9041)",
     "PredictiveEcology/pemisc@development",
-    "PredictiveEcology/scfmutils@development (>= 2.0.8.9002)",
+    "PredictiveEcology/scfmutils@development (>= 2.0.9.9003)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.5.9002)",
     "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)",
     "purrr", "reproducible", "sf", "stats", "terra"
