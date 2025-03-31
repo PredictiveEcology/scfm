@@ -531,16 +531,17 @@ prepare_scfmDriver <- function(sim) {
       projectToArg <- sim$rasterToMatchCalibration
     }
 
-    fmc <- prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      overwrite = TRUE,
-      maskTo = sim$studyAreaCalibration,
-      cropTo = sim$rasterToMatchCalibration,
-      projectTo = projectToArg, ## should be done after defineFlammable
-      writeTo = .suffix("rstLCC.tif",
-                        paste0("_", P(sim)$.studyAreaName, P(sim)$dataYear)),
-      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
+    fmc <- Cache(prepInputs_NTEMS_LCC_FAO,
+                 year = P(sim)$dataYear,
+                 destinationPath = dPath,
+                 overwrite = TRUE,
+                 maskTo = sim$studyAreaCalibration,
+                 cropTo = sim$rasterToMatchCalibration,
+                 projectTo = projectToArg, ## should be done after defineFlammable
+                 writeTo = .suffix("rstLCC.tif",
+                                   paste0("_", P(sim)$.studyAreaName, P(sim)$dataYear)),
+                 userTags = c("prepInputs_NTEMS_LCC_FAO", cacheTags,
+                              P(sim)$.studyAreaName)
     )
 
     fmc <- setValues(fmc, asInteger(values(fmc)))
