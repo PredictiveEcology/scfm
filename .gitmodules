@@ -1,0 +1,3 @@
+[submodule "modules/scfmutils"]
+	path = modules/scfmutils
+	url = https://github.com/PredictiveEcology/scfmutils.git
