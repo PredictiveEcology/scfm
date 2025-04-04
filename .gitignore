@@ -1,12 +1,25 @@
+## credentials
 .DS_Store
 .httr-oauth
+
+## R/Rstudio files
 .Rapp.history
 .RData
 .Rhistory
+.Rprofile
 *.Rproj
 .Rproj.user/
 .Rproj.user
+
+## project directories 
 cache/
 outputs/
-.Rprofile
 inputs/
+
+## auto-generated documention
+scfm2.Rmd
+modules/scfmDataPrep/scfmDataPrep2.Rmd
+modules/scfmDiagnostics/scfmDiagnostics2.Rmd
+modules/scfmEscape/scfmEscape2.Rmd
+modules/scfmIgnition/scfmIgnition2.Rmd
+modules/scfmSpread/scfmSpread2.Rmd
