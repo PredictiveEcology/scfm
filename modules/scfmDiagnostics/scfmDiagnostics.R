@@ -90,16 +90,17 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
 
       ## Some useful plots
-      gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim))
-      gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys)
-      gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
-      gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
-      gg_esc <- scfmutils::comparePredictions_annualEscapes(dt)
+      gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim), title = runName)
+      gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys, title = runName)
+      gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt, title = runName)
+      gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt, title = runName)
+      gg_esc <- scfmutils::comparePredictions_annualEscapes(dt, title = runName)
       ## NOTE: historical distribution is derived purely from historical data
       gg_histDist <- scfmutils::comparePredictions_fireDistribution(
         sim$fireRegimePoints,
         size = min(sim$fireRegimePolys$cellSize),
-        burnSummary = sim$burnSummary
+        burnSummary = sim$burnSummary,
+        title = runName
       )
       ## note that fireRegimePoints may include SAL but this figure only compares distribution
       ## so total area is irrelevant
@@ -153,22 +154,23 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
-        summaryDT, list(start = P(sim)$simTimes[1], end = P(sim)$simTimes[2])) +
+        summaryDT, list(start = P(sim)$simTimes[1], end = P(sim)$simTimes[2]), title = runName) +
         geom_smooth(method = lm)
 
-      gg_ign <- scfmutils::comparePredictions_annualIgnitions(summaryDT) +
+      gg_ign <- scfmutils::comparePredictions_annualIgnitions(summaryDT, title = runName) +
         geom_smooth(method = lm)
 
-      gg_mfs <- scfmutils::comparePredictions_meanFireSize(summaryDT) +
+      gg_mfs <- scfmutils::comparePredictions_meanFireSize(summaryDT, title = runName) +
         geom_smooth(method = lm)
 
-      gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT) +
+      gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT, title = runName) +
         geom_smooth(method = lm)
 
       ## note historical distribution is derived purely from historical data
       gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
                                                          size = min(sim$fireRegimePolys$cellSize),
-                                                         burnSummary = sim$burnSummary)
+                                                         burnSummary = sim$burnSummary,
+                                                         title = runName)
       ## note that fireRegimePoints may include SAL but this figure only compares distribution
       ## so total area is irrelevant
 
@@ -208,7 +210,7 @@ diagnosticPlotsDT <- function(sim) {
   fireRegimePointsReporting <- postProcess(sim$fireRegimePoints, to = sAR)
   #avoid geometry objects
   frpr <- postProcess(terra::vect(sim$fireRegimePolys),
-                                          to = sAR)
+                      to = sAR)
   #drop true slivers, not ecological slivers
   frpr <- frpr[expanse(frpr) > res(sim$flammableMap)[1],]
   fireRegimePolysReporting <- sf::st_as_sf(frpr)
