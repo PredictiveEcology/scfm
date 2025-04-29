@@ -550,7 +550,8 @@ prepare_scfmDriver <- function(sim) {
     fmc <- flammableMapCalibration <- postProcess(fmc,
                                                   to = sim$rasterToMatchCalibration,
                                                   method = "average")
-    sim$flammableMapCalibration[] <- LandR::asInteger(fmc[] > P(sim)$flammabilityThreshold)
+
+    sim$flammableMapCalibration <- rast(fmc, vals = LandR::asInteger(fmc[] > P(sim)$flammabilityThreshold))
   }
 
   if (!hasFM) {
