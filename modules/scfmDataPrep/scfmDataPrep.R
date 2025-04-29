@@ -143,7 +143,9 @@ defineModule(sim, list(
     createsOutput("fireRegimePolysCalibration", "sf",
                   desc = "`fireRegimePolysCalibration` with attributes appended"),
     createsOutput("fireRegimeRas", "SpatRaster",
-                  desc = "Rasterized version of fireRegimePolys with values representing polygon ID")
+                  desc = "Rasterized version of fireRegimePolys with values representing polygon ID"),
+    createsOutput("flammableMap", "SpatRaster", "flammable map coerced to integer if necessary"),
+    createsOutput("flammableMapCalibration", "SpatRaster", "flammable map coerced to integer if necessary")
   )
 ))
 
