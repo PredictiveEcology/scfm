@@ -458,7 +458,15 @@ prepare_scfmDriver <- function(sim) {
     sim$studyArea <- terra::project(sim$studyArea, y = "EPSG:3348")
     ## this is 1,500,000 km2 - somewhere in eastern Rockies
     ## the crs is Canada equal alberts - unfortunately there is no way to set
+  }
 
+  if (terra::is.lonlat(sim$studyArea)) {
+    stop("scfm requires a study area that is projected in metres")
+  }
+
+  if (!hasRTM) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      terra::mask(mask = sim$studyArea)
   }
 
   if (!hasSAC & !hasFRPC) {
@@ -488,15 +496,10 @@ prepare_scfmDriver <- function(sim) {
     sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
 
-    resRTM <- if (hasRTM) {
-      res(sim$rasterToMatch)
-    } else {
-      c(250, 250)
-    }
-
     sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
-                                                res = resRTM,
-                                                vals = 1)
+                                                res = res(sim$rasterToMatch),
+                                                vals = 1) |>
+      mask(mask = sim$studyAreaCalibration)
    } else if (hasSAC & !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
@@ -511,11 +514,6 @@ prepare_scfmDriver <- function(sim) {
     ## avoid GIS issue with sf
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration,
                                        to = sim$studyArea)
-  }
-
-  if (!hasRTM) {
-    sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
-                                     to = sim$studyArea)
   }
 
   #now that calibration objects are sure to exist
