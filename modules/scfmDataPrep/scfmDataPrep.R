@@ -547,14 +547,16 @@ prepare_scfmDriver <- function(sim) {
     fmc <- setValues(fmc, asInteger(values(fmc)))
     fmc <- defineFlammable(fmc, nonFlammClasses = c(20, 31, 32, 33))
     gc()
-    sim$flammableMapCalibration <- postProcess(fmc,
-                                               to = sim$rasterToMatchCalibration,
-                                               method = "mode")
+    fmc <- flammableMapCalibration <- postProcess(fmc,
+                                                  to = sim$rasterToMatchCalibration,
+                                                  method = "average")
+
+    sim$flammableMapCalibration <- rast(fmc, vals = LandR::asInteger(fmc[] > P(sim)$flammabilityThreshold))
   }
 
   if (!hasFM) {
     sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch,
-                                    method = "near")
+                                    method = "mode")
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {
