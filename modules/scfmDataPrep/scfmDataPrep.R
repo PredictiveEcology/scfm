@@ -388,7 +388,9 @@ prepare_scfmDriver <- function(sim) {
     cl <- NULL
   }
 
-  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+
+  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration,
+                   crs = TRUE, ext = FALSE, rowcol = FALSE, res = TRUE, stopOnError = FALSE)) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
@@ -555,8 +557,8 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFM) {
-    sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch,
-                                    method = "mode")
+    sim$flammableMap <- postProcess(sim$flammableMapCalibration,
+                                    to = sim$rasterToMatch, method = "mode")
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {
