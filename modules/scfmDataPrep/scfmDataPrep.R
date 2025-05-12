@@ -177,13 +177,13 @@ doEvent.scfmDataPrep = function(sim, eventTime, eventType) {
 ### template initialization
 Init <- function(sim) {
 
-  if ("scfmLandcoverInit" %in% P(sim)$eventsToPrepare){
+  if ("scfmLandcoverInit" %in% P(sim)$eventsToPrepare) {
     sim <- prepare_scfmLandcoverInit(sim)
   }
-  if ("scfmRegime" %in% P(sim)$eventsToPrepare){
+  if ("scfmRegime" %in% P(sim)$eventsToPrepare) {
     sim <- prepare_scfmRegime(sim)
   }
-  if ("scfmDriver" %in% P(sim)$eventsToPrepare){
+  if ("scfmDriver" %in% P(sim)$eventsToPrepare) {
     sim <- prepare_scfmDriver(sim)
   }
   return(invisible(sim))
@@ -191,7 +191,6 @@ Init <- function(sim) {
 
 
 prepare_scfmLandcoverInit <- function(sim) {
-
   ## ensure flammability maps are integer ('binary') maps
   if (!LandR::isInt(sim$flammableMap)) {
     sim$flammableMap <- LandR::asInt(sim$flammableMap)
@@ -398,8 +397,8 @@ prepare_scfmDriver <- function(sim) {
 
   flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
 
-  #this only needs to account for edge effects of a polygon
-  #it doesn't need to be as large as P(sim)$buffDist (the calibration buffer)
+  ## this only needs to account for edge effects of a polygon
+  ## it doesn't need to be as large as P(sim)$buffDist (the calibration buffer)
   bufferDist <- res(sim$rasterToMatch)[1] * 20
 
   scfmDriverPars <- Cache(pemisc::Map2,
