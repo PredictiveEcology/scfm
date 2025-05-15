@@ -39,14 +39,12 @@ defineModule(sim, list(
                     "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput("fireRegimePolys", "sf",
-                 desc = "fire regime polys with ignition rate"),
-    expectsInput("fireRegimeRas", "SpatRaster",
-                 desc = "rasterized version of `fireRegimePolys`"),
-    expectsInput("flammableMap", "SpatRaster",
-                 desc = "map of flammability"),
-    expectsInput("ignitionLoci", "numeric",
-                 desc = "pixel IDs where ignition occurs")
+    expectsInput("fireRegimePolys", "sf", desc = "fire regime polys with ignition rate"),
+    expectsInput("fireRegimeRas", "SpatRaster", desc = "rasterized version of `fireRegimePolys`"),
+    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability"),
+    expectsInput("ignitionLoci", "numeric", desc = "pixel IDs where ignition occurs"),
+    expectsInput("rasterToMatch", "SpatRaster", desc = "template raster"),
+    expectsInput("studyArea", "sf", desc = "studyArea polygon encapsulating `fireRegimePolys`")
   ),
   outputObjects = bindrows(
     createsOutput("spreadState", "data.table", desc = "stores the current fire spread state"),
@@ -112,24 +110,39 @@ Escape <- function(sim) {
 
 ## same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
-  ## TODO: This module has other dependencies that aren't created: scfmDriverPars and ignitionLoci
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
-  dPath <- asPath(inputPath(sim), 1)
+  mod$dPath <- asPath(inputPath(sim), 1)
+  message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+                                mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
+  if (!suppliedElsewhere("fireRegimeRas", sim)) {
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
+  }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    vegMap <- prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      maskTo = sim$studyArea,
-      cropTo = sim$rasterToMatch,
-      projectTo = sim$rasterToMatch,
-      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
-    )
-    vegMap[] <- asInteger(vegMap[])
-    sim$flammableMap <- defineFlammable(vegMap,
-                                        mask = sim$rasterToMatch,
-                                        nonFlammClasses = c(20, 31, 32, 33)
-    )
+    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
+      postProcess(maskTo = sim$fireRegimePolys)
   }
+
+  if (!suppliedElsewhere("ignitionLoci", sim)) {
+    poss <- 1:ncell(sim$flammableMap)[!is.na(sim$flammableMap[])]
+    sim$ignitionLoci <- sample(poss, size = 5, replace = FALSE)
+  }
+
   return(invisible(sim))
 }

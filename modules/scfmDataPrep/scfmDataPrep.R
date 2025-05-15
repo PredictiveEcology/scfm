@@ -463,13 +463,17 @@ prepare_scfmDriver <- function(sim) {
     ## the crs is Canada equal alberts - unfortunately there is no way to set
   }
 
-  if (terra::is.lonlat(sim$studyArea)) {
+  sa <- sim$studyArea
+  if (inherits(sa, "sf")) {
+    sa <- terra::vect(sa)
+  }
+  if (terra::is.lonlat(sa)) {
     stop("scfm requires a study area that is projected in metres")
   }
 
   if (!hasRTM) {
-    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
-      terra::mask(mask = sim$studyArea)
+    sim$rasterToMatch <- rast(sa, vals = 1, res = c(250, 250)) |>
+      terra::mask(mask = sa)
   }
 
   if (!hasSAC & !hasFRPC) {
@@ -485,6 +489,7 @@ prepare_scfmDriver <- function(sim) {
                   destinationPath = dPath,
                   subsetType = "contains",
                   userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
+
     sa <- sim$studyArea
     if (!inherits(sa, "sf")) {
       sa <- sf::st_as_sf(sa)
@@ -498,12 +503,7 @@ prepare_scfmDriver <- function(sim) {
 
     sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
-
-    sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
-                                                res = res(sim$rasterToMatch),
-                                                vals = 1) |>
-      mask(mask = sim$studyAreaCalibration)
-   } else if (hasSAC & !hasFRPC) {
+  } else if (hasSAC & !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
                   studyArea = sim$studyArea,
@@ -517,6 +517,24 @@ prepare_scfmDriver <- function(sim) {
     ## avoid GIS issue with sf
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration,
                                        to = sim$studyArea)
+  }
+
+  resRTM <- if (hasRTM) {
+    res(sim$rasterToMatch)
+  } else {
+    c(250, 250)
+  }
+
+  if (!hasRTMC) {
+    sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
+                                                res = resRTM,
+                                                vals = 1) |>
+      terra::mask(mask = sim$studyAreaCalibration)
+  }
+
+  if (!hasRTM) {
+    sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
+                                     to = sim$studyArea)
   }
 
   #now that calibration objects are sure to exist
@@ -566,7 +584,7 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    ## TODO: should this occur?
+
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 
