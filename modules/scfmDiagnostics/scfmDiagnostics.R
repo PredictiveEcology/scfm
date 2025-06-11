@@ -90,6 +90,9 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
 
+      if(!is.null(.runName)) {
+        runName <- .runName
+      }
       if (!exists("runName")) {
         runName <- NULL
       }
@@ -157,6 +160,9 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
+      if(!is.null(.runName)) {
+        runName <- .runName
+      }
       if (!exists("runName")) {
         runName <- NULL
       }
