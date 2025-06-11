@@ -231,7 +231,7 @@ prepare_scfmLandcoverInit <- function(sim) {
     sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
   }
 
-  sim$fireRegimePolysCalibration[order(sim$fireRegimePolysCalibration$PolyID), ]
+  temp <- sim$fireRegimePolysCalibration[order(sim$fireRegimePolysCalibration$PolyID), ]
   sim$fireRegimePolysCalibration <- temp ## to fit on two lines easily
   sim$fireRegimePolysCalibration <- Cache(
     genFireMapAttr,
