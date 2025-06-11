@@ -156,11 +156,10 @@ doEvent.scfmDataPrep = function(sim, eventTime, eventType) {
 
       sim <- Init(sim)
 
-      # schedule future event(s)
+      ## schedule future event(s)
       sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmDataPrep", "plot")
       sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "scfmDataPrep", "save")
     },
-    #
     plot = {
       ## NOTE: these objects don't change during sim, so only need to be plotted once
       flamRegime <- sim$fireRegimeRas
@@ -209,9 +208,9 @@ prepare_scfmLandcoverInit <- function(sim) {
   )
 
   message("checking sim$fireRegimePolys for sliver polygons...")
-  # this only needs to be done on the larger area, if it is provided
-  # doing so on larger and smaller has the potential to
-  # mismatch slivers between calibration/simulation
+  ## this only needs to be done on the larger area, if it is provided
+  ## doing so on larger and smaller has the potential to
+  ## mismatch slivers between calibration/simulation
 
   sim$fireRegimePolysCalibration <- checkForIssues(
     fireRegimePolys = sim$fireRegimePolysCalibration,
@@ -223,30 +222,27 @@ prepare_scfmLandcoverInit <- function(sim) {
   )
 
   ## now that slivers are removed, remake frp from the larger object
-  sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration,
-                                     studyArea = sim$studyArea)
+  sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration, studyArea = sim$studyArea)
   ## for now - GIS operations with sf objects are causing sliver polygons (area < 0.001 m2)
 
   if (is(st_geometry(sim$fireRegimePolys), "sfc_GEOMETRY")) {
-    # this object may have empty geometries, which can occur when SAC and SA are both subsets
-    # of the same file. the empty geometries will cause an error.
+    ## this object may have empty geometries, which can occur when SAC and SA are both subsets
+    ## of the same file. the empty geometries will cause an error.
     sim$fireRegimePolys <- sim$fireRegimePolys[as.numeric(st_area(sim$fireRegimePolys)) > 0, ]
-    #in the event this results in LINESTRING or POINT objects,remove them to prevent error
+    ## in the event this results in LINESTRING or POINT objects,remove them to prevent error
     sim$fireRegimePolys <- st_collection_extract(sim$fireRegimePolys, "POLYGON")
     sim$fireRegimePolys <- st_cast(sim$fireRegimePolys, "MULTIPOLYGON")
   }
 
   temp <- sim$fireRegimePolysCalibration[order(sim$fireRegimePolysCalibration$PolyID), ]
-  sim$fireRegimePolysCalibration <- temp #to fit on two lines easily
-  sim$fireRegimePolysCalibration <- Cache(genFireMapAttr,
-                                          flammableMap = sim$flammableMapCalibration,
-                                          fireRegimePolys = sim$fireRegimePolysCalibration,
-                                          neighbours = P(sim)$neighbours,
-                                          userTags = c(currentModule(sim),
-                                                       "genFireMapAttr",
-                                                       "studyAreaCalibration")
+  sim$fireRegimePolysCalibration <- temp ## to fit on two lines easily
+  sim$fireRegimePolysCalibration <- Cache(
+    genFireMapAttr,
+    flammableMap = sim$flammableMapCalibration,
+    fireRegimePolys = sim$fireRegimePolysCalibration,
+    neighbours = P(sim)$neighbours,
+    userTags = c(currentModule(sim), "genFireMapAttr", "studyAreaCalibration")
   )
-
 
   sim$fireRegimePolys <- checkForIssues(
     fireRegimePolys = sim$fireRegimePolys,
@@ -258,21 +254,26 @@ prepare_scfmLandcoverInit <- function(sim) {
   )
   sim$fireRegimePolys <- sim$fireRegimePolys[order(sim$fireRegimePolys$PolyID),]
 
-  sim$fireRegimePolys <- Cache(genFireMapAttr,
-                               flammableMap = sim$flammableMap,
-                               fireRegimePolys = sim$fireRegimePolys,
-                               neighbours = P(sim)$neighbours,
-                               userTags = c(currentModule(sim), "genFireMapAttr", "studyArea")
+  sim$fireRegimePolys <- Cache(
+    genFireMapAttr,
+    flammableMap = sim$flammableMap,
+    fireRegimePolys = sim$fireRegimePolys,
+    neighbours = P(sim)$neighbours,
+    userTags = c(currentModule(sim), "genFireMapAttr", "studyArea")
   )
 
   ## doing this prevents fireRegimeRas from inheriting colormaps
-  sim$fireRegimeRas <- rasterize(sim$fireRegimePolys, sim$rasterToMatch, fun = "max", field = "PolyID")
+  sim$fireRegimeRas <- terra::rasterize(
+    sim$fireRegimePolys,
+    sim$rasterToMatch,
+    fun = "max",
+    field = "PolyID"
+  )
   # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
 prepare_scfmRegime <- function(sim) {
-
   tmp <- sim$firePoints
 
   ## extract and validate fireCause spec
@@ -301,7 +302,7 @@ prepare_scfmRegime <- function(sim) {
 
   tmp <- subset(tmp, get(P(sim)$fireCauseColumnName) %in% fc)
 
-  #extract and validate fireEpoch
+  ## extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
   if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2]) {
     stop("illegal fireEpoch: ", epoch)
@@ -390,7 +391,7 @@ prepare_scfmDriver <- function(sim) {
     cl <- NULL
   }
 
-  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+  if (!terra::compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
     stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
   }
 
@@ -436,7 +437,6 @@ prepare_scfmDriver <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
-
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
 
@@ -450,7 +450,7 @@ prepare_scfmDriver <- function(sim) {
   hasFM <- suppliedElsewhere("flammableMap", sim)
   hasFMC <- suppliedElsewhere("flammableMapCalibration", sim)
 
-  if (c(hasFRP & !hasFRPC) | c(hasFM & !hasFMC)) {
+  if (c(hasFRP && !hasFRPC) || c(hasFM && !hasFMC)) {
     stop("if supplying flammableMap or fireRegimePolys",
          "the equivalent calibration-sized object must also be provided")
   }
@@ -458,17 +458,16 @@ prepare_scfmDriver <- function(sim) {
   ## supply objects
   if (!hasSA) {
     message("study area not supplied. Using random polygon in Alberta")
-    sim$studyArea <- LandR::randomStudyArea(size = 1500000* 1000, seed = 23654)
+    sim$studyArea <- LandR::randomStudyArea(size = 1500000 * 1000, seed = 23654)
     sim$studyArea <- terra::project(sim$studyArea, y = "EPSG:3348")
     ## this is 1,500,000 km2 - somewhere in eastern Rockies
     ## the crs is Canada equal alberts - unfortunately there is no way to set
-
   }
 
-  if (!hasSAC & !hasFRPC) {
+  if (!hasSAC && !hasFRPC) {
     ## buffDist is necessary only to ensure fires aren't extinguished from edges
     ## during the spread calibration - whereas the buffer distance here is to establish
-    ## studyAreaCalibration, whihc is intended to provide additional fire data for
+    ## studyAreaCalibration, which is intended to provide additional fire data for
     ## fire regime polygons that are otherwise too small after intersecting with studyArea.
     ## however - this distance must exceed P(sim)$buffDist
     ## ideally it is larger than the sqrt(max(sim$firePoints$SIZE_HA))
@@ -489,7 +488,7 @@ prepare_scfmDriver <- function(sim) {
 
     sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
 
-    sim$studyAreaCalibration <- st_union(sim$fireRegimePolysCalibration) %>%
+    sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
 
     resRTM <- if (hasRTM) {
@@ -501,7 +500,7 @@ prepare_scfmDriver <- function(sim) {
     sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
                                                 res = resRTM,
                                                 vals = 1)
-   } else if (hasSAC & !hasFRPC) {
+   } else if (hasSAC && !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
                   studyArea = sim$studyArea,
@@ -522,14 +521,14 @@ prepare_scfmDriver <- function(sim) {
                                      to = sim$studyArea)
   }
 
-  #now that calibration objects are sure to exist
+  ## now that calibration objects are sure to exist
   if (is.na(P(sim)$.studyAreaName)) {
     params(sim)[[currentModule(sim)]][[".studyAreaName"]] <- studyAreaName(sim$studyAreaCalibration,
                                                                            sim$rasterToMatchCalibration)
   }
 
   if (!hasFMC) {
-    #need memory safe option here
+    ## need memory safe option here
     projectToArg <- NULL
     if (P(sim)$limitRAMuse) {
       projectToArg <- sim$rasterToMatchCalibration
@@ -544,8 +543,7 @@ prepare_scfmDriver <- function(sim) {
                  projectTo = projectToArg, ## should be done after defineFlammable
                  writeTo = .suffix("rstLCC.tif",
                                    paste0("_", P(sim)$.studyAreaName, P(sim)$dataYear)),
-                 userTags = c("prepInputs_NTEMS_LCC_FAO", cacheTags,
-                              P(sim)$.studyAreaName)
+                 userTags = c("prepInputs_NTEMS_LCC_FAO", cacheTags, P(sim)$.studyAreaName)
     )
 
     fmc <- setValues(fmc, asInteger(values(fmc)))
@@ -559,8 +557,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFM) {
-    sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch,
-                                    method = "mode")
+    sim$flammableMap <- postProcess(sim$flammableMapCalibration, to = sim$rasterToMatch, method = "mode")
   }
 
   if (!suppliedElsewhere("firePoints", sim)) {
