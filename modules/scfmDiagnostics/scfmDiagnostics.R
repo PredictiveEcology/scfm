@@ -41,7 +41,8 @@ defineModule(sim, list(
     defineParameter(".useCache", "logical", FALSE, NA, NA,
                     "Should caching of events or module be used?"),
     defineParameter(".runName", "character", NULL, NA, NA,
-                    "Name for simulation provided by user")
+                    paste('Name for simulation provided by user. Used as a title for diagnostic plots',
+                          'NULL is allowed but will result in plots without titles.'))
   ),
   inputObjects = bindrows(
     #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
@@ -90,12 +91,10 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
 
-      if(exists("sim$.runName")) {
-        runName <- P(sim$.runName)
+      if(!exists("runName")) {
+        runName <- P(sim)$.runName
       }
-      if (!exists("runName")) {
-        runName <- NULL
-      }
+
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim), title = runName)
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys, title = runName)
@@ -160,11 +159,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
-      if(exists("sim$.runName")) {
-        runName <- P(sim$.runName)
-      }
-      if (!exists("runName")) {
-        runName <- NULL
+      if(!exists("runName")) {
+        runName <- P(sim)$.runName
       }
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
