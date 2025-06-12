@@ -91,9 +91,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
 
-      if(!exists("runName")) {
-        runName <- P(sim)$.runName
-      }
+      runName <- P(sim)$.runName
 
       ## Some useful plots
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim), title = runName)
@@ -159,9 +157,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
-      if(!exists("runName")) {
-        runName <- P(sim)$.runName
-      }
+      runName <- P(sim)$.runName
 
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(
         summaryDT, list(start = P(sim)$simTimes[1], end = P(sim)$simTimes[2]),
