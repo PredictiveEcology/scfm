@@ -228,28 +228,44 @@ Burnemup <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
   if (!suppliedElsewhere("fireRegimeRas", sim)) {
-    stop("you should run scfmLandCoverInit")
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    vegMap <- prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      maskTo = sim$studyArea,
-      cropTo = sim$rasterToMatch,
-      projectTo = sim$rasterToMatch,
-      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
-    )
-    vegMap[] <- asInteger(vegMap[])
-    sim$flammableMap <- defineFlammable(vegMap,
-                                        mask = sim$rasterToMatch,
-                                        nonFlammClasses = c(20, 31, 32, 33)
-    )
+    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
+      postProcess(maskTo = sim$fireRegimePolys)
   }
+
   if (!suppliedElsewhere("studyAreaReporting", sim)) {
     message("'studyAreaReporting' was not provided by user. Using the same as 'studyArea'.")
     sim$studyAreaReporting <- sim$studyArea
   }
+
+  if (!suppliedElsewhere("spreadState", sim)) {
+    sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
+                                             start = sample(1:ncell(sim$flammableMap),
+                                                            size = 10, replace = FALSE,
+                                                            prob = as.vector(sim$flammableMap)),
+                                             spreadProb = 0.1)
+  }
+
   return(sim)
 }

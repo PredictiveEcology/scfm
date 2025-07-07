@@ -536,14 +536,14 @@ prepare_scfmDriver <- function(sim) {
                                      to = sim$studyArea)
   }
 
-  ## now that calibration objects are sure to exist
+  #now that calibration objects are sure to exist
   if (is.na(P(sim)$.studyAreaName)) {
     params(sim)[[currentModule(sim)]][[".studyAreaName"]] <- studyAreaName(sim$studyAreaCalibration,
                                                                            sim$rasterToMatchCalibration)
   }
 
   if (!hasFMC) {
-    ## need memory safe option here
+    #need memory safe option here
     projectToArg <- NULL
     if (P(sim)$limitRAMuse) {
       projectToArg <- sim$rasterToMatchCalibration
@@ -581,7 +581,7 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    ## TODO: should this occur?
+
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 

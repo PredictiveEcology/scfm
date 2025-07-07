@@ -33,9 +33,11 @@ defineModule(sim, list(
                     "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput("fireRegimePolys", "sf", "`fireRegimePolys` with ignition rate attribute"),
-    expectsInput("fireRegimeRas", "SpatRaster", "rasterized version of `fireRegimePolys`"),
-    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability")
+    expectsInput("fireRegimePolys", "sf", desc = "`fireRegimePolys` with ignition rate attribute"),
+    expectsInput("fireRegimeRas", "SpatRaster", desc = "rasterized version of `fireRegimePolys`"),
+    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability"),
+    expectsInput("rasterToMatch", "SpatRaster", desc = "template raster"),
+    expectsInput("studyArea", "sf", desc = "studyArea polygon encapsulating `fireRegimePolys`")
     ),
   outputObjects = bindrows(
     createsOutput("ignitionLoci", "numeric", desc = "vector of ignition locations"),
@@ -123,24 +125,30 @@ calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
   mod$dPath <- asPath(inputPath(sim), 1)
   message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
 
-  # ! ----- EDIT BELOW ----- ! #
-
-  if (!suppliedElsewhere("flammableMap", sim)) {
-    vegMap <- prepInputs_NTEMS_LCC_FAO(
-      year = P(sim)$dataYear,
-      destinationPath = dPath,
-      maskTo = sim$studyArea,
-      cropTo = sim$rasterToMatch,
-      projectTo = sim$rasterToMatch,
-      userTags = c("prepInputs_NTEMS_LCC_FAO", "studyArea")
-    )
-    vegMap[] <- asInteger(vegMap[])
-    sim$flammableMap <- defineFlammable(vegMap,
-                                        mask = sim$rasterToMatch,
-                                        nonFlammClasses = c(20, 31, 32, 33)
-    )
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
   }
 
-  # ! ----- STOP EDITING ----- ! #
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
+  if (!suppliedElsewhere("fireRegimeRas", sim)) {
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
+  }
+
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
+      postProcess(maskTo = sim$fireRegimePolys)
+  }
+
   return(invisible(sim))
 }
