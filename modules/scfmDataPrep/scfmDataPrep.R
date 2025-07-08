@@ -167,6 +167,9 @@ doEvent.scfmDataPrep = function(sim, eventTime, eventType) {
       Plots(flamRegime, fn = scfmutils::plot_fireRegimeRas, type = P(sim)$.plots,
             filename = paste0("flam_fireRegimeRas"),
             title = paste0("Fire regimes"))
+      Plots(sim$flammableMap, fn = scfmutils::plot_flammableMap, type = P(sim)$.plots,
+            filename = paste0("flammableMap"),
+            title = paste0("landscape flammability map"))
     },
     warning(noEventWarning(sim))
   )
