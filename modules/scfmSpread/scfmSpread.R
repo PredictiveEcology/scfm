@@ -37,7 +37,10 @@ defineModule(sim, list(
     defineParameter(".plots", "character", c("screen"), NA, NA,
                     desc = "Used by Plots function, which can be optionally used here"),
     defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
-                    desc = "Can be names of events or the whole module name; these will be cached by SpaDES")
+                    desc = "Can be names of events or the whole module name; these will be cached by SpaDES"),
+    defineParameter(".runName", "character", NA_character_, NA, NA,
+                    paste('Name for simulation provided by user. Used as a title for diagnostic plots',
+                          'NULL is allowed but will result in plots without titles.'))
   ),
   inputObjects = bindrows(
     expectsInput("fireRegimePolys", "sf",
@@ -100,13 +103,21 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
     plot = {
+      if (is.na(P(sim)$.runName)) {
+        runName <- NULL
+      } else {
+        runName <- P(sim)$.runName
+      }
+
       if (!is.null(sim$rstCurrentBurn)) {
         Plots(sim$rstCurrentBurn, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
               filename = paste0("currentBurnMap_year_", time(sim)),
-              title = paste0("Annual Burn: year ", time(sim)))
+              title = paste0("Annual Burn: year ", time(sim)),
+              subtitle = runName)
         Plots(sim$burnMap, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
               filename = paste0("cumulativeBurnMap_year_", time(sim)),
-              title = paste0("Cumulative Burn: year ", time(sim)))
+              title = paste0("Cumulative Burn: year ", time(sim)),
+              subtitle = runName)
       }
       sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
