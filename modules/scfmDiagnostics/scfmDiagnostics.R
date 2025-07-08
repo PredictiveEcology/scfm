@@ -20,7 +20,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "ggplot2", "gridExtra",
     "PredictiveEcology/reproducible@development (>= 2.1.0)",
-    "PredictiveEcology/scfmutils (>= 2.0.1)",
+    "PredictiveEcology/scfmutils (>= 2.0.4)",
     "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"
   ),
   parameters = bindrows(
