@@ -242,7 +242,7 @@ diagnosticPlotsDT <- function(sim) {
   fireRegimePolysReporting <- fireRegimePolysReporting[colsToKeep]
   
   fireRegimePolysReporting <- genFireMapAttr(
-    flammableMap = postProcessTo(sim$flammableMap, to = sAR),
+    flammableMap = postProcessTo(sim$flammableMap, cropTo = sAR, maskTo = sAR),
     fireRegimePolys = fireRegimePolysReporting,
     neighbours = 8 ## TODO: use the param from the sim rather than hardcoding here
   )
