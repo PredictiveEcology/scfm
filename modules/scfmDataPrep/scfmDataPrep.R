@@ -454,14 +454,12 @@ prepare_scfmDriver <- function(sim) {
     stop("if supplying flammableMap or fireRegimePolys",
          "the equivalent calibration-sized object must also be provided")
   }
-
   ## supply objects
   if (!hasSA) {
     message("study area not supplied. Using random polygon in Alberta")
     sim$studyArea <- LandR::randomStudyArea(size = 1500000 * 1000, seed = 23654)
     sim$studyArea <- terra::project(sim$studyArea, y = "EPSG:3348")
     ## this is 1,500,000 km2 - somewhere in eastern Rockies
-    ## the crs is Canada equal alberts - unfortunately there is no way to set
   }
 
   if (!hasSAC && !hasFRPC) {
@@ -491,16 +489,8 @@ prepare_scfmDriver <- function(sim) {
     sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
 
-    resRTM <- if (hasRTM) {
-      res(sim$rasterToMatch)
-    } else {
-      c(250, 250)
-    }
 
-    sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
-                                                res = resRTM,
-                                                vals = 1)
-   } else if (hasSAC && !hasFRPC) {
+  } else if (hasSAC && !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
                   studyArea = sim$studyArea,
@@ -519,6 +509,18 @@ prepare_scfmDriver <- function(sim) {
   if (!hasRTM) {
     sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
                                      to = sim$studyArea)
+  }
+
+  if (!hasRTMC) {
+    sa <- sim$studyAreaCalibration
+    if (inherits(sa, "sf")) {
+      sa <- vect(sa)
+    }
+
+    sim$rasterToMatchCalibration <- terra::rast(sa,
+                                                res = res(sim$rasterToMatch),
+                                                vals = 1) |>
+      postProcess(maskTo = sim$studyAreaCalibration)
   }
 
   ## now that calibration objects are sure to exist
