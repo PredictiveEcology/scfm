@@ -103,9 +103,13 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt, title = runName)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt, title = runName)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt, title = runName)
+
+      #this object may contain points from polygons outside of study area
+      frPoints <- sim$fireRegimePoints[sim$fireRegimePoints$PolyID %in% unique(sim$fireRegimePolys$PolyID),]
+
       ## NOTE: historical distribution is derived purely from historical data
       gg_histDist <- scfmutils::comparePredictions_fireDistribution(
-        sim$fireRegimePoints,
+        frPoints,
         size = min(sim$fireRegimePolys$cellSize),
         burnSummary = sim$burnSummary,
         title = runName
@@ -183,9 +187,12 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       gg_esc <- scfmutils::comparePredictions_annualEscapes(summaryDT,
                                                             title = runName) +
         geom_smooth(method = lm)
-      
+
+      #this object may contain points from polygons outside of study area
+      frPoints <- sim$fireRegimePoints[sim$fireRegimePoints$PolyID %in% unique(sim$fireRegimePolys$PolyID),]
+
       ## note historical distribution is derived purely from historical data
-      gg_histDist <- comparePredictions_fireDistribution(sim$fireRegimePoints,
+      gg_histDist <- comparePredictions_fireDistribution(frPoints,
                                                          size = min(sim$fireRegimePolys$cellSize),
                                                          burnSummary = sim$burnSummary,
                                                          title = runName)
