@@ -462,6 +462,19 @@ prepare_scfmDriver <- function(sim) {
     ## this is 1,500,000 km2 - somewhere in eastern Rockies
   }
 
+  #enforce lonlat
+  sa <- sim$studyArea
+  projFun <- sf::st_transform
+  if (inherits(sa, "SpatVector")) {
+    sa <- sf::st_as_sf(sa)
+    projFun <- terra::project
+  }
+
+  if (sf::st_is_longlat(sa)) {
+    message("study area must use a projected CRS - reprojecting studyArea to EPSG 3348")
+    sim$studyArea <- projFun(sim$studyArea, "EPSG:3348")
+  }
+
   if (!hasSAC && !hasFRPC) {
     ## buffDist is necessary only to ensure fires aren't extinguished from edges
     ## during the spread calibration - whereas the buffer distance here is to establish
@@ -475,11 +488,8 @@ prepare_scfmDriver <- function(sim) {
                   destinationPath = dPath,
                   subsetType = "contains",
                   userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
-    sa <- sim$studyArea
-    if (!inherits(sa, "sf")) {
-      sa <- sf::st_as_sf(sa)
-    }
-    sac <- sf::st_union(sa) |>
+
+    sac <- sf::st_union(sa) |> #sa exists from chunk above
       sf::st_buffer(P(sim)$buffDist) |>
       sf::st_convex_hull() |>
       sf::st_as_sf()
@@ -506,9 +516,12 @@ prepare_scfmDriver <- function(sim) {
                                        to = sim$studyArea)
   }
 
+  sa <- vect(sa)
+  #convert to terra or raster will have mismatched res (e.g. 249.8857, 250.0057)
+
   if (!hasRTM) {
-    sim$rasterToMatch <- postProcess(sim$rasterToMatchCalibration,
-                                     to = sim$studyArea)
+    sim$rasterToMatch <- rast(sa, res = c(250, 250), vals = 1) |>
+      postProcess(maskTo = sim$studyArea)
   }
 
   if (!hasRTMC) {
@@ -516,10 +529,10 @@ prepare_scfmDriver <- function(sim) {
     if (inherits(sa, "sf")) {
       sa <- vect(sa)
     }
-
-    sim$rasterToMatchCalibration <- terra::rast(sa,
-                                                res = res(sim$rasterToMatch),
-                                                vals = 1) |>
+    #convert to terra or raster will have mismatched res (e.g. 249.8857, 250.0057)
+    sim$rasterToMatchCalibration <- rast(sa,
+                                         res = res(sim$rasterToMatch),
+                                         vals = 1) |>
       postProcess(maskTo = sim$studyAreaCalibration)
   }
 
