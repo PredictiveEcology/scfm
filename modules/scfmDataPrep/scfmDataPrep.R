@@ -473,6 +473,7 @@ prepare_scfmDriver <- function(sim) {
   if (sf::st_is_longlat(sa)) {
     message("study area must use a projected CRS - reprojecting studyArea to EPSG 3348")
     sim$studyArea <- projFun(sim$studyArea, "EPSG:3348")
+    sa <- sf::st_transform(sa, "EPSG:3348")
   }
 
   if (!hasSAC && !hasFRPC) {
@@ -493,6 +494,8 @@ prepare_scfmDriver <- function(sim) {
       sf::st_buffer(P(sim)$buffDist) |>
       sf::st_convex_hull() |>
       sf::st_as_sf()
+
+    sac <- st_transform(sac, to = sa)
 
     sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
 
