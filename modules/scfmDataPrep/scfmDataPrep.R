@@ -462,21 +462,20 @@ prepare_scfmDriver <- function(sim) {
     ## this is 1,500,000 km2 - somewhere in eastern Rockies
   }
 
-  #enforce lonlat
   sa <- sim$studyArea
-  projFun <- sf::st_transform
-  if (inherits(sa, "SpatVector")) {
-    sa <- sf::st_as_sf(sa)
-    projFun <- terra::project
+  if (inherits(sa, "sf")) {
+    sa <- terra::vect(sa)
+  }
+  if (terra::is.lonlat(sa)) {
+    stop("scfm requires a study area that is projected in metres")
   }
 
-  if (sf::st_is_longlat(sa)) {
-    message("study area must use a projected CRS - reprojecting studyArea to EPSG 3348")
-    sim$studyArea <- projFun(sim$studyArea, "EPSG:3348")
-    sa <- sf::st_transform(sa, "EPSG:3348")
+  if (!hasRTM) {
+    sim$rasterToMatch <- rast(sa, vals = 1, res = c(250, 250)) |>
+      terra::mask(mask = sa)
   }
 
-  if (!hasSAC && !hasFRPC) {
+  if (!hasSAC & !hasFRPC) {
     ## buffDist is necessary only to ensure fires aren't extinguished from edges
     ## during the spread calibration - whereas the buffer distance here is to establish
     ## studyAreaCalibration, which is intended to provide additional fire data for
@@ -490,7 +489,11 @@ prepare_scfmDriver <- function(sim) {
                   subsetType = "contains",
                   userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
 
-    sac <- sf::st_union(sa) |> #sa exists from chunk above
+    sa <- sim$studyArea
+    if (!inherits(sa, "sf")) {
+      sa <- sf::st_as_sf(sa)
+    }
+    sac <- sf::st_union(sa) |>
       sf::st_buffer(P(sim)$buffDist) |>
       sf::st_convex_hull() |>
       sf::st_as_sf()
@@ -501,9 +504,18 @@ prepare_scfmDriver <- function(sim) {
 
     sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
+  } else if (hasSAC & !hasFRPC) {
 
+    resRTM <- if (hasRTM) {
+      res(sim$rasterToMatch)
+    } else {
+      c(250, 250)
+    }
 
-  } else if (hasSAC && !hasFRPC) {
+    sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
+                                                res = resRTM,
+                                                vals = 1)
+   } else if (hasSAC && !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
                   studyArea = sim$studyArea,
@@ -518,9 +530,6 @@ prepare_scfmDriver <- function(sim) {
     sim$fireRegimePolys <- postProcess(sim$fireRegimePolysCalibration,
                                        to = sim$studyArea)
   }
-
-  sa <- vect(sa)
-  #convert to terra or raster will have mismatched res (e.g. 249.8857, 250.0057)
 
   if (!hasRTM) {
     sim$rasterToMatch <- rast(sa, res = c(250, 250), vals = 1) |>
@@ -546,7 +555,7 @@ prepare_scfmDriver <- function(sim) {
   }
 
   if (!hasFMC) {
-    ## need memory safe option here
+    #need memory safe option here
     projectToArg <- NULL
     if (P(sim)$limitRAMuse) {
       projectToArg <- sim$rasterToMatchCalibration
@@ -584,7 +593,7 @@ prepare_scfmDriver <- function(sim) {
       studyArea = sim$fireRegimePolysCalibration,
       NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
     )
-    ## TODO: should this occur?
+
     sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 
