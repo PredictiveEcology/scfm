@@ -56,7 +56,10 @@ defineModule(sim, list(
                  desc = "Polygon to use as the simulation study area."),
     expectsInput("studyAreaReporting", "sf",
                  desc = paste("multipolygon (typically smaller/unbuffered than `studyArea`)",
-                              "to use for plotting/reporting."))
+                              "to use for plotting/reporting.")),
+    expectsInput("timeSinceFire", "SpatRaster",
+                 desc = paste("map of time since last burn - with pixels that never burn receiving NA.",
+                              "If not supplied, it will count from start(sim)."))
   ),
   outputObjects = bindrows(
     createsOutput("burnDT", "data.table", desc = "data table with pixel IDs of most recent burn"),
@@ -139,7 +142,7 @@ Init <- function(sim) {
   sim$burnMap <- rast(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
   sim$burnMap[sim$flammableMap[] %==% 0] <- NA
-  sim$timeSinceFire <- rast(sim$burnMap)
+
 
   if (!is.null(sim$fireRegimePolys$pSpread)) {
     sprValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
@@ -239,8 +242,26 @@ Burnemup <- function(sim) {
 }
 
 .inputObjects <- function(sim) {
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 5000, seed = 25)
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      postProcess(maskTo = sim$studyArea) #postProcess instead of mask in case of sf
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$maxBurnCells <- 1000
+    sim$fireRegimePolys$polyID <- 1
+    sim$fireRegimePolys$pSpread <- 0.25
+  }
+
   if (!suppliedElsewhere("fireRegimeRas", sim)) {
-    stop("you should run scfmLandCoverInit")
+    sim$fireRegimeRas <- sim$rasterToMatch
+    sim$fireRegimeRas[!is.na(sim$fireRegimeRas[])] <- unique(sim$fireRegimePolys$polyID)
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
@@ -258,9 +279,15 @@ Burnemup <- function(sim) {
                                         nonFlammClasses = c(20, 31, 32, 33)
     )
   }
+
   if (!suppliedElsewhere("studyAreaReporting", sim)) {
     message("'studyAreaReporting' was not provided by user. Using the same as 'studyArea'.")
     sim$studyAreaReporting <- sim$studyArea
   }
+
+  if (!suppliedElsewhere("timeSinceFire", sim)) {
+    sim$timeSinceFire <- rast(sim$flammableMap)
+  }
+
   return(sim)
 }
