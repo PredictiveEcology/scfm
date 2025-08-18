@@ -56,7 +56,10 @@ defineModule(sim, list(
                  desc = "Polygon to use as the simulation study area."),
     expectsInput("studyAreaReporting", "sf",
                  desc = paste("multipolygon (typically smaller/unbuffered than `studyArea`)",
-                              "to use for plotting/reporting."))
+                              "to use for plotting/reporting.")),
+    expectsInput("timeSinceFire", "SpatRaster",
+                 desc = paste("map of time since last burn - with pixels that never burn receiving NA.",
+                              "If not supplied, it will count from start(sim)."))
   ),
   outputObjects = bindrows(
     createsOutput("burnDT", "data.table", desc = "data table with pixel IDs of most recent burn"),
@@ -139,7 +142,7 @@ Init <- function(sim) {
   sim$burnMap <- rast(sim$fireRegimeRas)
   sim$burnMap[!is.na(sim$flammableMap[])] <- 0
   sim$burnMap[sim$flammableMap[] %==% 0] <- NA
-  sim$timeSinceFire <- rast(sim$burnMap)
+
 
   if (!is.null(sim$fireRegimePolys$pSpread)) {
     sprValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
@@ -269,13 +272,18 @@ Burnemup <- function(sim) {
     message("'studyAreaReporting' was not provided by user. Using the same as 'studyArea'.")
     sim$studyAreaReporting <- sim$studyArea
   }
-
   if (!suppliedElsewhere("spreadState", sim)) {
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
                                              start = sample(1:ncell(sim$flammableMap),
                                                             size = 10, replace = FALSE,
                                                             prob = as.vector(sim$flammableMap)),
                                              spreadProb = 0.1)
+  }
+
+
+
+  if (!suppliedElsewhere("timeSinceFire", sim)) {
+    sim$timeSinceFire <- rast(sim$flammableMap)
   }
 
   return(sim)
