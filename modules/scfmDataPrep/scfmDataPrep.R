@@ -507,14 +507,14 @@ prepare_scfmDriver <- function(sim) {
   } else if (hasSAC && !hasFRPC) {
     frpc <- Cache(prepInputsFireRegimePolys,
                   type = P(sim)$fireRegimePolysType,
-                  studyArea = sim$studyArea,
+                  studyArea = sim$studyAreaCalibration,
                   destinationPath = dPath,
                   userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
 
     sim$fireRegimePolysCalibration <- frpc
   }
 
-  if (hasSAC & !hasRTMC) {
+  if (!hasRTMC) {
 
     resRTM <- if (hasRTM) {
       res(sim$rasterToMatch)
