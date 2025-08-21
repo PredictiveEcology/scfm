@@ -504,7 +504,17 @@ prepare_scfmDriver <- function(sim) {
 
     sim$studyAreaCalibration <- sf::st_union(sim$fireRegimePolysCalibration) %>%
       sf::st_as_sf()
-  } else if (hasSAC & !hasFRPC) {
+  } else if (hasSAC && !hasFRPC) {
+    frpc <- Cache(prepInputsFireRegimePolys,
+                  type = P(sim)$fireRegimePolysType,
+                  studyArea = sim$studyArea,
+                  destinationPath = dPath,
+                  userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
+
+    sim$fireRegimePolysCalibration <- frpc
+  }
+
+  if (hasSAC & !hasRTMC) {
 
     resRTM <- if (hasRTM) {
       res(sim$rasterToMatch)
@@ -515,14 +525,6 @@ prepare_scfmDriver <- function(sim) {
     sim$rasterToMatchCalibration <- terra::rast(terra::vect(sim$studyAreaCalibration),
                                                 res = resRTM,
                                                 vals = 1)
-   } else if (hasSAC && !hasFRPC) {
-    frpc <- Cache(prepInputsFireRegimePolys,
-                  type = P(sim)$fireRegimePolysType,
-                  studyArea = sim$studyArea,
-                  destinationPath = dPath,
-                  userTags = c(cacheTags, P(sim)$fireRegimePolysType, "frpc"))
-
-    sim$fireRegimePolysCalibration <- frpc
   }
 
   if (!hasFRP) {
