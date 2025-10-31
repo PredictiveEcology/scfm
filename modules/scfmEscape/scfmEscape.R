@@ -120,7 +120,7 @@ Escape <- function(sim) {
 
   if (!suppliedElsewhere("rasterToMatch", sim)) {
     sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
-                                mask(sim$studyArea)
+      mask(sim$studyArea)
   }
 
   if (!suppliedElsewhere("fireRegimePolys", sim)) {
@@ -135,12 +135,14 @@ Escape <- function(sim) {
   }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
-      postProcess(maskTo = sim$fireRegimePolys)
+    sim$flammableMap <- rast(sim$fireRegimeRas)
+    sim$flammableMap[!is.na(sim$fireRegimeRas[])] <- 1
+
   }
 
   if (!suppliedElsewhere("ignitionLoci", sim)) {
-    poss <- 1:ncell(sim$flammableMap)[!is.na(sim$flammableMap[])]
+    NAs <- which(is.na(as.vector(sim$flammableMap)))
+    poss <- setdiff(1:ncell(sim$flammableMap), NAs)
     sim$ignitionLoci <- sample(poss, size = 5, replace = FALSE)
   }
 
