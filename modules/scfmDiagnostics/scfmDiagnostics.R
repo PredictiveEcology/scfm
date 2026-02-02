@@ -45,7 +45,7 @@ defineModule(sim, list(
                           'NULL is allowed but will result in plots without titles.'))
   ),
   inputObjects = bindrows(
-    #expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
+    ## expectsInput("objectName", "objectClass", "input object description", sourceURL, ...),
     expectsInput("burnSummary", "data.table",
                  "describes details of all burned pixels. Required in single mode.",
                  sourceURL = NA),
@@ -74,7 +74,7 @@ defineModule(sim, list(
                                "Can be used to create customized diagnostic plots;",
                                "see `?scfmutils::comparePredictions`."))
   )
-)
+))
 
 doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
   switch(
@@ -88,9 +88,9 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
     },
     diagnosticPlotsSingle = {
       dt <- diagnosticPlotsDT(sim)
-      
+
       write.csv(dt, file.path(outputPath(sim), "scfmDiagnostics_single_summary_dt.csv"))
-      
+
       if (is.na(P(sim)$.runName)) {
         runName <- NULL
       } else {
