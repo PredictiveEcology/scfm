@@ -19,9 +19,9 @@ defineModule(sim, list(
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list(
     "ggplot2", "gridExtra", "qs2",
-    "PredictiveEcology/reproducible@development (>= 2.1.0)",
+    "PredictiveEcology/reproducible@development (>= 3.0.0)",
     "PredictiveEcology/scfmutils@development (>= 2.0.9.9004)",
-    "PredictiveEcology/SpaDES.core@development (>= 2.1.0.9005)"
+    "PredictiveEcology/SpaDES.core@development (>= 3.0.3.9003)"
   ),
   parameters = bindrows(
     defineParameter("mode", "character", "single", NA, NA,
@@ -74,7 +74,7 @@ defineModule(sim, list(
                                "Can be used to create customized diagnostic plots;",
                                "see `?scfmutils::comparePredictions`."))
   )
-))
+)
 
 doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
   switch(
@@ -96,16 +96,21 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       } else {
         runName <- P(sim)$.runName
       }
-      
+
       ## Some useful plots
+      ## fmt: skip
       gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt, times = times(sim), title = runName)
+      ## fmt: skip
       gg_frp <- scfmutils::plot_fireRegimePolys(sim$fireRegimePolys, title = runName)
+      ## fmt: skip
       gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt, title = runName)
       gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt, title = runName)
       gg_esc <- scfmutils::comparePredictions_annualEscapes(dt, title = runName)
 
-      #this object may contain points from polygons outside of study area
-      frPoints <- sim$fireRegimePoints[sim$fireRegimePoints$PolyID %in% unique(sim$fireRegimePolys$PolyID),]
+      ## this object may contain points from polygons outside of study area
+      frPoints <- sim$fireRegimePoints[
+        sim$fireRegimePoints$PolyID %in% unique(sim$fireRegimePolys$PolyID),
+      ]
 
       ## NOTE: historical distribution is derived purely from historical data
       gg_histDist <- scfmutils::comparePredictions_fireDistribution(
@@ -120,6 +125,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
       ## studyAreaCalibration is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
+      ## fmt: skip
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "FRI.png"), gg_fri, height = 8, width = 8)
         ggsave(file.path(figurePath(sim), "FRP.png"), gg_frp, height = 8, width = 8)
@@ -131,8 +137,12 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc, gg_histDist,
-                                nrow = 2, ncol = 3)
+        ## fmt: skip
+        gridExtra::grid.arrange(
+          gg_frp, gg_mfs, gg_fri,
+          gg_ign, gg_esc, gg_histDist,
+          nrow = 2, ncol = 3
+        )
       }
 
       sim$scfmSummaryDT <- dt
@@ -162,6 +172,8 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
         return(dt)
       }))
+      ## fmt: skip
+      write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
       write.csv(summaryDT, file.path(outputPath(sim), "scfmDiagnostics_multi_summary_dt.csv"))
 
@@ -203,6 +215,7 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       ## removed MAAB as diagnostic plot because it was derived from fire points incorrectly when
       ## studyAreaCalibration is supplied; MAAB can still be calculated manually if needed by user ## TODO
 
+      ## fmt: skip
       if ("png" %in% P(sim)$.plots) {
         ggsave(file.path(figurePath(sim), "multi_FRI.png"), gg_fri, height = 8, width = 8)
         ggsave(file.path(figurePath(sim), "multi_FRP.png"), gg_frp, height = 8, width = 8)
@@ -214,35 +227,42 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
 
       if ("screen" %in% P(sim)$.plots) {
         clearPlot()
-        gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, gg_esc,  gg_histDist,
-                                nrow = 2, ncol = 3)
+        ## fmt: skip
+        gridExtra::grid.arrange(
+          gg_frp, gg_mfs, gg_fri,
+          gg_ign, gg_esc, gg_histDist,
+          nrow = 2, ncol = 3
+        )
       }
 
       sim$scfmSummaryDT <- summaryDT
     },
-    warning(paste("Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
-                  "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""))
+    ## fmt: skip
+    warning(paste(
+      "Undefined event type: \'", current(sim)[1, "eventType", with = FALSE],
+      "\' in module \'", current(sim)[1, "moduleName", with = FALSE], "\'", sep = ""
+    ))
   )
   return(invisible(sim))
 }
 
 diagnosticPlotsDT <- function(sim) {
   sAR <- sim$studyAreaReporting |>
-    sf::st_as_sf() |> #in case it is terra
+    sf::st_as_sf() |> ## in case it is terra
     sf::st_union() |>
     sf::st_make_valid() |>
     terra::vect()
 
   fireRegimePointsReporting <- postProcess(sim$fireRegimePoints, to = sAR)
-  #avoid geometry objects
+  ## avoid geometry objects
   frpr <- postProcess(terra::vect(sim$fireRegimePolys), to = sAR)
-  #drop true slivers, not ecological slivers
+  ## drop true slivers, not ecological slivers
   frpr <- frpr[expanse(frpr) > res(sim$flammableMap)[1], ]
   fireRegimePolysReporting <- sf::st_as_sf(frpr)
 
   # fireRegimePolysReporting <- sf::st_cast(fireRegimePolysReporting, "MULTIPOLYGON")
 
-  #do not collection extract - it breaks.
+  ## do not collection extract - it breaks.
 
   colsToDrop <- c("burnyArea", "nFlammable", "cellSize", paste0("nNbr_", 0:8))
   colsToKeep <- setdiff(names(fireRegimePolysReporting), colsToDrop)
@@ -264,11 +284,4 @@ diagnosticPlotsDT <- function(sim) {
   )
 
   return(dt)
-}
-
-## older version of SpaDES.core used here doesn't have this function
-if (packageVersion("SpaDES.core") < "2.0.2.9001") {
-  figurePath <- function(sim) {
-    file.path(outputPath(sim), "figures", current(sim)[["moduleName"]]) |> checkPath(create = TRUE)
-  }
 }
