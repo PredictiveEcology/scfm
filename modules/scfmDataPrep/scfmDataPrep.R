@@ -575,7 +575,7 @@ prepare_scfmDriver <- function(sim) {
                  userTags = c("prepInputs_NTEMS_LCC_FAO", cacheTags, P(sim)$.studyAreaName)
     )
 
-    fmc <- setValues(fmc, asInteger(values(fmc)))
+    fmc <- terra::as.int(fmc)
     fmc <- defineFlammable(fmc, nonFlammClasses = c(20, 31, 32, 33))
     gc()
     fmc <- flammableMapCalibration <- postProcess(fmc,
