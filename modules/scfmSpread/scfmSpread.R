@@ -133,6 +133,8 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 Init <- function(sim) {
   compareGeom(sim$rasterToMatch, sim$fireRegimeRas)
   compareGeom(sim$fireRegimeRas, sim$flammableMap)
+  compareGeom(sim$timeSinceFire, sim$burnMap)
+
   tmpRas <- sim$rasterToMatch
   values(tmpRas) <- 1:ncell(tmpRas)
   tmpRas <- postProcess(tmpRas, studyArea = sim$studyAreaReporting)
