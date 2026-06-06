@@ -67,8 +67,8 @@ defineModule(sim, list(
                           as flammable when upscaling the default flammable maps.")),
     defineParameter("limitRAMuse", "logical", FALSE, 0, 1,
                     paste("Limit RAM use during reprojection of landcover rasters during",
-                    "creation of flammableMap. Ideally this operation is performed at 30 metres",
-                    "resolution, to correctly incorporate the param flammmabilityThreshold")),
+                          "creation of flammableMap. Ideally this operation is performed at 30 metres",
+                          "resolution, to correctly incorporate the param flammmabilityThreshold")),
     defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours"),
     defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
     defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
@@ -101,6 +101,9 @@ defineModule(sim, list(
                     "Use caching of events - not recommended as of 10/05/2023"),
     defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
                     "should a cloud cache be used for heavy operations"),
+    defineParameter(".useCacheArgs", "list",
+                    list(.inputObjects = list(useCloud = quote(params(sim)[["scfmDataPrep"]][[".useCloud"]]))),
+                    NA, NA, "should this event be cloud cached"),
     defineParameter(".useParallelFireRegimePolys", "logical", getOption("pemisc.useParallel", FALSE), NA, NA,
                     "should driver use parallel? Alternatively accepts a numeric argument, i.e., how many cores.")
   ),
@@ -403,26 +406,52 @@ prepare_scfmDriver <- function(sim) {
   ## it doesn't need to be as large as P(sim)$buffDist (the calibration buffer)
   bufferDist <- res(sim$rasterToMatch)[1] * 20
 
-  scfmDriverPars <- Cache(pemisc::Map2,
-                          cl = cl,
-                          cloudFolderID = sim$cloudFolderID,
-                          ## function-level cache is controlled by option("reproducible.useCache")
-                          useCloud = P(sim)$.useCloud,
-                          omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
-                          polygonType = unique(sim$fireRegimePolys$PolyID),
-                          MoreArgs = list(targetN = P(sim)$targetN,
-                                          fireRegimePolys = sim$fireRegimePolys,
-                                          buffDist = bufferDist,
-                                          pJmp = P(sim)$pJmp,
-                                          pMin = P(sim)$pMin,
-                                          pMax = P(sim)$pMax,
-                                          flammableMap = flammableMapCalibration,
-                                          plotPath = figurePath(sim),
-                                          outputPath = outputPath(sim),
-                                          optimizer = P(sim)$scamOptimizer
-                          ),
-                          f = scfmutils::calibrateFireRegimePolys,
-                          userTags = c("scfmDriver", "scfmDriverPars"))
+  moreArgs <- list(targetN = P(sim)$targetN,
+                   fireRegimePolys = sim$fireRegimePolys,
+                   buffDist = bufferDist,
+                   pJmp = P(sim)$pJmp,
+                   pMin = P(sim)$pMin,
+                   pMax = P(sim)$pMax,
+                   flammableMap = flammableMapCalibration,
+                   optimizer = P(sim)$scamOptimizer
+  )
+  digs <- .robustDigest(moreArgs)
+  moreArgs <- append(moreArgs, list(
+    plotPath = figurePath(sim),
+    outputPath = outputPath(sim)
+  ))
+  scfmDriverPars <- pemisc::Map2(
+    f = scfmutils::calibrateFireRegimePolys,
+    cl = cl,
+    ## function-level cache is controlled by option("reproducible.useCache")
+    polygonType = unique(sim$fireRegimePolys$PolyID),
+    MoreArgs = moreArgs) |>
+    Cache(cloudFolderID = sim$cloudFolderID,
+          .cacheExtra = digs,
+          useCloud = P(sim)$.useCloud,
+          omitArgs = c("MoreArgs", "cl"),
+          userTags = c("scfmDriver", "scfmDriverPars"))
+
+  # scfmDriverPars <- Cache(pemisc::Map2,
+  #                         cl = cl,
+  #                         cloudFolderID = sim$cloudFolderID,
+  #                         ## function-level cache is controlled by option("reproducible.useCache")
+  #                         useCloud = P(sim)$.useCloud,
+  #                         omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
+  #                         polygonType = unique(sim$fireRegimePolys$PolyID),
+  #                         MoreArgs = list(targetN = P(sim)$targetN,
+  #                                         fireRegimePolys = sim$fireRegimePolys,
+  #                                         buffDist = bufferDist,
+  #                                         pJmp = P(sim)$pJmp,
+  #                                         pMin = P(sim)$pMin,
+  #                                         pMax = P(sim)$pMax,
+  #                                         flammableMap = flammableMapCalibration,
+  #                                         plotPath = figurePath(sim),
+  #                                         outputPath = outputPath(sim),
+  #                                         optimizer = P(sim)$scamOptimizer
+  #                         ),
+  #                         f = scfmutils::calibrateFireRegimePolys,
+  #                         userTags = c("scfmDriver", "scfmDriverPars"))
 
   scfmDriverPars <- rbindlist(scfmDriverPars)
 
@@ -439,6 +468,9 @@ prepare_scfmDriver <- function(sim) {
 .inputObjects <- function(sim) {
   cacheTags <- c(currentModule(sim), "function:.inputObjects")
   dPath <- asPath(inputPath(sim), 1)
+
+  if (!suppliedElsewhere("cloudFolderID"))
+    sim$cloudFolderID <- getOption("reproducible.cloudFolderID")
 
   ## object check for SA/FRP/FRPC/SAC - better to be strict with stops
   hasSA <- suppliedElsewhere("studyArea", sim)
