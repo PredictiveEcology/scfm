@@ -8,7 +8,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmSpread = "2.0.1"),
+  version = list(scfmSpread = "2.0.1.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -51,7 +51,8 @@ defineModule(sim, list(
                  desc = "binary map of landscape flammability"),
     expectsInput("rasterToMatch", "SpatRaster",
                  desc = "template raster for raster GIS operations. Must be supplied by user."),
-    expectsInput("spreadState", "data.table", desc = "see `SpaDES.tools::spread2`"),
+    expectsInput("spreadState", "data.table",
+                 desc = "see `SpaDES.tools::spread2`; from scfmEscape, which sets each fire's size cap"),
     expectsInput("studyArea", "sf",
                  desc = "Polygon to use as the simulation study area."),
     expectsInput("studyAreaReporting", "sf",
@@ -89,20 +90,7 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
       }
     },
     burn = {
-      if (!is.null(sim$spreadState)) {
-
-        if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
-          sim <- Burnemup(sim) ## fire sizes recorded in  sim$burnSummary
-        } else {
-          ## make sure to record fires that did not escape/spread
-          tempDT <- countBurnedPixelsInSAR(sim$spreadState)
-          tempDT$year <- time(sim)
-          tempDT[, areaBurned := N * unique(sim$fireRegimePolys$cellSize)]
-          tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
-          setnames(tempDT, c("initialPixels"), c("igLoc"))
-          sim$burnSummary <- rbind(sim$burnSummary, tempDT)
-        }
-      }
+      sim <- Burnemup(sim) ## fire sizes recorded in  sim$burnSummary
       sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
     },
     plot = {
@@ -193,31 +181,41 @@ countBurnedPixelsInSAR <- function(burnDT) {
 ## name 'Burnemup' is a homage to Walters and Hillborne
 Burnemup <- function(sim) {
 
+  ## This year's burn starts empty every year, before any fire: a year without fire must not keep the
+  ## last fire year's pixels (Biomass_regeneration regenerates wherever rstCurrentBurn > 0).
+  sim$rstCurrentBurn <- rast(sim$fireRegimeRas) ## use fireRegimeRas as template
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 ## reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA ## might have to ignore warnings.
+
+  if (NROW(sim$spreadState) == 0) { ## no ignitions this year: nothing burns, time since fire still ages
+    if (terra::hasValues(sim$timeSinceFire)) sim$timeSinceFire <- sim$timeSinceFire + 1
+    return(invisible(sim))
+  }
+
   threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
   on.exit(setDTthreads(threadsDT), add = TRUE)
 
   if (!is.null(sim$fireRegimePolys$maxBurnCells)){
-    maxSize <- data.table(PolyID = sim$fireRegimePolys$PolyID,
-                          maxBurnCells = sim$fireRegimePolys$maxBurnCells)
-    burning <- as.vector(sim$fireRegimeRas)[sim$spreadState[state == "inactive"]$initialPixels]
-    maxSizes <- maxSize$maxBurnCells[match(burning, maxSize$polyID)]
+    maxSizes <- NA_real_ ## each fire's cap is in spreadState: scfmEscape set it where the fire started
   } else {
     maxSizes <- sum(as.vector(sim$flammableMap), na.rm = TRUE)
   }
 
   #TODO: check maxSizes
-  sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
-                                      start = sim$spreadState,
-                                      spreadProb = sim$pSpread,
-                                      #spreadState = sim$spreadState,
-                                      directions = P(sim)$neighbours,
-                                      maxSize = maxSizes,
-                                      asRaster = FALSE)
-
-  sim$rstCurrentBurn <- rast(sim$fireRegimeRas) ## use fireRegimeRas as template
-  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 ## reset annual burn
-  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA ## might have to ignore warnings.
+  if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
+    sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
+                                        start = sim$spreadState,
+                                        spreadProb = sim$pSpread,
+                                        #spreadState = sim$spreadState,
+                                        directions = P(sim)$neighbours,
+                                        maxSize = maxSizes,
+                                        asRaster = FALSE)
+  } else {
+    ## No fire escaped: each ignition burned its own pixel, as the ignitions that do not escape do in a
+    ## year with escapes (spread2() keeps all of spreadState's pixels in burnDT).
+    sim$burnDT <- sim$spreadState
+  }
 
   sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 ## update annual burn
   # sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))

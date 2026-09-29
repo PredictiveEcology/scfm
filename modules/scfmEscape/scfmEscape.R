@@ -11,7 +11,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmEscape = "2.0.0"),
+  version = list(scfmEscape = "2.0.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -47,7 +47,9 @@ defineModule(sim, list(
     expectsInput("studyArea", "sf", desc = "studyArea polygon encapsulating `fireRegimePolys`")
   ),
   outputObjects = bindrows(
-    createsOutput("spreadState", "data.table", desc = "stores the current fire spread state"),
+    createsOutput("spreadState", "data.table",
+                  desc = paste("stores the current fire spread state, with each fire's size cap (`maxBurnCells`);",
+                               "`NULL` in a year with no ignitions")),
     createsOutput("p0", "SpatRaster", desc = "escape probability raster")
   )
 ))
@@ -96,12 +98,21 @@ Init <- function(sim) {
 
 Escape <- function(sim) {
 
+  ## no ignitions, no fire: scfmSpread must not spread last year's escapes again
+  sim$spreadState <- NULL
   if (length(sim$ignitionLoci) > 0) {
+    ## Each fire's size cap (its fire regime polygon's maxBurnCells) is set where the fire starts, so
+    ## spread2() counts the escape's pixels towards it when scfmSpread resumes the fire. spreadState
+    ## carries it; a cap first given on resuming counts each fire as 1 pixel.
+    maxSizes <- if (is.null(sim$fireRegimePolys$maxBurnCells)) NA_real_ else
+      sim$fireRegimePolys$maxBurnCells[match(as.vector(sim$fireRegimeRas)[sim$ignitionLoci],
+                                             sim$fireRegimePolys$PolyID)]
     sim$spreadState <- spread2(landscape = sim$flammableMap,
                                start = sim$ignitionLoci,
                                iterations = 1,
                                spreadProb = sim$p0,
                                directions = P(sim)$neighbours,
+                               maxSize = maxSizes,
                                asRaster = FALSE)
   }
 
