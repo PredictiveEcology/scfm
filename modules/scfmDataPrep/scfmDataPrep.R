@@ -533,7 +533,7 @@ prepare_scfmDriver <- function(sim) {
       sf::st_convex_hull() |>
       sf::st_as_sf()
     
-    sac <- st_transform(sac, to = sa)
+    sac <- sf::st_transform(sac, sf::st_crs(sa)) # current sf requires crs; older sf ignored `to = sa`
     
     sim$fireRegimePolysCalibration <- postProcess(frpc, to = sac)
     
