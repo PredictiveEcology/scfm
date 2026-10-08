@@ -1,12 +1,13 @@
 defineModule(sim, list(
   name = "scfmLandcoverInit",
-  description = paste(
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    paste(
     "Generates some relevant statistics for each fire regime over a `studyArea`.",
     "If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
     "`studyArea`, `studyAreaCalibration`, `rasterToMatch`, `rasterToMatchCalibration`.",
     "The extent should differ between objects and their 'large' counterparts."
-  ),
+  )),
   keywords = c("fire", "land cover classification"),
   childModules = character(),
   authors = c(

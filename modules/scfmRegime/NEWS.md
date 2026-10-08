@@ -1,6 +1,7 @@
 # scfmRegime 2.1.0
 
 - Released with the scfm family at 2.1.0.
+- Deprecated: scfmDataPrep runs this step (its `eventsToPrepare` parameter), and the scfm parent module does not load this module. It will be removed in a later release.
 
 - changed `fireEpoch` from 1970-2020 in order to expand input data so that more wildfire is detected on the landscape
 

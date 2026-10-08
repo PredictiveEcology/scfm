@@ -1,6 +1,7 @@
 defineModule(sim, list(
   name = "scfmRegime",
-  description = "estimates fire regime parameters for BEACONs à la Steve's method.",
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    "estimates fire regime parameters for BEACONs à la Steve's method."),
   keywords = c("fire regime", "BEACONs"),
   authors = c(
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),

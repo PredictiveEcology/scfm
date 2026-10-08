@@ -1,6 +1,7 @@
 defineModule(sim, list(
   name = "scfmDriver",
-  description = "generate parameters for the generic percolation model",
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    "generate parameters for the generic percolation model"),
   keywords = c("fire"),
   authors = c(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
