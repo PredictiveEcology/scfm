@@ -136,7 +136,6 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
 
       if ("screen" %in% P(sim)$.plots) {
-        clearPlot()
         ## fmt: skip
         gridExtra::grid.arrange(
           gg_frp, gg_mfs, gg_fri,
@@ -226,7 +225,6 @@ doEvent.scfmDiagnostics = function(sim, eventTime, eventType) {
       }
 
       if ("screen" %in% P(sim)$.plots) {
-        clearPlot()
         ## fmt: skip
         gridExtra::grid.arrange(
           gg_frp, gg_mfs, gg_fri,
