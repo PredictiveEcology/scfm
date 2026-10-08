@@ -92,16 +92,13 @@ Init <- function(sim) {
     sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
   }
 
-  ## we will use our colour choices, not whatever may have come with the loaded map.
-  setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
-
   return(invisible(sim))
 }
 
 Age <- function(sim) {
 
   newAges <- pmin(P(sim)$maxAge, as.vector(sim$ageMap) + P(sim)$returnInterval)
-  sim$ageMap[newAges]
+  sim$ageMap[] <- newAges
 
   if (!is.null(sim$rstCurrentBurn)) {
     compareGeom(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn)
