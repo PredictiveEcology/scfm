@@ -1,7 +1,7 @@
 ---
 title: "scfmDataPrep Manual"
-subtitle: "v.0.0.0.9000"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -52,7 +52,7 @@ Describe input data required by the module and how to obtain it (e.g., directly 
 If `sourceURL` is specified, `downloadData("scfmDataPrep", "..")` may be sufficient.
 Table \@ref(tab:moduleInputs-scfmDataPrep) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmDataPrep)(\#tab:moduleInputs-scfmDataPrep)List of (ref:scfmDataPrep) input objects and their description.</caption>
  <thead>
   <tr>
@@ -73,7 +73,7 @@ Table \@ref(tab:moduleInputs-scfmDataPrep) shows the full list of module inputs.
    <td style="text-align:left;"> firePoints </td>
    <td style="text-align:left;"> sf </td>
    <td style="text-align:left;"> Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA', or pass the parameters to identify those. </td>
-   <td style="text-align:left;"> http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip </td>
+   <td style="text-align:left;"> https://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point_shp.zip </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireRegimePolys </td>
@@ -129,7 +129,7 @@ Table \@ref(tab:moduleInputs-scfmDataPrep) shows the full list of module inputs.
 Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmDataPrep))
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmDataPrep)(\#tab:moduleParams-scfmDataPrep)List of (ref:scfmDataPrep) parameters and their description.</caption>
  <thead>
   <tr>
@@ -145,10 +145,10 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
   <tr>
    <td style="text-align:left;"> buffDist </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 20000 </td>
+   <td style="text-align:left;"> 2e+05 </td>
    <td style="text-align:left;"> 1 </td>
-   <td style="text-align:left;"> 1e+05 </td>
-   <td style="text-align:left;"> Buffer width to mitigate edge effects in fire landscape calibration. If studyAreaCalibration is not supplied, this parameter will also be used to create it via buffering studyArea </td>
+   <td style="text-align:left;"> 1e+06 </td>
+   <td style="text-align:left;"> If studyAreaCalibration is not supplied, this parameter will be used to buffer create it via buffering studyArea </td>
   </tr>
   <tr>
    <td style="text-align:left;"> cloudFolderID </td>
@@ -201,7 +201,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
   <tr>
    <td style="text-align:left;"> fireEpoch </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 1971, 2000 </td>
+   <td style="text-align:left;"> 1971, 2020 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> start of normal period </td>
@@ -237,6 +237,14 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> Minimum proportion of flammable old pixel needed to define a new pixel as flammable when upscaling the default flammable maps. </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> limitRAMuse </td>
+   <td style="text-align:left;"> logical </td>
+   <td style="text-align:left;"> FALSE </td>
+   <td style="text-align:left;"> 0 </td>
+   <td style="text-align:left;"> 1 </td>
+   <td style="text-align:left;"> Limit RAM use during reprojection of landcover rasters during creation of flammableMap. Ideally this operation is performed at 30 metres resolution, to correctly incorporate the param flammmabilityThreshold </td>
   </tr>
   <tr>
    <td style="text-align:left;"> neighbours </td>
@@ -351,6 +359,14 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> Interval between save events </td>
   </tr>
   <tr>
+   <td style="text-align:left;"> .studyAreaName </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Human-readable name for the study area used. If `NA`, a hash of studyArea will be used. </td>
+  </tr>
+  <tr>
    <td style="text-align:left;"> .useCache </td>
    <td style="text-align:left;"> character </td>
    <td style="text-align:left;"> .inputOb.... </td>
@@ -365,6 +381,14 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should a cloud cache be used for heavy operations </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> .useCacheArgs </td>
+   <td style="text-align:left;"> list </td>
+   <td style="text-align:left;"> list(use.... </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> should this event be cloud cached </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useParallelFireRegimePolys </td>
@@ -393,7 +417,7 @@ Write what is saved.
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDataPrep)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmDataPrep)(\#tab:moduleOutputs-scfmDataPrep)List of (ref:scfmDataPrep) outputs and their description.</caption>
  <thead>
   <tr>
@@ -422,6 +446,16 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDataPrep)).
    <td style="text-align:left;"> fireRegimeRas </td>
    <td style="text-align:left;"> SpatRaster </td>
    <td style="text-align:left;"> Rasterized version of fireRegimePolys with values representing polygon ID </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flammableMap </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> flammable map coerced to integer if necessary </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> flammableMapCalibration </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> flammable map coerced to integer if necessary </td>
   </tr>
 </tbody>
 </table>
