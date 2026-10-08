@@ -1,7 +1,7 @@
 ---
 title: "scfmEscape Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -43,7 +43,7 @@ Steven G Cumming <stevec@sbf.ulaval.ca> [aut], Ian MS Eddy <ian.eddy@nrcan-rncan
 
 Table \@ref(tab:moduleInputs-scfmEscape) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmEscape)(\#tab:moduleInputs-scfmEscape)List of (ref:scfmEscape) input objects and their description.</caption>
  <thead>
   <tr>
@@ -78,12 +78,24 @@ Table \@ref(tab:moduleInputs-scfmEscape) shows the full list of module inputs.
    <td style="text-align:left;"> pixel IDs where ignition occurs </td>
    <td style="text-align:left;"> NA </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> rasterToMatch </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> template raster </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> studyArea </td>
+   <td style="text-align:left;"> sf </td>
+   <td style="text-align:left;"> studyArea polygon encapsulating `fireRegimePolys` </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
 </tbody>
 </table>
 
 Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameters.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmEscape)(\#tab:moduleParams-scfmEscape)List of (ref:scfmEscape) parameters and their description.</caption>
  <thead>
   <tr>
@@ -151,7 +163,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmEscape)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmEscape)(\#tab:moduleOutputs-scfmEscape)List of (ref:scfmEscape) outputs and their description.</caption>
  <thead>
   <tr>
@@ -164,7 +176,7 @@ Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmEscape)).
   <tr>
    <td style="text-align:left;"> spreadState </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> stores the current fire spread state </td>
+   <td style="text-align:left;"> stores the current fire spread state, with each fire's size cap (`maxBurnCells`); `NULL` in a year with no ignitions </td>
   </tr>
   <tr>
    <td style="text-align:left;"> p0 </td>
