@@ -31,8 +31,8 @@ always_allow_html: true
 
 The repository is the `scfm` parent module, and its children are the modules in `modules/`.
 `PredictiveEcology/scfm@v2.1.0` in `SpaDES.project::setupProject(modules = ...)` loads
-`ageModule`, `scfmDataPrep`, `scfmDiagnostics`, `scfmEscape`, `scfmIgnition` and `scfmSpread`
-from that release (SpaDES.project >= 1.2.0.9015). A single module can still be loaded on its
+`scfmDataPrep`, `scfmIgnition`, `scfmEscape`, `scfmSpread` and `scfmDiagnostics` from that
+release (SpaDES.project >= 1.2.0.9015). A single module can still be loaded on its
 own, e.g. `PredictiveEcology/scfm@v2.1.0/modules/scfmSpread`.
 
 ## Overview
