@@ -1,7 +1,7 @@
 ---
 title: "scfmDiagnostics Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -46,7 +46,7 @@ Inputs objects will be loaded from saved simulation files when in 'multi' mode.
 
 Table \@ref(tab:moduleInputs-scfmDiagnostics) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmDiagnostics)(\#tab:moduleInputs-scfmDiagnostics)List of (ref:scfmDiagnostics) input objects and their description.</caption>
  <thead>
   <tr>
@@ -99,7 +99,7 @@ Table \@ref(tab:moduleInputs-scfmDiagnostics) shows the full list of module inpu
 Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmDiagnostics))
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmDiagnostics)(\#tab:moduleParams-scfmDiagnostics)List of (ref:scfmDiagnostics) parameters and their description.</caption>
  <thead>
   <tr>
@@ -168,6 +168,14 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Should caching of events or module be used? </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> .runName </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Name for simulation provided by user. Used as a title for diagnostic plots NULL is allowed but will result in plots without titles. </td>
+  </tr>
 </tbody>
 </table>
 
@@ -179,7 +187,7 @@ A single event `diagnosticPlots` produces `ggplot`s (and saves these to disk).
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDiagnostics)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmDiagnostics)(\#tab:moduleOutputs-scfmDiagnostics)List of (ref:scfmDiagnostics) outputs and their description.</caption>
  <thead>
   <tr>
