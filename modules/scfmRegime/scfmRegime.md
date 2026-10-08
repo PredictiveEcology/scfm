@@ -1,7 +1,7 @@
 ---
 title: "scfmRegime Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -43,7 +43,7 @@ Estimates fire regime parameters for a given landscape (`studyArea`).
 
 Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmRegime)(\#tab:moduleInputs-scfmRegime)List of (ref:scfmRegime) input objects and their description.</caption>
  <thead>
   <tr>
@@ -101,7 +101,7 @@ Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
 
 Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameters.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmRegime)(\#tab:moduleParams-scfmRegime)List of (ref:scfmRegime) parameters and their description.</caption>
  <thead>
   <tr>
@@ -141,7 +141,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
   <tr>
    <td style="text-align:left;"> fireEpoch </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 1971, 2000 </td>
+   <td style="text-align:left;"> 1971, 2020 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> start of normal period </td>
@@ -201,7 +201,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmRegime)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmRegime)(\#tab:moduleOutputs-scfmRegime)List of (ref:scfmRegime) outputs and their description.</caption>
  <thead>
   <tr>
