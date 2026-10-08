@@ -13,7 +13,7 @@ defineModule(sim, list(
   ),
   childModules = c("scfmDataPrep", "scfmIgnition", "scfmEscape", "scfmSpread",
                    "scfmDiagnostics"),
-  version = list(scfm = "2.1.0",
+  version = list(scfm = "2.1.0.9000",
                  scfmDataPrep = "2.1.0", scfmIgnition = "2.1.0", scfmEscape = "2.1.0",
                  scfmSpread = "2.1.0", scfmDiagnostics = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),

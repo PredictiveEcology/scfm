@@ -1,3 +1,5 @@
+# scfm (development version)
+
 # scfm 2.1.0
 
 This is the first release of scfm as one family under one version number. The repository itself is now the scfm parent module, so `PredictiveEcology/scfm@v2.1.0` loads the five scfm modules in use from this release in one step, and every module in it carries the version 2.1.0. A new scfmDataPrep module prepares the fire regime inputs in one place, the modules use terra and sf throughout, and run names can be added to plot titles and burn maps.
