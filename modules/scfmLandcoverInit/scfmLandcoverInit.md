@@ -1,7 +1,7 @@
 ---
 title: "scfmLandcoverInit Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -49,7 +49,7 @@ The extents should differ between objects and their 'large' counterparts.
 
 Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmLandcoverInit)(\#tab:moduleInputs-scfmLandcoverInit)List of (ref:scfmLandcoverInit) input objects and their description.</caption>
  <thead>
   <tr>
@@ -114,7 +114,7 @@ Table \@ref(tab:moduleInputs-scfmLandcoverInit) shows the full list of module in
 Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module parameters.
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmLandcoverInit)(\#tab:moduleParams-scfmLandcoverInit)List of (ref:scfmLandcoverInit) parameters and their description.</caption>
  <thead>
   <tr>
@@ -162,7 +162,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
   <tr>
    <td style="text-align:left;"> flammabilityThreshold </td>
    <td style="text-align:left;"> numeric </td>
-   <td style="text-align:left;"> 0.25 </td>
+   <td style="text-align:left;"> 0.05 </td>
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> Minimum proportion of flammable old pixel needed to define a new pixel as flammable when upscaling the default flammable maps`. </td>
@@ -222,7 +222,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmLandcoverInit)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmLandcoverInit)(\#tab:moduleOutputs-scfmLandcoverInit)List of (ref:scfmLandcoverInit) outputs and their description.</caption>
  <thead>
   <tr>
