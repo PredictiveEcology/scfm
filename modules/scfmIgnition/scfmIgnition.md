@@ -1,7 +1,7 @@
 ---
 title: "scfmIgnition Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -43,7 +43,7 @@ Starts random number of fires based on estimated ignition probabilities for the 
 
 Table \@ref(tab:moduleInputs-scfmIgnition) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmIgnition)(\#tab:moduleInputs-scfmIgnition)List of (ref:scfmIgnition) input objects and their description.</caption>
  <thead>
   <tr>
@@ -72,13 +72,25 @@ Table \@ref(tab:moduleInputs-scfmIgnition) shows the full list of module inputs.
    <td style="text-align:left;"> map of flammability </td>
    <td style="text-align:left;"> NA </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> rasterToMatch </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> template raster </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
+  <tr>
+   <td style="text-align:left;"> studyArea </td>
+   <td style="text-align:left;"> sf </td>
+   <td style="text-align:left;"> studyArea polygon encapsulating `fireRegimePolys` </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
 </tbody>
 </table>
 
 Table \@ref(tab:moduleParams-scfmIgnition) shows the full list of module parameters.
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmIgnition)(\#tab:moduleParams-scfmIgnition)List of (ref:scfmIgnition) parameters and their description.</caption>
  <thead>
   <tr>
@@ -97,7 +109,7 @@ Table \@ref(tab:moduleParams-scfmIgnition) shows the full list of module paramet
    <td style="text-align:left;"> 2011 </td>
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
-   <td style="text-align:left;"> used to select the year of landcover data used to create `flammableMap` if the obejct is unsupplied </td>
+   <td style="text-align:left;"> used to select the year of landcover data used to create `flammableMap` if the object is unsupplied </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pIgnition </td>
@@ -138,7 +150,7 @@ Table \@ref(tab:moduleParams-scfmIgnition) shows the full list of module paramet
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmIgnition)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmIgnition)(\#tab:moduleOutputs-scfmIgnition)List of (ref:scfmIgnition) outputs and their description.</caption>
  <thead>
   <tr>
