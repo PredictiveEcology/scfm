@@ -1,7 +1,7 @@
 ---
 title: "scfmDriver Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2024-07-03"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -43,7 +43,7 @@ Estimates parameters for the generic percolation model.
 
 Table \@ref(tab:moduleInputs-scfmDriver) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmDriver)(\#tab:moduleInputs-scfmDriver)List of (ref:scfmDriver) input objects and their description.</caption>
  <thead>
   <tr>
@@ -83,7 +83,7 @@ Table \@ref(tab:moduleInputs-scfmDriver) shows the full list of module inputs.
 
 Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameters.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmDriver)(\#tab:moduleParams-scfmDriver)List of (ref:scfmDriver) parameters and their description.</caption>
  <thead>
   <tr>
@@ -215,7 +215,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDriver)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmDriver)(\#tab:moduleOutputs-scfmDriver)List of (ref:scfmDriver) outputs and their description.</caption>
  <thead>
   <tr>
