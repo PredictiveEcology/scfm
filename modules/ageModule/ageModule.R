@@ -1,6 +1,7 @@
 defineModule(sim, list(
   name = "ageModule",
-  description = "Creates and maintains a raster called `ageMap`.",
+  description = paste("Deprecated: not part of the scfm parent module, and will be removed in a later release.",
+                      "Creates and maintains a raster called `ageMap`."),
   keywords = c("forest age", "modelling course", "Lab 5"),
   authors = c(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
