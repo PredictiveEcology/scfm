@@ -6,7 +6,7 @@ defineModule(sim, list(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
   ),
   childModules = character(),
-  version = list(scfmIgnition = "2.0.0"),
+  version = list(scfmIgnition = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),

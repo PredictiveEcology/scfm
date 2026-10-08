@@ -1,12 +1,13 @@
 defineModule(sim, list(
   name = "scfmLandcoverInit",
-  description = paste(
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    paste(
     "Generates some relevant statistics for each fire regime over a `studyArea`.",
     "If scfm is being parameterized over a larger area (`studyAreaCalibration`), then the",
     "following objects must be supplied with identical CRS and resolution, where applicable:",
     "`studyArea`, `studyAreaCalibration`, `rasterToMatch`, `rasterToMatchCalibration`.",
     "The extent should differ between objects and their 'large' counterparts."
-  ),
+  )),
   keywords = c("fire", "land cover classification"),
   childModules = character(),
   authors = c(
@@ -15,7 +16,7 @@ defineModule(sim, list(
     person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
     person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
-  version = list(scfmLandcoverInit = "2.0.0"),
+  version = list(scfmLandcoverInit = "2.1.0"),
   timeframe = as.POSIXlt(c("2005-01-01", NA)),
   documentation = list("README.md", "scfmLandcoverInit.Rmd"), # same file
   loadOrder = list(after = c("Biomass_speciesData", "Biomass_borealDataPrep"),

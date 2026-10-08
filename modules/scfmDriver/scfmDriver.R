@@ -1,6 +1,7 @@
 defineModule(sim, list(
   name = "scfmDriver",
-  description = "generate parameters for the generic percolation model",
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    "generate parameters for the generic percolation model"),
   keywords = c("fire"),
   authors = c(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
@@ -8,7 +9,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
   ),
   childModules = character(),
-  version = list(scfmDriver = "2.0.0"),
+  version = list(scfmDriver = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
