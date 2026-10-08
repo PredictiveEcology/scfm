@@ -1,7 +1,7 @@
 ---
 title: "scfmSpread Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -43,7 +43,7 @@ Simulates wildfire spread on a landscape.
 
 Table \@ref(tab:moduleInputs-scfmSpread) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-scfmSpread)(\#tab:moduleInputs-scfmSpread)List of (ref:scfmSpread) input objects and their description.</caption>
  <thead>
   <tr>
@@ -81,7 +81,7 @@ Table \@ref(tab:moduleInputs-scfmSpread) shows the full list of module inputs.
   <tr>
    <td style="text-align:left;"> spreadState </td>
    <td style="text-align:left;"> data.table </td>
-   <td style="text-align:left;"> see `SpaDES.tools::spread2` </td>
+   <td style="text-align:left;"> see `SpaDES.tools::spread2`; from scfmEscape, which sets each fire's size cap </td>
    <td style="text-align:left;"> NA </td>
   </tr>
   <tr>
@@ -96,13 +96,19 @@ Table \@ref(tab:moduleInputs-scfmSpread) shows the full list of module inputs.
    <td style="text-align:left;"> multipolygon (typically smaller/unbuffered than `studyArea`) to use for plotting/reporting. </td>
    <td style="text-align:left;"> NA </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> timeSinceFire </td>
+   <td style="text-align:left;"> SpatRaster </td>
+   <td style="text-align:left;"> map of time since last burn - with pixels that never burn receiving NA. If not supplied, it will count from start(sim). </td>
+   <td style="text-align:left;"> NA </td>
+  </tr>
 </tbody>
 </table>
 
 Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameters.
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-scfmSpread)(\#tab:moduleParams-scfmSpread)List of (ref:scfmSpread) parameters and their description.</caption>
  <thead>
   <tr>
@@ -179,6 +185,14 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Can be names of events or the whole module name; these will be cached by SpaDES </td>
   </tr>
+  <tr>
+   <td style="text-align:left;"> .runName </td>
+   <td style="text-align:left;"> character </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> NA </td>
+   <td style="text-align:left;"> Name for simulation provided by user. Used as a title for diagnostic plots NULL is allowed but will result in plots without titles. </td>
+  </tr>
 </tbody>
 </table>
 
@@ -186,7 +200,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmSpread)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-scfmSpread)(\#tab:moduleOutputs-scfmSpread)List of (ref:scfmSpread) outputs and their description.</caption>
  <thead>
   <tr>
