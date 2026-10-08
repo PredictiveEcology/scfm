@@ -1,7 +1,7 @@
 ---
 title: "ageModule Manual"
-subtitle: "v.2.0.0"
-date: "Last updated: 2025-03-17"
+subtitle: "v.2.1.0"
+date: "Last updated: 2026-10-08"
 output:
   bookdown::html_document2:
     toc: true
@@ -44,7 +44,7 @@ This module is optional when running the `scfm` suite of modules.
 
 Table \@ref(tab:moduleInputs-ageModule) shows the full list of module inputs.
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleInputs-ageModule)(\#tab:moduleInputs-ageModule)List of (ref:ageModule) input objects and their description.</caption>
  <thead>
   <tr>
@@ -85,7 +85,7 @@ Table \@ref(tab:moduleInputs-ageModule) shows the full list of module inputs.
 Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
 
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleParams-ageModule)(\#tab:moduleParams-ageModule)List of (ref:ageModule) parameters and their description.</caption>
  <thead>
   <tr>
@@ -161,7 +161,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
 
 Description of the module outputs (Table \@ref(tab:moduleOutputs-ageModule)).
 
-<table class="table" style="color: black; margin-left: auto; margin-right: auto;">
+<table class="table" style="margin-left: auto; margin-right: auto;">
 <caption>(\#tab:moduleOutputs-ageModule)(\#tab:moduleOutputs-ageModule)List of (ref:ageModule) outputs and their description.</caption>
  <thead>
   <tr>
