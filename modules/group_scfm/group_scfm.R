@@ -1,6 +1,6 @@
 defineModule(sim, list(
   name = "group_scfm",
-  description = "parent module for scfm family of modules",
+  description = "Deprecated: use the `scfm` parent module at the root of this repository (PredictiveEcology/scfm@v2.1.0)",
   keywords = "fire",
   authors = c(
     person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = "aut"),
@@ -9,7 +9,7 @@ defineModule(sim, list(
   ),
   childModules = c("ageModule", "scfmDataPrep", "scfmDiagnostics",
                    "scfmEscape", "scfmIgnition", "scfmSpread"),
-  version = list(group_scfm = "2.0.0"),
+  version = list(group_scfm = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),

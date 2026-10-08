@@ -8,7 +8,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmSpread = "2.0.1.9000"),
+  version = list(scfmSpread = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),

@@ -30,6 +30,14 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Usage
+
+The repository is the `scfm` parent module, and its children are the modules in `modules/`.
+`PredictiveEcology/scfm@v2.1.0` in `SpaDES.project::setupProject(modules = ...)` loads
+`ageModule`, `scfmDataPrep`, `scfmDiagnostics`, `scfmEscape`, `scfmIgnition` and `scfmSpread`
+from that release (SpaDES.project >= 1.2.0.9015). A single module can still be loaded on its
+own, e.g. `PredictiveEcology/scfm@v2.1.0/modules/scfmSpread`.
+
 ## Overview
 
 Fire is modelled over a grid of raster cells (pixels) and is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread. The original fire model is described by Cumming et al. (1998), and more accessibly in Armstrong and Cumming (2003), and was recently implemented as a collection of SpaDES modules by Cumming, McIntire, and Eddy (in prep). Each fire module corresponds to one of the processes being modelled:

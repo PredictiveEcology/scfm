@@ -10,7 +10,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("aut", "cre"))
   ),
   childModules = character(0),
-  version = list(scfmDiagnostics = "2.0.0"),
+  version = list(scfmDiagnostics = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),

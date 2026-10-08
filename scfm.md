@@ -27,6 +27,14 @@ always_allow_html: true
 
 
 
+## Usage
+
+The repository is the `scfm` parent module, and its children are the modules in `modules/`.
+`PredictiveEcology/scfm@v2.1.0` in `SpaDES.project::setupProject(modules = ...)` loads
+`ageModule`, `scfmDataPrep`, `scfmDiagnostics`, `scfmEscape`, `scfmIgnition` and `scfmSpread`
+from that release (SpaDES.project >= 1.2.0.9015). A single module can still be loaded on its
+own, e.g. `PredictiveEcology/scfm@v2.1.0/modules/scfmSpread`.
+
 ## Overview
 
 Fire is modelled over a grid of raster cells (pixels) and is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread.

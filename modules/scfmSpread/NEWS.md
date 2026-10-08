@@ -1,4 +1,6 @@
-# scfmSpread (development version)
+# scfmSpread 2.1.0
+
+- Released with the scfm family at 2.1.0.
 
 - `rstCurrentBurn` now starts empty in every burn event. It was rebuilt only in a year with an escaped
   fire, so a year whose ignitions all failed to escape kept the last escape year's pixels, and

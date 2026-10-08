@@ -1,4 +1,6 @@
-# scfmEscape (development version)
+# scfmEscape 2.1.0
+
+- Released with the scfm family at 2.1.0.
 
 - `spreadState` is `NULL` in a year with no ignitions. It kept the previous year's state, so scfmSpread
   burned the previous year's fires again and counted them again in `burnSummary`.

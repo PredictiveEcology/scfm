@@ -1,3 +1,7 @@
+# scfmLandcoverInit 2.1.0
+
+- Released with the scfm family at 2.1.0.
+
 # scfmLandcoverInit 2.0.0
 
 - completed conversion to using `terra` instead of `raster` objects;
