@@ -13,7 +13,7 @@ defineModule(sim, list(
   documentation = list("README.txt", "ageModule.Rmd"),
   reqdPkgs = list("RColorBrewer", "sf", "terra",
                   "PredictiveEcology/LandR@development",
-                  "PredictiveEcology/scfmutils (>= 2.0.1)"),
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)"),
   parameters = rbind(
     defineParameter("initialAge", "numeric", 99.0, 0, 1e4,
                     "initial age"),
