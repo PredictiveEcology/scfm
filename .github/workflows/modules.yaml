@@ -21,7 +21,7 @@ jobs:
       fail-fast: false
       matrix:
         module: [ageModule, scfmDataPrep, scfmDiagnostics, scfmDriver, scfmEscape, scfmIgnition, scfmLandcoverInit, scfmRegime, scfmSpread]
-    uses: PredictiveEcology/actions/.github/workflows/testthat-module.yaml@feat/module-dir
+    uses: PredictiveEcology/actions/.github/workflows/testthat-module.yaml@main
     with:
       module: ${{ matrix.module }}
       module-dir: modules/${{ matrix.module }}
@@ -33,7 +33,7 @@ jobs:
         module: [ageModule, scfmDataPrep, scfmDiagnostics, scfmDriver, scfmEscape, scfmIgnition, scfmLandcoverInit, scfmRegime, scfmSpread]
     permissions:
       contents: write
-    uses: PredictiveEcology/actions/.github/workflows/render-module-rmd.yaml@feat/module-dir
+    uses: PredictiveEcology/actions/.github/workflows/render-module-rmd.yaml@main
     with:
       module: ${{ matrix.module }}
       module-dir: modules/${{ matrix.module }}
