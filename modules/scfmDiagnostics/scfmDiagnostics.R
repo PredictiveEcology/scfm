@@ -18,7 +18,7 @@ defineModule(sim, list(
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver",
                              "scfmEscape", "scfmIgnition", "scfmSpread")),
   reqdPkgs = list(
-    "ggplot2", "gridExtra", "qs2",
+    "data.table", "ggplot2", "gridExtra", "qs2", "terra",
     "PredictiveEcology/reproducible@development (>= 3.0.0)",
     "PredictiveEcology/scfmutils@development (>= 2.0.9.9004)",
     "PredictiveEcology/SpaDES.core@development (>= 3.0.3.9003)"
