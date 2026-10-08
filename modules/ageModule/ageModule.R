@@ -1,128 +1,137 @@
-
-# Everything in this file gets sourced during simInit, and all functions and objects
-#  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "ageModule",
-  description = "Creates and maintains a raster called ageMap",
+  description = paste("Deprecated: not part of the scfm parent module, and will be removed in a later release.",
+                      "Creates and maintains a raster called `ageMap`."),
   keywords = c("forest age", "modelling course", "Lab 5"),
-  authors = c(person(c("Steve", "G"), "Cumming", email="stevec@sbf.ulaval.ca", role=c("aut", "cre"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
+  ),
   childModules = character(),
-  version = numeric_version("0.9.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(ageModule = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "ageModule.Rmd"),
-  reqdPkgs = list("raster","RColorBrewer"),
+  reqdPkgs = list("RColorBrewer", "sf", "terra",
+                  "PredictiveEcology/LandR@development",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)"),
   parameters = rbind(
-    defineParameter("initialAge", "numeric", 99.0, 0, 1e4, desc =  "initial age"),
-    defineParameter("maxAge","numeric", 200, 0, 2**16-1, desc = "maximum age for plotting"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between aging aevents"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate aging"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first plot event should occur")
+    defineParameter("initialAge", "numeric", 99.0, 0, 1e4,
+                    "initial age"),
+    defineParameter("maxAge", "numeric", 200, 0, 2**16 - 1,
+                    "maximum age for plotting"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA,
+                    "Time interval between aging events"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA,
+                    "Simulation time at which to initiate aging"),
+    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 10, NA, NA,
+                    "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
+                    "Used by `Plots()`, which can be optionally used here")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability vegetation"),
-    expectsInput(objectName = "ageMap", objectClass = "RasterLayer",
+    expectsInput("ageMap", "SpatRaster",
                  desc = "stand age map in study area, default is Canada national stand age map",
                  sourceURL = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar"),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame",
-                 desc = "study area template",
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
+    expectsInput("rasterToMatch", "SpatRaster",
+                 desc = "template raster for raster GIS operations. Must be supplied by user."),
+    expectsInput("rstCurrentBurn", "SpatRaster",
+                 desc = "annual burn map created by `scfmSpread`.")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "ageMap", objectClass = "RasterLayer", desc = "map of vegetation age")
+    createsOutput("ageMap", "SpatRaster", desc = "map of vegetation age")
   )
 ))
 
-## event types
-#   - type `init` is required for initiliazation
-
 doEvent.ageModule = function(sim, eventTime, eventType, debug = FALSE) {
-  if (eventType == "init") {
-    ### check for more detailed object dependencies:
-    ### (use `checkObject` or similar)
+  switch(eventType,
+    init = {
+      ### check for more detailed object dependencies:
+      ### (use `checkObject` or similar)
 
-    # do stuff for this event
-    sim <- Init(sim)
+      # do stuff for this event
+      sim <- Init(sim)
 
-    # schedule future event(s)
-    sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age")
-    sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "ageModule", "plot")
-    sim <- scheduleEvent(sim, P(sim)$.saveInitialTime, "ageModule", "save")
-  } else if (eventType=="age") {
-    # do stuff for this event
-    sim <- Age(sim)
+      # schedule future event(s)
+      sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "age", eventPriority = 7.5)
 
-    # schedule the next event
-    sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval,
-                         "ageModule", "age")
-  } else if (eventType == "plot") {
+      if (anyPlotting(P(sim)$.plots)) {
+        sim <- scheduleEvent(sim, P(sim)$startTime, "ageModule", "plot", eventPriority = 7.5)
+      }
+    },
+    age = {
+      # do stuff for this event
+      sim <- Age(sim)
 
-    Plot(sim$ageMap, legendRange=c(0, P(sim)$maxAge))
-    sim <- scheduleEvent(sim,
-                         time(sim) + P(sim)$.plotInterval,
-                         "ageModule", "plot")
+      # schedule the next event
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "ageModule", "age")
+    },
+    plot = {
+      Plots(sim$ageMap, fn = scfmutils::plot_ageMap, type = P(sim)$.plots,
+            filename = paste0("ageMap_year_", time(sim)),
+            title = paste0("Age map: year ", time(sim)),
+            maxAge = P(sim)$maxAge)
 
-  }  else {
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "ageModule", "plot")
+    },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
-                  "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-  }
+               "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
+  )
   return(invisible(sim))
 }
 
-
-### template initilization
 Init <- function(sim) {
+  ## TODO: remove this workaround -- why isn't this 'being 'sticking' when done in .inputObjects??
+  #my hunch is that ageMap is studyAreaCalibration sized if supplied in BBDP
+  if (!compareGeom(sim$rasterToMatch, sim$ageMap, stopOnError = FALSE)) {
+    ## ensure ageMap matches rasterToMatch
+    sim$ageMap <- postProcess(sim$ageMap, rasterToMatch = sim$rasterToMatch)
+  }
 
- dPath <- dataPath(sim)
- preProcess(url = "http://tree.pfc.forestry.ca/kNN-StructureStandVolume.tar",
-            destinationPath = file.path(dPath, "age"))
- ageMap <- prepInputs(targetFile = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.tif"),
-                      archive = file.path(dPath, "NFI_MODIS250m_kNN_Structure_Stand_Age_v0.zip"),
-                      studyArea = sim$studyArea,
-                      rasterToMatch = sim$rasterToMatch,
-                      destinationPath = file.path(dPath, "age"),
-                      overwrite = TRUE,
-                      filename2 = TRUE,
-                      userTags = c("ageMap"),
-                      method = "ngb")
-
- sim$ageMap <- ageMap
-
- # we will use our colour choices, not whatever may have come with the loaded map.
- setColors(sim$ageMap, n = 10, colorRampPalette(c("LightGreen", "DarkGreen"))(10))
- #temporary until we buid the rest of the modules
-  return(invisible(sim))
-}
-
-### template for save events
-Save <- function(sim) {
-  # ! ----- EDIT BELOW ----- ! #
-  # do stuff for this event
-  sim <- saveFiles(sim)
-
-  # ! ----- STOP EDITING ----- ! #
   return(invisible(sim))
 }
 
 Age <- function(sim) {
 
-  sim$ageMap <- setValues(sim$ageMap, pmin(P(sim)$maxAge, getValues(sim$ageMap)+ P(sim)$returnInterval))
+  newAges <- pmin(P(sim)$maxAge, as.vector(sim$ageMap) + P(sim)$returnInterval)
+  sim$ageMap[] <- newAges
+
+  if (!is.null(sim$rstCurrentBurn)) {
+    compareGeom(sim$rasterToMatch, sim$ageMap, sim$rstCurrentBurn)
+    burn <- sim$rstCurrentBurn[]
+    sim$ageMap[!is.na(burn) & burn == 1] <- 0
+  }
 
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
+  dPath <- asPath(inputPath(sim), 1)
 
   if (!suppliedElsewhere("studyArea", sim)) {
     message("study area not supplied. Using random polygon in Alberta")
 
     studyArea <- pemisc::randomStudyArea(size = 2000000000, seed = 23657)
     sim$studyArea <- studyArea
+  }
+
+  if (!suppliedElsewhere("ageMap", sim)) {
+    sim$ageMap <- LandR::prepInputsStandAgeMap(
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      ageFun = "terra::rast",
+      destinationPath = dPath,
+      startTime  = start(sim)
+    )
+  }
+
+  if (!suppliedElsewhere("rstCurrentBurn", sim)) {
+    stop("Please supply rstCurrentBurn by running scfmSpread or another fire model")
   }
 
   return(invisible(sim))

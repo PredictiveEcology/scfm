@@ -1,49 +1,74 @@
 defineModule(sim, list(
   name = "scfmDriver",
-  description = "generate parameters for the generic percolation model",
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    "generate parameters for the generic percolation model"),
   keywords = c("fire"),
-  authors = c(person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
-              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
+  ),
   childModules = character(),
-  version = numeric_version("0.1.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(scfmDriver = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
   documentation = list("README.txt", "scfmDriver.Rmd"),
-  reqdPkgs = list("fasterize", "PredictiveEcology/LandR@development", "magrittr", "parallel",
-                  "PredictiveEcology/pemisc@development", "reproducible", "rgeos",
-                  "scam", "sf", "sp", "SpaDES.tools", "stats"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime"),
+                   before = c("scfmEscape", "scfmIgnition", "scfmSpread")),
+  reqdPkgs = list("parallel", "sf", "spatialEco", "stats", "terra",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
+                  "PredictiveEcology/pemisc@development",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.7)",
+                  "PredictiveEcology/SpaDES.tools (>= 1.0.2.9001)"),
   parameters = rbind(
-    defineParameter("neighbours", "numeric", 8, 4, 8, "number of cell immediate neighbours"),
-    defineParameter("buffDist", "numeric", 5e3, 0, 1e5, "Buffer width for fire landscape calibration"),
-    defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
-    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
-    defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
-    defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
-    defineParameter("useCloudCache", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
-                    desc = "should a cloud cache be used for heavy operations"),
+    defineParameter("buffDist", "numeric", 5e3, 0, 1e5,
+                    "Buffer width for fire landscape calibration"),
     defineParameter("cloudFolderID", "character", NULL, NA, NA, "URL for Google-drive-backed cloud cache"),
-    defineParameter(".useParallel", class = "logical",
-                    default = getOption("pemisc::useParallel", FALSE), min = NA, max = NA,
-                    desc = "should driver use parallel? Alternatively accepts a numeric argument, ie how many cores")
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "flammableMapCalibration if the object is unsupplied")),
+    defineParameter("pJmp", "numeric", 0.23, 0.18, 0.25, "default spread prob for degenerate polygons"),
+    defineParameter("pMax", "numeric", 0.253, 0.24, 0.26, "maximum spread range for calibration"),
+    defineParameter("pMin", "numeric", 0.185, 0.15, 0.225, "minimum spread range for calibration"),
+    defineParameter("scamOptimizer", "character", "bfgs", NA, NA,
+                    "numerical optimization method used in fitting scam model; see `?scam`."),
+    defineParameter("targetN", "numeric", 4000, 1, NA, "target sample size for determining true spread probability"),
+    defineParameter(".plotInitialTime", "numeric", start(sim, "year") + 1, NA, NA,
+                    "simulation time at which the first plot event should occur"),
+    defineParameter(".plotInterval", "numeric", 1, NA, NA,
+                    "simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen", "png"), NA, NA,
+                    "Used by Plots function, which can be optionally used here"),
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
+                    "Can be names of events or the whole module name; these will be cached by SpaDES"),
+    defineParameter(".useCloud", "logical", getOption("reproducible.useCloud", FALSE), NA, NA,
+                    "should a cloud cache be used for heavy operations"),
+    defineParameter(".useParallelFireRegimePolys", "logical", getOption("pemisc.useParallel", FALSE), NA, NA,
+                    "should driver use parallel? Alternatively accepts a numeric argument, i.e., how many cores.")
   ),
   inputObjects = bindrows(
     expectsInput("cloudFolderID", "character",
-                 paste("URL for Google-drive-backed cloud cache. ",
-                       "Note: turn cloudCache on or off with options('reproducible.useCloud')")),
-    expectsInput("scfmRegimePars", "list", desc = ""),
-    expectsInput("landscapeAttr", "list", desc = ""),
-    expectsInput("studyArea", "SpatialPolygonsDataFrame",
-                 desc = "a studyArea where separate polygons denote separate fire regimes")
+                 paste("URL for Google-drive-backed cloud cache.",
+                       "Note: turn `cloudCache` on or off with `options('reproducible.useCloud')`.")),
+    expectsInput("fireRegimePolys", "sf",
+                 paste("Areas to calibrate individual fire regime parameters. Defaults to ecozones of Canada.",
+                       "Must have numeric field 'PolyID' or it will be created for individual polygons.")),
+    expectsInput("flammableMapCalibration", "SpatRaster",
+                 paste("a flammable map of study area after buffering by `P(sim)$buffDist`.",
+                       "Must be supplied by user if `flammableMap` is also supplied.")),
+    expectsInput("rasterToMatch", "SpatRaster",
+                 "template raster for raster GIS operations. Must be supplied by user.")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "scfmDriverPars", objectClass = "list", desc = "")
+    createsOutput("fireRegimePolys", "sf",
+                  "`fireRegimePolys` with driver attributes appended")
   )
 ))
 
 ## event types
-#   - type `init` is required for initiliazation
+#   - type `init` is required for initilization
 
 doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   switch(
@@ -58,291 +83,126 @@ doEvent.scfmDriver = function(sim, eventTime, eventType, debug = FALSE) {
   return(invisible(sim))
 }
 
-# 1 - (1-p0)**N = pEscape
-# 1 - pEscape = (1-p0)**N
-# (1 - pEscape)**1/N = 1 - p0
-# p0 = 1 - (1 - pEscape)**1/N
-
-hatP0 <- function(pEscape, n = 8) {
-  1 - (1 - pEscape) ** (1 / n)
-}
-
-#a real clever boots would minimise the abs log odds ratio.
-#be my guest.
-
-escapeProbDelta <- function(p0, w, hatPE) {
-  abs(sum(w*(1 - (1 - p0) ** (0:8))) - hatPE)
-}
-
 Init <- function(sim) {
-  cellSize <- sim$landscapeAttr[[1]]$cellSize
+  if (is(sim$fireRegimePolys, "SpatialPolygonsDataFrame")) {
+    sim$fireRegimePolys <- st_as_sf(sim$fireRegimePolys)
+  }
 
-  if (isTRUE(P(sim)$.useParallel) || P(sim)$.useParallel > 1) { # works if numeric or logical
-    maxNumClusters <- length(sim$scfmRegimePars) # this is maximum that is needed
-    if (is.numeric(P(sim)$.useParallel)) {
-      maxNumClusters <- min(maxNumClusters, P(sim)$.useParallel )  # user may set a smaller maximum passed with P(sim)$.useParallel as a numeric
-    }
-    cl <- pemisc::makeOptimalCluster(MBper = 5000,
-                                     maxNumClusters = maxNumClusters,
-                                     outfile = "scfmLog")
-    on.exit(try(stopCluster(cl), silent = TRUE))
+  ## Check to see if it is a Cache situation -- if it is, don't make a cl -- on Windows, takes too long
+  seeIfItHasRun <- CacheDigest(
+    list(
+      Map2,
+      polygonType = unique(sim$fireRegimePolys$PolyID),
+      MoreArgs = list(
+        targetN = P(sim)$targetN,
+        fireRegimePolys = sim$fireRegimePolys,
+        buffDist = P(sim)$buffDist,
+        pJmp = P(sim)$pJmp,
+        pMin = P(sim)$pMin,
+        pMax = P(sim)$pMax,
+        flammableMap = sim$flammableMapCalibration
+      ),
+      f = scfmutils::calibrateFireRegimePolys
+    )
+  )
+
+  if (NROW(showCache(userTags = seeIfItHasRun$outputHash)) == 0) {
+    cl <- pemisc::makeOptimalCluster(
+      useParallel = P(sim)$.useParallelFireRegimePolys,
+      ## Estimate as the area of polygon * 2 for "extra" / raster resolution + 400 for fixed costs
+      MBper = units::drop_units(sf::st_area(sim$fireRegimePolys)) / prod(res(sim$rasterToMatch)) / 1e3 * 2 + 4e2,
+      maxNumClusters = length(unique(sim$fireRegimePolys$PolyID)),
+      outfile = file.path(outputPath(sim), "log", "scfm.log"),
+      objects = c(), envir = environment(),
+      libraries = c("scfmutils")
+    )
+
+    on.exit({
+      if (!is.null(cl)) {
+        parallel::stopCluster(cl)
+      }
+    })
   } else {
     cl <- NULL
   }
-  # Eliot modified this to use cloudCache -- need all arguments named, so Cache works
-  sim$scfmDriverPars <- cloudCache(
-    pemisc::Map2, cl = cl, cloudFolderID = sim$cloudFolderID,
-    useCache = getOption("reproducible.useCache", TRUE),
-    useCloud = getOption("reproducible.useCloud", FALSE),
-    regime = sim$scfmRegimePars, #[[polygonType]]
-    omitArgs = c("useCloud", "useCache", "cloudFolderID", "cl"),
-    MoreArgs = list(cellSize = cellSize,
-                    studyArea = rlang::quo(sim$studyArea),
-                    buffDist = P(sim)$buffDist,
-                    pJmp = P(sim)$pJmp,
-                    pMin = P(sim)$pMin,
-                    pMax = P(sim)$pMax,
-                    neighbours = P(sim)$neighbours,
-                    landAttr = rlang::quo(sim$landscapeAttr)),
-    polygonType = names(sim$scfmRegimePars),
-    f = function(polygonType, targetN = P(sim)$targetN,
-             regime = regime, landAttr = landAttr,
-             cellSize = cellSize,
-             studyArea = studyArea,
-             buffDist = buffDist,
-             pJmp = pJmp, pMin = pMin, pMax = pMax,
-             neighbours = neighbours) {
-      #regime <- sim$scfmRegimePars[[polygonType]] #pass as argument
-      #landAttr <- sim$landscapeAttr[[polygonType]] #pass as argument
-      maxBurnCells <- as.integer(round(regime$emfs_ha / cellSize)) #will return NA if emfs is NA
-      if (is.na(maxBurnCells)) {
-        warning("This can't happen")
-        maxBurnCells = 1
-      }
-      landAttr <- rlang::eval_tidy(landAttr)
-      landAttr <- landAttr[[polygonType]] #landAttr may have invalid polygons, so exclude from Map2 call
-      message("generating buffered landscapes...")
-      studyArea <- rlang::eval_tidy(studyArea)
-      calibLand <- Cache(genSimLand, studyArea[studyArea$PolyID == polygonType,], buffDist = buffDist,
-                         userTags = paste("genSimLand ", polygonType))
 
-      #Need a vector of igniteable cells
-      #Item 1 = L, the flammable Map
-      #Item 2 = B (aka the landscape Index) this denotes buffer
-      #Item 3 = igLoc(index of igniteable cells) L[igloc] == 1 &&(B[igLoc]) == 1 (ie within core)
-      index <- 1:ncell(calibLand$flammableMap)
-      index[calibLand$flammableMap[] != 1 | is.na(calibLand$flammableMap[])] <- NA
-      index[calibLand$landscapeIndex[] != 1 | is.na(calibLand$landscapeIndex[])] <- NA
-      index <- index[!is.na(index)]
-      if (length(index) == 0)
-        stop("polygon has no flammable cells!")
+  if (!compareGeom(sim$flammableMap, sim$flammableMapCalibration, ext = FALSE, rowcol = FALSE, res = TRUE)) {
+    stop("mismatch in resolution of buffered flammable map. Please supply this object manually.")
+  }
 
-      dT <- Cache(makeDesign, indices = index, targetN = targetN,
-                  pmin = pMin, pmax = pMax,
-                  pEscape = ifelse(regime$pEscape == 0, 0.1, regime$pEscape),
-                  userTags = paste("makeDesign", polygonType))
+  message("Running calibrateFireRegimePolys()...")
 
-      message(paste0("calibrating for polygon ", polygonType, " (Time: ", Sys.time(), ")"))
-      calibData <- Cache(executeDesign,
-                         L = calibLand$flammableMap,
-                         dT,
-                         maxCells = maxBurnCells,
-                         userTags = paste("executeDesign", polygonType)
-      )
+  flammableMapCalibration <- terra::wrap(sim$flammableMapCalibration)
+  scfmDriverPars <- Cache(pemisc::Map2,
+                          cl = cl,
+                          cloudFolderID = sim$cloudFolderID,
+                          ## function-level cache is controlled by option("reproducible.useCache")
+                          useCloud = P(sim)$.useCloud,
+                          omitArgs = c("cl", "cloudFolderID", "plotPath", "useCache", "useCloud"),
+                          polygonType = unique(sim$fireRegimePolys$PolyID),
+                          MoreArgs = list(targetN = P(sim)$targetN,
+                                          fireRegimePolys = sim$fireRegimePolys,
+                                          buffDist = P(sim)$buffDist,
+                                          pJmp = P(sim)$pJmp,
+                                          pMin = P(sim)$pMin,
+                                          pMax = P(sim)$pMax,
+                                          flammableMap = flammableMapCalibration,
+                                          plotPath = figurePath(sim),
+                                          outputPath = outputPath(sim),
+                                          optimizer = P(sim)$scamOptimizer
+                          ),
+                          f = scfmutils::calibrateFireRegimePolys,
+                          userTags = c("scfmDriver", "scfmDriverPars"))
 
-      cD <- calibData[calibData$finalSize > 1,]  #could use [] notation, of course.
-      calibModel <- scam::scam(finalSize ~ s(p, bs = "micx", k = 20), data = cD)
+  scfmDriverPars <- rbindlist(scfmDriverPars)
 
-      xBar <- regime$xBar / cellSize
+  ## drop the attributes if they are present
+  colsToDrop <- c("pSpread", "p0", "naiveP0", "pIgnition", "maxBurnCells")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
 
-      if (xBar > 0) {
-        #now for the inverse step.
-        Res <- try(stats::uniroot(f <- function(x, cM, xBar) {predict(cM, list("p" = x)) - xBar},
-                                  calibModel, xBar, # "..."
-                                  interval = c(min(cD$p), max(cD$p)),
-                                  extendInt = "no",
-                                  tol = 0.00001
-        ), silent = TRUE)
-        if (class(Res) == "try-error") {
-          #TODO: should pick the closest value (of min and max) if error is value not of opposite sign
-          pJmp <- min(cD$p)
-          message("the loess model may underestimate the spread probability for polygon ", polygonType)
-        } else {
-          pJmp <- Res$root
-        }
-      } else {
-        #pJmp <- P(sim)$pJmp # don't need this because it is an argument to this function alraedy
-        calibModel <- "No Model"
-        Res <- "No Uniroot result"
-      }
-      #check convergence, and out of bounds errors etc
-      w <- landAttr$nNbrs
-      w <- w / sum(w)
-      hatPE <- regime$pEscape
-      if (hatPE == 0) {
-        # no fires in polygon zone escapted
-        p0 <- 0
-      } else if (hatPE == 1) {
-        # all fires in polygon zone escaped
-        p0 <- 1
-      } else {
-        res <- optimise(escapeProbDelta,
-                        interval = c(hatP0(hatPE, neighbours),
-                                     hatP0(hatPE, floor(sum(w * 0:8)))),
-                        tol = 1e-4,
-                        w = w,
-                        hatPE = hatPE)
-        p0 <- res[["minimum"]]
-        #It is almost obvious that the true minimum must occurr within the interval specified in the
-        #call to optimise, but I have not proved it, nor am I certain that the function being minimised is
-        #monotone.
-      }
-      #don't forget to scale by number of years, as well, if your timestep is ever != 1yr
-      rate <- regime$ignitionRate * cellSize #fireRegimeModel and this module must agree on
-      #an annual time step. How to test / enforce?
-      pIgnition <- rate #approximate Poisson arrivals as a Bernoulli process at cell level.
-      #for Poisson rate << 1, the expected values are the same, partially accounting
-      #for multiple arrivals within years. Formerly, I used a poorer approximation
-      #where 1-p = P[x==0 | lambda=rate] (Armstrong and Cumming 2003).
+  sim$fireRegimePolys  <- left_join(sim$fireRegimePolys, scfmDriverPars, by = "PolyID")
 
-      return(list(pSpread = pJmp,
-                  p0 = p0,
-                  naiveP0 = hatP0(regime$pEscape, 8),
-                  pIgnition = pIgnition,
-                  maxBurnCells = maxBurnCells,
-                  calibModel = calibModel,
-                  uniroot.Res = Res
-      )
-      )
-    })
-
-  names(sim$scfmDriverPars) <- names(sim$scfmRegimePars) #replicate the polygon labels
-
-  return(invisible(sim))
+ return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using random polygon in Alberta")
-    #TODO: remove LandR once this is confirmed working
-    studyArea <- LandR::randomStudyArea(size = 1e4*1e6, seed = 23654) #10,000 km * 1000^2m^2
-    sim$studyArea <- studyArea
+  dPath <- asPath(inputPath(sim), 1)
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    ## it is impossible to get this behaviour correct without also testing for
+    ## rasterToMatch, studyArea, and then supplying artificial regime and landcover
+    ## attributes anyway.
+    stop("fireRegimePolys unsupplied - please run scfmLandcoverInit and scfmRegime")
   }
+
+  if (!suppliedElsewhere("flammableMapCalibration", sim)) {
+    bufferedPoly <- st_buffer(sim$fireRegimePolys, (abs(P(sim)$buffDist)))
+    bufferedPoly <- fixErrors(bufferedPoly)
+    landscapeLCC <- prepInputs_NTEMS_LCC_FAO(
+      year = P(sim)$dataYear,
+      destinationPath = dPath,
+      projectTo = sim$rasterToMatch,
+      cropTo = bufferedPoly,
+      maskTo = bufferedPoly)
+    if (!identical(res(landscapeLCC), res(sim$rasterToMatch))) {
+      #warning is about identical crs
+      landscapeLCC <- suppressWarnings(expr = eval(
+        #we want the resolution of rasterToMatch, but not the extent
+        Cache(project,
+              landscapeLCC,
+              method = "near",
+              res = res(sim$rasterToMatch),
+              y = crs(bufferedPoly),
+              userTags = c("scfmDriver", "projectBufferedLCC"))
+      ))
+    }
+
+    landscapeLCC <- LandR::asInt(landscapeLCC)
+
+    sim$flammableMapCalibration <- defineFlammable(landscapeLCC,
+                                             nonFlammClasses = c(20, 31, 32, 33))
+  }
+
   return(invisible(sim))
-}
-
-#Buffers polygon, generates index raster
-genSimLand <- function(coreLand, buffDist) {
-  tempDir <- tempdir()
-  #Buffer study Area. #rbind had occasional errors before makeUniqueIDs = TRUE
-  #TODO: Investigate why some polygons fail
-  bStudyArea <- buffer(coreLand, buffDist) %>%
-    rgeos::gDifference(., spgeom2 = coreLand, byid = FALSE)
-  polyLandscape <- sp::rbind.SpatialPolygons(coreLand, bStudyArea, makeUniqueIDs = TRUE) #
-  polyLandscape$zone <- c("core", "buffer")
-  polyLandscape$Value <- c(1, 0)
-
-  #Generate flammability raster
-  landscapeLCC <- prepInputsLCC(destinationPath = tempDir, studyArea = polyLandscape, useSAcrs = TRUE)
-  landscapeFlam <- defineFlammable(landscapeLCC)
-  #Generate landscape Index raster
-  polySF <- sf::st_as_sf(polyLandscape)
-  landscapeIndex <- fasterize::fasterize(polySF, landscapeLCC, "Value")
-
-  calibrationLandscape <- list(polyLandscape, landscapeIndex, landscapeLCC, landscapeFlam)
-  names(calibrationLandscape) <- c("studyArea", "landscapeIndex", "lcc", "flammableMap")
-  return(calibrationLandscape)
-}
-
-#dT <- data.frame("igLoc" = index, p0 = 0.1, p = 0.23)
-
-#this version of makeDesign is the simplest possible...
-
-makeDesign <- function(indices, targetN, pEscape = 0.1, pmin, pmax, q = 1) {
-  #TODO: Fix makeDesign to work if polygons have no fires
-  sampleSize <- round(targetN / pEscape)
-  cellSample <- sample(indices, sampleSize, replace = TRUE)
-  pVec <- runif(sampleSize)^q
-  pVec <- pVec * (pmax - pmin) + pmin
-
-  #derive p0 from escapeProb
-  #steal code from scfmRegime and friends.
-
-  p0 <- 1 - (1 - pEscape)^0.125  #assume 8 neighbours
-  #the preceding approximation seems inadequate in practice.
-  #when implemented in scfmDriver, make use of correct derivation of p0 from pEscape based on L
-  Temp <- data.frame("igLoc" = cellSample, "p0" = p0, "p" = pVec)
-  return(Temp)
-}
-
-executeDesign <- function(L, dT, maxCells) {
-  # extract elements of dT into a three column matrix where column 1,2,3 = igLoc, p0, p
-
-  iter <- 0
-  f <- function(x, L, ProbRas) { ## L, P are rasters, passed by reference
-    iter <<- iter + 1
-    currentTime <- Sys.time()
-    diffTime <- currentTime - startTime
-    units(diffTime) <- "secs"
-    timePer <- as.numeric(diffTime) / iter
-    timeLeft <- (NROW(dT) - iter) * timePer
-    timeLeft <- round(as.difftime(timeLeft, units = "mins")/60, 1)
-    nrowDT <- NROW(dT)
-    if (iter %% 200 == 0)
-      message("  ", iter, " of ", nrowDT, " total; estimated time remaining: ",
-              format(timeLeft, units = "mins"))
-
-
-    threadsDT <- getDTthreads()
-    setDTthreads(1)
-    on.exit({setDTthreads(threadsDT)}, add = TRUE)
-
-    i <- x[1]
-    p0 <- x[2]
-    p <- x[3]
-
-    nbrs <- as.vector(SpaDES.tools::adj(x = L, i, pairs = FALSE, directions = 8))
-    #nbrs < nbrs[which(L[nbrs] == 1)] #or this?
-    nbrs <- nbrs[L[nbrs] == 1] #only flammable neighbours please. also, verify NAs excluded.
-    #nbrs is a vector of flammable neighbours.
-    nn <- length(nbrs)
-    res <- c(nn, 0, 1)
-    if (nn == 0)
-      return(res) #really defaults
-    #P is still flammableMap.
-
-    ProbRas[nbrs] <- p0
-    #Now it is 1, 0, p0, and NA
-    spreadState0 <- SpaDES.tools::spread2(landscape = L,
-                                          start = i,
-                                          iterations = 1,
-                                          spreadProb = ProbRas,
-                                          asRaster = FALSE)
-
-    tmp <- nrow(spreadState0)
-    res[2:3] <- c(tmp - 1,tmp)
-    if (tmp == 1) # the fire did not spread
-      return(res)
-    ProbRas[] <- L[]*p
-    spreadState1 <- SpaDES.tools::spread2(landscape = L,
-                                          start = spreadState0,
-                                          spreadProb = ProbRas,
-                                          asRaster = FALSE,
-                                          maxSize = maxCells)
-    #calculate return data
-    res[3] <- nrow(spreadState1)
-    return(res)
-  }
-
-  probRas <- raster(L)
-  probRas[] <- L[]
-
-  startTime <- Sys.time()
-  res <- Cache(apply, dT, 1, f, L, ProbRas = probRas) # Parallelizing isn't efficient here. ~TM 15Feb19
-  res <- data.frame("nNeighbours" = res[1,], "initSpreadEvents" = res[2,], "finalSize" = res[3,])
-
-  #cbind dT and res, then select the columns we need
-  x <- cbind(dT,res)
-
-  return(x)
 }

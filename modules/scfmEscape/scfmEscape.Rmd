@@ -1,87 +1,93 @@
 ---
-title: "scfmEscape"
-author: "Module Author"
-date: "17 December 2015"
-output: pdf_document
+title: "scfmEscape Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmEscape', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_scfmEscape.bib
+link-citations: true
+always_allow_html: true
 ---
 
-# Overview
+# scfmEscape Module
 
-Provide an overview of what the module does / how to use the module.
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:scfmEscape) *scfmEscape*
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+```{r setup-scfmEscape, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
 
-## RMarkdown
+dir.create("figures", showWarnings = FALSE)
 
-RMarkdown syntax allows R code, outputs, and figures to be rendered in the documentation.
-
-For help writing in RMarkdown, see http://rmarkdown.rstudio.com/.
-
-# Usage
-
-```{r module_usage}
-library(SpaDES)
-
-inputDir <- file.path(tempdir(), "inputs") %>% checkPath(create = TRUE)
-outputDir <- file.path(tempdir(), "outputs")
-times <- list(start = 0, end = 10)
-parameters <- list(
-  .globals = list(burnStats = "nPixelsBurned"),
-  .progress = list(type = "text", interval = 1),
-  cropReprojectLccAge = list(useCache = TRUE),
-  forestSuccessionBeacons = list(
-    returnInterval = 1, startTime = times$start,
-    .plotInitialTime = times$start, .plotInterval = 1),
-  forestAge = list(
-    returnInterval = 1, startTime = times$start+0.5,
-    .plotInitialTime = times$start, .plotInterval = 1),
-  fireSpreadLcc = list(
-    nFires = 3, its = 1e6, drought = 1.2, persistprob = 0, returnInterval = 1,
-    startTime = times$start+1, .plotInitialTime = times$start, .plotInterval = 1),
-  caribouMovementLcc = list(
-    N = 1e3, moveInterval = 1, startTime = times$start+1, torus = TRUE,
-    glmInitialTime = NA_real_, .plotInitialTime = times$start, .plotInterval = 1)
-)
-modules <- list("scfmEscape")
-  objects <- list()
-  paths <- list(
-    cachePath = file.path(outputDir, "cache"),
-    modulePath = file.path(".."),
-    inputPath = inputDir,
-    outputPath = outputDir
-)
-
-mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = paths)
-
-spades(mySim)
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = 'wb')
 ```
 
-# Events
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
 
-Describe what happens for each event type.
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
 
-## Plotting
+#### Authors:
 
-Write what is plotted.
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmEscape", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
 
-## Saving
+## Module Overview
 
-Write what is saved.
+### Module summary
 
-# Data dependencies
+'Escapes' fire(s) from an initial set of loci returned by `scfmIgnition` and prepares the results for use by `scfmSpread`.
 
-## Input data
+### Module inputs and parameters
 
-How to obtain input data, and a description of the data required by the module.
+Table \@ref(tab:moduleInputs-scfmEscape) shows the full list of module inputs.
 
-## Output data
+```{r moduleInputs-scfmEscape, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("scfmEscape", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:scfmEscape) input objects and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
 
-Description of the module outputs.
+Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameters.
 
-# Links to other modules
+```{r moduleParams-scfmEscape, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("scfmEscape", "..")
+knitr::kable(df_params, caption = "List of (ref:scfmEscape) parameters and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
 
-Describe any anticipated linkages to other modules.
+### Module outputs
 
+Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmEscape)).
 
+```{r moduleOutputs-scfmEscape, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("scfmEscape", "..")
+knitr::kable(df_outputs, caption = "List of (ref:scfmEscape) outputs and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDriver`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmLandcoverInit`
+- `scfmRegime`
+- `scfmSpread`
+
+### Getting help
+
+<https://github.com/PredictiveEcology/scfm/issues>

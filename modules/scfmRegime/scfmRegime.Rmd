@@ -1,67 +1,93 @@
 ---
-title: "scfmRegime"
-author: "Module Author"
-date: "03 August 2015"
-output: pdf_document
+title: "scfmRegime Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmRegime', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_scfmRegime.bib
+link-citations: true
+always_allow_html: true
 ---
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed.
+# scfmRegime Module
 
-Parameter _empiricalMaxSizeFactor_ is used to derive max from mean fire size when the statistical estimator fails; 
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:scfmRegime) *scfmRegime*
 
-Hi Steve,
+```{r setup-scfmRegime, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
 
-I did a bit more digging. I mixed the numbers up. The 1.3 value was calculated from the hexagons (10,000km^2, n=484), and the 1.2 value from the ecoregions (n=62). 
-## Plotting
+dir.create("figures", showWarnings = FALSE)
 
-Write what is plotted.
-
-## Saving
-
-Write what is saved.
-
-## Input data
-
-## Output data
-
-## Anticipated linkages to other modules
-
-## Other Markdown help
-For help writing in RMarkdown, see http://rmarkdown.rstudio.com/. We have also included
-The `html_vignette` template includes a basic CSS theme. To override this theme you can specify your own CSS in the document metadata as follows:
-
-output:
-rmarkdown::html_vignette:
-css: mystyles.css
-
-## Figures
-
-The figure sizes have been customised so that you can easily put two images side-by-side.
-
-```{r, fig.show='hold'}
-plot(1:10)
-plot(10:1)
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = 'wb')
 ```
 
-You can enable figure captions by `fig_caption: yes` in YAML:
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
 
-output:
-rmarkdown::html_vignette:
-fig_caption: yes
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
 
-Then you can use the chunk option `fig.cap = "Your figure caption."` in **knitr**.
+#### Authors:
 
-## More Examples
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmRegime", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
 
-You can write math expressions, e.g. $Y = X\beta + \epsilon$, footnotes^[A footnote here.], and tables, e.g. using `knitr::kable()`.
+## Module Overview
 
-```{r, echo=FALSE, results='asis'}
-knitr::kable(head(mtcars, 10))
+### Module summary
+
+Estimates fire regime parameters for a given landscape (`studyArea`).
+
+### Module inputs and parameters
+
+Table \@ref(tab:moduleInputs-scfmRegime) shows the full list of module inputs.
+
+```{r moduleInputs-scfmRegime, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("scfmRegime", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:scfmRegime) input objects and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
 ```
 
-Also a quote using `>`:
+Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameters.
 
-> "He who gives up [code] safety for [code] speed deserves neither."
-([via](https://twitter.com/hadleywickham/status/504368538874703872))
+```{r moduleParams-scfmRegime, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("scfmRegime", "..")
+knitr::kable(df_params, caption = "List of (ref:scfmRegime) parameters and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
 
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmRegime)).
+
+```{r moduleOutputs-scfmRegime, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("scfmRegime", "..")
+knitr::kable(df_outputs, caption = "List of (ref:scfmRegime) outputs and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDriver`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmLandcoverInit`
+- `scfmRegime`
+- `scfmSpread`
+
+### Getting help
+
+<https://github.com/PredictiveEcology/scfm/issues>

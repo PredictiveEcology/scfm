@@ -1,0 +1,110 @@
+---
+title: "scfmDiagnostics Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmDiagnostics', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_scfmDiagnostics.bib
+citation-style: citations/ecology-letters.csl
+link-citations: true
+always_allow_html: true
+---
+
+# scfmDiagnostics Module
+
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:scfmDiagnostics) *scfmDiagnostics*
+
+```{r setup-scfmDiagnostics, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+
+## get citation style
+if (!file.exists("citations/ecology-letters.csl")) {
+  dir.create("citations", showWarnings = FALSE)
+  download.file("https://www.zotero.org/styles/ecology-letters", destfile = "citations/ecology-letters.csl")
+}
+
+if (!require(dplyr)) {
+  install.packages("dplyr")
+  library(dplyr)
+}
+
+dir.create("figures", showWarnings = FALSE)
+
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = 'wb')
+```
+
+[![made-with-Markdown](figures/markdownBadge.png)](http://commonmark.org)
+
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
+
+#### Authors:
+
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmDiagnostics", path = "..")$authors), sep = ", ")`
+<!-- ideally separate authors with new lines, '\n' not working -->
+
+## Module Overview
+
+### Module summary
+
+Produce diagnostic and summary plots for scfm runs.
+Can be run for a single simulation, as part of the main scfm run, or as part of postprocessing.
+Inputs objects will be loaded from saved simulation files when in 'multi' mode.
+                      
+### Module inputs and parameters
+
+Table \@ref(tab:moduleInputs-scfmDiagnostics) shows the full list of module inputs.
+
+```{r moduleInputs-scfmDiagnostics, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("scfmDiagnostics", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:scfmDiagnostics) input objects and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmDiagnostics))
+
+
+```{r moduleParams-scfmDiagnostics, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("scfmDiagnostics", "..")
+knitr::kable(df_params, caption = "List of (ref:scfmDiagnostics) parameters and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Events
+
+A single event `diagnosticPlots` produces `ggplot`s (and saves these to disk).
+
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDiagnostics)).
+
+```{r moduleOutputs-scfmDiagnostics, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("scfmDiagnostics", "..")
+knitr::kable(df_outputs, caption = "List of (ref:scfmDiagnostics) outputs and their description.") %>%
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDataPrep`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmSpread`
+
+### Getting help
+
+<https://github.com/PredictiveEcology/scfm/issues>

@@ -1,92 +1,170 @@
 ---
 title: "scfm"
-author: "Ian"
-date: "December 18, 2018"
-output: pdf_document
+author: "Ian Eddy and Alex Chubaty"
+date: "Updated July 2024"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography:
+    - modules/ageModule/citations/references_ageModule.bib
+    - modules/scfmDataPrep/citations/references_scfmDataPrep.bib
+    - modules/scfmDiagnostics/citations/references_scfmDiagnostics.bib
+    - modules/scfmEscape/citations/references_scfmEscape
+    - modules/scfmIgnition/citations/references_scfmIgnition.bib
+    - modules/scfmSpread/citations/references_scfmSpread.bib
+link-citations: true
+always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  echo = TRUE,
+  eval = FALSE
+)
 ```
+
+## Usage
+
+The repository is the `scfm` parent module, and its children are the modules in `modules/`.
+`PredictiveEcology/scfm@v2.1.0` in `SpaDES.project::setupProject(modules = ...)` loads
+`scfmDataPrep`, `scfmIgnition`, `scfmEscape`, `scfmSpread` and `scfmDiagnostics` from that
+release (SpaDES.project >= 1.2.0.9015). A single module can still be loaded on its
+own, e.g. `PredictiveEcology/scfm@v2.1.0/modules/scfmSpread`.
+
 ## Overview
 
-Fire is modelled over a grid of raster cells (pixels) and is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread. The original fire model is described by Cumming et al. (1998), and more accessibly in Armstrong and Cumming (2003), and was recently implemented as a collection of SpaDES modules by Cumming, McIntire, and Eddy (in prep). Each fire module corresponds to one of the processes being modelled). The Ignition stage determines if a fire actually starts in a particular grid cell in a given model time step. The Escape stage models the effect of fire suppression, or other ecological or sampling effects that alter the lower end of the fire size distribution. This is simulated in the model by determining a probability that a fire stays within the cell of origin, and accounts for lakes and other non-flammable geographic features. The Spread stage simulates fire growth, using a spread parameter that determines the probability of a fire spreading across a cell boundary, from a burning cell into an unburnt neighbour.
+Fire is modelled over a grid of raster cells (pixels) and is treated as a three stage stochastic process of ignition, escape from the cell of origin, and subsequent spread. The original fire model is described by Cumming et al. (1998), and more accessibly in Armstrong and Cumming (2003), and was recently implemented as a collection of SpaDES modules by Cumming, McIntire, and Eddy (in prep). Each fire module corresponds to one of the processes being modelled:
+1) The Ignition stage (`scfmIgintion`) determines if a fire actually starts in a particular grid cell in a given model time step.
+2) The Escape stage (`scfmEscape`) models the effect of fire suppression, or other ecological or sampling effects that alter the lower end of the fire size distribution. This is simulated in the model by determining a probability that a fire stays within the cell of origin, and accounts for lakes and other non-flammable geographic features.
+3) The Spread stage (`scfmSpread`) simulates fire growth, using a spread parameter that determines the probability of a fire spreading across a cell boundary, from a burning cell into an unburned neighbour.
 
-In addition to these core fire modules, the model also makes use of several support modules involved in parameter estimation and model calibration. Fire regime parameters are estimated from historic fire data using the Canadian National Fire Database (Canadian Forest Service, n.d.) in order to reproduce realistic fire patterns. Parameterization and calibration of the model can be done separately for each geographic region used in the model (e.g., by ecoregion), allowing finer scale parameterization across large geographic areas. Individual spread parameters are determined in each geographic region following a four-part process. First, the region is buffered by a set distance and a flammability map is generated for the buffered region using the 2005 Land Cover Map of Canada (Latifovic et al., 2005). Next, fires are repeatedly simulated on the landscape across a range of spread probabilities. These fires cannot start in the buffered area, but may spread to and from the buffer. This reduces the influence of edge effects in determining mean fire size. Then the spread probabilities and resulting fire sizes are fit with a shape-constrained additive model (SCAM) (Pya and Wood, 2015). The SCAM is monotonic to ensure fire size increases for any incremental increase in spread probability. Lastly, an optimization algorithm is used to predict the spread probability that will generate the estimated mean fire size for the region.
+In addition to these core fire modules, the model also makes use of two other modules: 
+1) `scfmDataPrep` is used for data preparation, parameter estimation, and model calibration.
+2) `scfmDiagnostics` is used for visualization of model outputs.  
 
-This version of the model considers lightning-caused fires only. Fires are started by applying a random number sequence to each cell independently. Fires are extinguished when no further spread events (jumps) occur. After a fire, forested cells are reset to age 1. Thus, fires are presumed to be stand initiating. These processes result in irregular patches of variously sized burns. The locations of fires are not constant across simulations because of stochastic patterns of fire ignition and growth. The model tracks the sizes and compositions of each burn. Fire sizes follow a probability distribution largely determined by the spread parameter(s). The current implementation does not account for differences in vegetation type with respect to fire spread (e.g., flammability), nor is it climate sensitive. The more experimental fireSense model (Marchal, Cumming, and McIntire 2017), recently implemented in SpaDES, could be used in future updates to explicitly account for climate and vegetation impacts on fires (in prep).
+Fire regime parameters are estimated from historic fire data using the Canadian National Fire Database (Canadian Forest Service, n.d.) in order to reproduce realistic fire patterns. Parameterization and calibration of the model is done separately for each geographic region used in the model (e.g., by ecoregion), allowing finer scale parameterization across large geographic areas. Individual ignition, escape, and spread parameters are determined in each geographic region following a four-part process.
+
+First, a flammability map is generated for the buffered region, and a count of flammable neighbouring pixels is made for every flammable pixel.
+Next, the ignition and escape rates, as well as the mean and maximum fire size, are estimated in each fire regime. These are used in combination with the flammability statistics to calculate the fire return interval. 
+Next, fires are repeatedly simulated on the buffered landscape across a range of spread probabilities. These fires cannot start in the buffered area, but may spread to and from the buffer. This reduces the influence of edge effects in determining mean fire size.
+Then the spread probabilities and resulting fire sizes are fit with a shape-constrained additive model (SCAM) (Pya and Wood, 2015). The SCAM is monotonic to ensure fire size increases for any incremental increase in spread probability.
+Lastly, an optimization algorithm is used to predict the spread probability that will generate the estimated mean fire size for the region.
+
+By default, the model considers naturally-caused (e.g., lightning-caused) fires only, but can be run using fire data from both naturally-caused fires and those initiated by human activity. Fires are started by applying a random number sequence to each cell independently. Fires are extinguished when no further spread events (jumps) occur. These processes result in irregular patches of variously sized burns. The locations of fires are not constant across simulations because of stochastic patterns of fire ignition and spread.
+
+The model tracks the sizes and initial locations of each burn `(burnDT)`, the current burn (`rstCurrentBurn`), the cumulative burn (`burnMap`), and the time since last burn (`timeSinceDisturbance`). Fire sizes follow a probability distribution largely determined by the spread parameter(s). The simulated mean fire size, number of fires, and fire return interval within a fire regime polygon should all match the historical data, however the distribution of fire sizes is unlikely to correspond well with the negative binomial  distribution commonly seen in historical fire datasets. This may be a result of some simplifications, including differences in vegetation type with respect to fire spread (e.g., flammability), fuel consumption, and climatic influences, among others. However, the `fireSense` model (Marchal, Cumming, and McIntire 2017), recently implemented in `SpaDES`, could be used in future updates to explicitly account for climate and vegetation impacts on fires (in prep).
+
+An additional module, `scfmDiagnostics`, produces diagnostic and summary plots for scfm runs.
+It can be run for a single simulation, as part of the main scfm run, or to summarize multiple completed runs as part of postprocessing.
+
+## Technical overview
+
+The calibration module of `scfm` is flexible and capable of accommodating various levels of *a priori* user knowledge regarding fire parameters.
+It can also account for calibration areas that are distinct from simulation areas (provided the simulation area is wholly contained by the calibration area).
+The minimum needed objects are a study area polygon (`studyArea`) and a template raster that will determine the spatial resolution at which fire is simulated (`rasterToMatch`).
+However, if the simulation borders are determined by some factor other than fire ecology (e.g., administrative boundaries), each fire regime area may not possess sufficient historical fire data to produce accurate parameterization.
+Two alternative approaches are outlined below.
+Users are recommended to identify the scenario that best fits their use case, and supply the corresponding objects, rather than supplying default objects arbitrarily. 
+
+### Scenario 1: no prior knowledge of fire regimes
+
+In this scenario, some or all of the fire regime polygons (`fireRegimePolys`) may be too geographically limited to include historical fire data sufficient for calibration.
+The suggested workflow is to buffer the study area by an appropriate amount to create a larger area for parameterization (`studyAreaCalibration`).
+In this case, landscape flammability metrics are calculated for both the larger area (`fireRegimePolysCalibration`) and core area (`fireRegimePolys`), fire characteristics are calculated using the larger region, but the spread probability is calibrated solely for the core region. This ensures the simulated fires achieve the correct mean fire size in each fire regime polygon given the parameter values of their larger area.  
+
+While the default `fireRegimePolys` object is created from the ecoregions of Canada, for convenience there are various other options available for a user to select without needing to supply these themselves, including Canadian ecozones, ecoprovinces, ecodistricts, the Fire Regime Units and Fire Regime Types outlined by Erni et al in dx.doi.org/10.1139/cjfr-2019-0191, and if in British Columbia with the `bcdata` package installed, the BC BEC zones, subzones, and British Columbian "Natural Disturbance Zones". These can be set with the `fireRegimePolysType` parameter in `scfmDataPrep`. 
+
+**Additional objects needed:**
+
+- `studyAreaCalibration` and `rasterToMatchCalibration`;
+- if `flammableMap` or `fireRegimePolys` is supplied, the corresponding "larger" counterpart should also be supplied (`flammableMapCalibration` and `fireRegimePolysCalibration`, respectively). 
+
+### Scenario 2: *a priori* knowledge of fire regimes
+
+In this scenario, a user may have *a priori* knowledge of the maximum fire size and/or the fire return interval for one or more fire regime areas.
+These parameters can be passed to override the estimate provided by `scfmDataPrep`.
+
+**Additional objects needed:**
+
+- `fireRegimePolys`/ `fireRegimePolysCalibration`
+
+**Additional parameters needed:**
+
+- `scfmDataPrep` requires `targetBurnRate` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known fire return interval (i.e., $1 / fireReturnInterval$);
+- `scfmDataPrep` also requires `targetMaxFireSize` (a named vector, with names corresponding to the IDs in `fireRegimePolys$PolyID`) for a known maximum fire size.
+
+## Technical notes
+
+1. the parameter most likely to be underestimated is the maximum fire size (`maxFireSize`).
+This is not typically very consequential, as simulated fires are unlikely to reach the maximum size unless it is drastically underestimated. The suggested solution is to pass pre-defined maximums to `scfmDataPrep` (`targetMaxFireSize`).
+The parameterized maximum fire size, in hectares, can be verified in `sim$fireRegimePolys$<PolyID>emfs_ha`. 
+
+2. 'Sliver polygons', i.e., polygons that are smaller than the sliver threshold parameter (default $100 km^2$), are joined with their nearest non-sliver neighbour.
+This prevents any areas that have too little fire data from being *de facto* nonflammable.
+If a larger parameterization area is supplied (`fireRegimePolysCalibration`), slivers are identified and merged only in the larger area.
+The simulation fire regimes are derived from these, after the slivers are merged. As a result, supplying `fireRegimePolys` is unnecessary when `fireRegimePolysCalibration` is also supplied, as the former is overwritten by the latter.
 
 ## References
-Armstrong, Glen W, and Steven G Cumming. 2003. “Estimating the Cost of Land Base Changes Due to Wildfire Using Shadow Prices.” Forest Science 49 (5): 719–30. https://doi.org/10.1093/forestscience/49.5.719.
-Cumming, Steve G, D Demarchi, and C Walters. 1998. “A Grid-Based Spatial Model of Forest Dynamics Applied to the Boreal Mixedwood Region.” Working Paper 1998–8. Sustainable Forest Management Network. https://doi.org/10.7939/R35N33.
-Latifovic, Rasim and Darren Pouliot, 2005. "Multi-temporal land cover mapping for Canada: Methodology and Products," Canadian Journal of Remote Sensing, Vol. 31, no. 5, pp. 347-363.
-Marchal, Jean, Steve G Cumming, and Eliot J B McIntire. 2017. “Land Cover, More than Monthly Fire Weather, Drives Fire-Size Distribution in Southern Québec Forests: Implications for Fire Risk Management.” PLoS ONE 12 (6): 1–17. https://doi.org/10.1371/journal.pone.0179294.
-Pya, Natalya, and Simon N Wood, 2015. "Shape constrained additive models," Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
 
-```{r load-SpaDES, eval=TRUE}
-library(magrittr)
-library(raster)
-library(SpaDES)
-```
+- Armstrong, G W, and S G Cumming. 2003. "Estimating the Cost of Land Base Changes Due to Wildfire Using Shadow Prices." Forest Science 49 (5): 719–30. <https://doi.org/10.1093/forestscience/49.5.719>.
+- Cumming, S G, D Demarchi, and C Walters. 1998. "A Grid-Based Spatial Model of Forest Dynamics Applied to the Boreal Mixedwood Region." Working Paper 1998–8. Sustainable Forest Management Network. <https://doi.org/10.7939/R35N33>.
+- Latifovic, R, Pouliot, D, Olthof, I. "Circa 2010 Land Cover of Canada: Local Optimization Methodology and Product Development." Remote Sens. 2017, 9, 1098. <https://doi.org/10.3390/rs9111098>.
+- Marchal, J, S G Cumming, and E J B McIntire. 2017. "Land Cover, More than Monthly Fire Weather, Drives Fire-Size Distribution in Southern Québec Forests: Implications for Fire Risk Management." PLoS ONE 12 (6): 1–17. <https://doi.org/10.1371/journal.pone.0179294>.
+- Pya, N, and S N Wood. 2015. "Shape constrained additive models." Statistics and Computing, Vol. 25, Iss. 3, pp 543-559. 
+
+\newpage
 
 ## Usage example
 
-```{r module usage example, eval = FALSE}
-cloudFolderID <- "https://drive.google.com/open?id=1PoEkOkg_ixnAdDqqTQcun77nUvkEHDc0"
+```{r load-SpaDES, eval = FALSE}
+library(Require)
 
-#Parameters
+Require(c("data.table", "ggplot2",
+          "PredictiveEcology/LandR@development",
+          "magrittr", "raster", "SpaDES.core", "sf"))
+```
+
+```{r module usage example, eval = FALSE}
+# Parameters
 timeunit <- "year"
-times <- list(start = 0, end = 20)
-defaultInterval <- 1.0
-defaultPlotInterval <- 1.0
+times <- list(start = 1, end = 250)
+defaultPlotInterval <- 50
 defaultInitialSaveTime <- NA #don't be saving nuffink
 
+globCache <- ".inputObjects"  #don't cache the init event - it is too prone to false positives
+
 parameters <- list(
-  .progress = list(type = "text", interval = 1),
-    scfmLandcoverInit = list(
-  .plotInitialTime = times$start,
-  .plotInterval = defaultPlotInterval,
-  .saveInitialTime = defaultInitialSaveTime,
-  .saveInterval = defaultInterval),
-  ageModule = list( #age is really time since fire, regardless of landcover
-    initialAge = 100,
-    maxAge = 200,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
+  scfmDataPrep = list(
+    sliverThreshold = 1e8, 
+    targetN = 1500, 
+    fireCause = "N"), #polygons <100 km2 are merged with closest non-sliver neighbour
   scfmIgnition = list(
-    pIgnition = 0.0001,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
+    .useCache = globCache
+  ),
   scfmEscape = list(
-    p0 = 0.05,
-    returnInterval = defaultInterval,
-    startTime = times$start,
-    .plotInitialTime = NA,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
+    .useCache = globCache
+  ),
   scfmSpread = list(
-    pSpread = 0.235,
-    returnInterval = defaultInterval,
-    startTime = times$start,
+    .useCache = globCache,
     .plotInitialTime = times$start,
-    .plotInterval = defaultPlotInterval,
-    .saveInitialTime = defaultInitialSaveTime,
-    .saveInterval = defaultInterval),
-  scfmRegime = list(fireCause=c("L", "H")),
-  scfmDriver = list(targetN = 1000) #this is an important parameter.
-  #increase targetN for more robust estimates, longer run-time 
+    .plotInterval = defaultPlotInterval)
+) 
+
+
+modules <- list(
+  "scfmDataPrep",
+  "scfmIgnition", "scfmEscape",
+  "scfmSpread", "scfmDiagnostics"
+  , "ageModule"
 )
 
-modules <- list("group_scfm")
 
 #Paths
 paths <- list(
@@ -95,78 +173,57 @@ paths <- list(
   inputPath = file.path("inputs"),
   outputPath = file.path("outputs")
 )
-#RasterToMatch:
 #if you supply studyArea you should supply rtm to make sure the crs are identical. 
 
-#if run with no studyArea, the default is a small area in southwest Alberta
+targetCRS <- paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95 +x_0=0 +y_0=0",
+                       "+datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+sa <- terra::vect(cbind(-1209980, 7586865), crs = targetCRS)
+studyArea <- LandR::randomStudyArea(size = 10000 * 100 * 30000, center = sa, seed = 1001)
+
+studyAreaCalibration <- buffer(studyArea, 50000)
+
+rasterToMatchCalibration <- rast(studyAreaCalibration, res = c(250, 250), vals = 1) |>
+  mask(mask = studyAreaCalibration)
+rasterToMatch <- postProcess(rasterToMatchCalibration, studyArea = studyArea)
+
+#if run with no studyArea, the default is a small area in southwest Alberta with very few fires
 objects <- list(
-  "cloudFolderID" = cloudFolderID
-  # studyArea = tempStudyArea,
-  # rasterToMatch = rtm
-  )
+  studyArea = studyArea,
+  studyAreaCalibration = studyAreaCalibration,
+  rasterToMatch = rasterToMatch,
+  fireRegimePolysLarge = frpl,
+  rasterToMatchCalibration = rasterToMatchCalibration
+)
 
 #Run module
 #The calibration process may take hours (it's cached)
 options("reproducible.cachePath" = paths$cachePath) 
 options("reproducible.useMemoise" = FALSE)
-mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects, paths = paths)
 
-dev()
-clearPlot()
-set.seed(23657)
-
-outSim <- SpaDES.core::spades(mySim, progress = FALSE, debug = TRUE)
+outSim <- simInitAndSpades(times = times, 
+                           params = parameters, 
+                           modules = modules,
+                           objects = objects, 
+                           paths = paths)
 ```
 
 ```{r module evaluate module output, eval = FALSE}
-#for comparing parameters of interest
-comparePredictions <- function(polyList, simList) {
-  out <- lapply(polyList, FUN = function(x, sim = simList) {
-    regime <- sim$scfmRegimePars[[x]]
-    driver <- sim$scfmDriverPars[[x]]
-    landscapeAttr <- sim$landscapeAttr[[x]]
-    firePoints <- outSim$firePoints[outSim$firePoints$PolyID == x,]
-    hist_MAAB <- sum(firePoints$SIZE_HA[firePoints$SIZE_HA > landscapeAttr$cellSize])/
-      (landscapeAttr$burnyArea*(sim@params$scfmRegime$fireEpoch[2] - sim@params$scfmRegime$fireEpoch[1] + 1)) * 100
-    #This is a long way of saying, sum of fires/ (flammable landscape * fire epoch )
-    #hist_mfs will be NaN if there were no fires larger than one pixel
-    pSpread <- driver$pSpread 
-    burnSum <- sim$burnSummary[sim$burnSummary$polyID == x,]
-    burnSum$N <- as.numeric(burnSum$N)
-    burnSum$areaBurned <- as.numeric(burnSum$areaBurned)
-    burnSum <- burnSum[burnSum$N > 1]
-    mod_MAAB <- sum(burnSum$areaBurned)/(landscapeAttr$burnyArea * (times(sim)$end - times(sim)$start)) * 100
-    
-    pred <- data.frame("PolyId" = x, #Polygon ID
-                       "histMeanSize" = regime$xBar, #The predicted (empirical) mean size of fires
-                       "modMeanSize" = mean(burnSum$areaBurned), #The modeled mean size of fires
-                       "pSpread" = pSpread, # The spread probability estimated from the SCAM model
-                       "hist_MAAB" = hist_MAAB,#The empirical mean annual area burned (from NFDB 1970-2000)
-                       "mod_MAAB" = mod_MAAB) #The modelled mean annual area burned
-    return(pred)
-  })
-  return(out)
-}
+## NOTE: these plots are generated as part of the scfmDiagnostics module
 
-df <- comparePredictions(names(outSim$scfmDriverPars), outSim) %>%
-  rbindlist(.)
-#Some useful plots
-breaks = c(0.20, 0.21, 0.22, 0.23, 0.24, 0.25)
-ggplot(df, aes(x = histMeanSize, y = modMeanSize, color = pSpread)) +
-  geom_point(aes(histMeanSize, modMeanSize)) + 
-  scale_color_gradient(low = "yellow", high = "red")+
-  labs(y = "modeled mean fire size size", x = "historical mean size fire size") +
-  theme_minimal() + 
-  #geom_text(aes(label = PolyId), hjust = 0, vjust = 0)
-  geom_abline(slope = 1)
+dt <- scfmutils::comparePredictions_summaryDT(outSim)
+  
+## Some useful plots
+gg_mfs <- scfmutils::comparePredictions_meanFireSize(dt)
 
+# removed MAAB as diagnostic plot because it was derived from fire points incorrectly when SAL is supplied
+# MAAB can still be calculated manually if a user desires
 
-ggplot(df, aes(x = hist_MAAB, y = mod_MAAB, col = pSpread)) +
-  geom_point(aes(hist_MAAB, mod_MAAB)) +
-  labs(y = "model mean annual area burned (%)", x = "empirical mean annual area burned (%)") +
-  scale_color_gradient(low = "yellow", high = "red")+
-  theme_minimal() +  #+ 
-  geom_abline(slope = 1)
-  # xlim(c(0, 8000)) + 
-  # ylim(c(0, 12000)) # + 
+gg_fri <- scfmutils::comparePredictions_fireReturnInterval(dt)
+
+gg_ign <- scfmutils::comparePredictions_annualIgnitions(dt)
+
+gg_frp <- scfmutils::plot_fireRegimePolys(outSim$fireRegimePolys)
+
+clearPlot()
+gridExtra::grid.arrange(gg_frp,  gg_mfs,  gg_fri,  gg_ign, nrow = 2, ncol = 2)
+```

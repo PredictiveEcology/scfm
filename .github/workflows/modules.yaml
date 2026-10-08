@@ -1,0 +1,39 @@
+## Tests and renders each scfm module with the shared PredictiveEcology/actions
+## workflows; `module-dir` tells them where the module is. Replaces the nine
+## hand-written render-module-rmd-<module>.yaml files, which never ran: they watched
+## <module>.R at the repository root and only main/master.
+
+name: modules
+
+on:
+  pull_request:
+    branches: [main, master, development]
+  push:
+    branches: [main, master, development]
+    paths:
+      - .github/workflows/modules.yaml
+      - modules/**
+  workflow_dispatch:
+
+jobs:
+  testthat-module:
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [ageModule, scfmDataPrep, scfmDiagnostics, scfmDriver, scfmEscape, scfmIgnition, scfmLandcoverInit, scfmRegime, scfmSpread]
+    uses: PredictiveEcology/actions/.github/workflows/testthat-module.yaml@main
+    with:
+      module: ${{ matrix.module }}
+      module-dir: modules/${{ matrix.module }}
+
+  render-module-rmd:
+    strategy:
+      fail-fast: false
+      matrix:
+        module: [ageModule, scfmDataPrep, scfmDiagnostics, scfmDriver, scfmEscape, scfmIgnition, scfmLandcoverInit, scfmRegime, scfmSpread]
+    permissions:
+      contents: write
+    uses: PredictiveEcology/actions/.github/workflows/render-module-rmd.yaml@main
+    with:
+      module: ${{ matrix.module }}
+      module-dir: modules/${{ matrix.module }}

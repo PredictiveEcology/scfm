@@ -1,223 +1,232 @@
 defineModule(sim, list(
   name = "scfmRegime",
-  description = "estimates fire regime parameters for BEACONs a la Steve's method",
+  description = paste("Deprecated: use scfmDataPrep, which runs this step (parameter `eventsToPrepare`).",
+    "estimates fire regime parameters for BEACONs à la Steve's method."),
   keywords = c("fire regime", "BEACONs"),
-  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+  authors = c(
+    person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person(c("Alex", "M."), "Chubaty", email = "achubaty@for-cast.ca", role = c("ctb"))
+  ),
   childModules = character(),
-  version = numeric_version("0.1.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(scfmRegime = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list(),
-  documentation = list("README.txt", "scfmRegime.Rmd"),
-  reqdPkgs = list("raster", "reproducible", "sp"),
+  documentation = list("README.md", "scfmRegime.Rmd"), ## same file
+  reqdPkgs = list(
+    "dplyr", "reproducible", "sf", "terra",
+    "PredictiveEcology/scfmutils@development (>= 2.0.1)"
+  ),
+  loadOrder = list(after = c("scfmLandcoverInit"),
+                   before = c("scfmDriver", "scfmIgnition", "scfmEscape", "scfmSpread")),
   parameters = rbind(
-    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10, "scale xMax by this is HD estimator fails "),
-    defineParameter("fireCause", "character", c("L"), NA_character_, NA_character_, "subset of c(H,H-PB,L,Re,U)"),
-    defineParameter("fireEpoch", "numeric", c(1971,2000), NA, NA, "start of normal period")
+    defineParameter("empiricalMaxSizeFactor", "numeric", 1.2, 1, 10,
+                    desc = "scale `xMax` by this if HD estimator fails"),
+    defineParameter("fireCause", "character", c("N"), NA_character_, NA_character_,
+                    desc = "subset of `c('H', 'H-PB', 'N', 'Re', 'U')`"),
+    defineParameter("fireCauseColumnName", "character", "CAUSE", NA, NA,
+                    desc = "Name of the column that has fire cause, consistent with `P(sim)$fireCause`."),
+    defineParameter("fireEpoch", "numeric", c(1971, 2020), NA, NA, "start of normal period"),
+    defineParameter("fireRegimePolysType", "character", "ECOREGION", NA, NA,
+                    paste("Polygon type to use for scfm `fireRegimePolys`:",
+                          "see `?scfmutils::prepInputsFireRegimePolys` for allowed types.")),
+    defineParameter("fireSizeColumnName", "character", "SIZE_HA", NA, NA,
+                    desc = "Name of the column that has fire size"),
+    defineParameter("fireYearColumnName", "character", "YEAR", NA, NA,
+                    desc = "Name of the column that has fire size"),
+    defineParameter("targetBurnRate", "numeric", NA, 0, 1,
+                    desc = paste("a named vector giving the proportional annual area burned of each fire regime polygon.",
+                                 "These override the default estimate of scfm and are used to estimate a new mean",
+                                 "fire size and ignition rate. Names should correspond to `PolyID`.",
+                                 "A partial set of polygons is allowed - missing polys are estimated from data.")),
+    defineParameter("targetMaxFireSize", "numeric", NA, 0, NA,
+                    desc = paste("a named vector giving the estimated max fire size (in $ha$) of each fire regime polygon.",
+                                 "These will override the default estimate of scfm and will be used to estimate",
+                                 "a new spread probability. Names should correspond to `PolyID`.",
+                                 "A partial set of polygons is allowed - missing polys are estimated from data.")),
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
+                    desc = "Internal. Can be names of events or the whole module name to be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame", desc = "Historical fire data in point form. Must contain fields 'CAUSE', 'YEAR', and 'SIZE_HA'",
+    expectsInput("firePoints", "sf",
+                 desc = paste0("Historical fire data in point form. Must contain fields 'CAUSE',
+                               'YEAR', and 'SIZE_HA', or pass the parameters to identify those."),
                  sourceURL = "http://cwfis.cfs.nrcan.gc.ca/downloads/nfdb/fire_pnt/current_version/NFDB_point.zip"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammbility"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "contains landscape attributes for each polygon"),
-    expectsInput(objectName = "studyArea", objectClass = "SpatialPolygonsDataFrame", desc = "",
+    expectsInput("fireRegimePolys", "sf",
+                 desc = paste("Areas to calibrate individual fire regime parameters. Defaults to ecoregions.",
+                              "Must have numeric field 'PolyID' or it will be created for individual polygons.",
+                              "Must be a sf object.")),
+    expectsInput("fireRegimePolysCalibration", "sf",
+                 desc = paste("`sf` polygons object with field 'PolyID' describing unique",
+                              " fire regimes in a larger study area.",
+                              "Not required - but useful if the parameterization region is different",
+                              "from the simulation region.")),
+    expectsInput("rasterToMatch", "SpatRaster",
+                 desc = paste("template raster for raster GIS operations.",
+                              "Must be supplied by user with same CRS as `studyArea`.")),
+    expectsInput("rasterToMatchCalibration", "SpatRaster",
+                 desc = paste("large template raster for raster GIS operations.",
+                              "Must be supplied by user with same CRS as `studyAreaCalibration`.")),
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area. Can be a `SpatVector`.",
                  sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user with same CRS as studyArea")
+    expectsInput("studyAreaCalibration", "sf",
+                 desc = paste("Polygon to use as the parametrisation study area. Can be a `SpatVector`.",
+                              "Note that `studyAreaCalibration` is only used for parameter estimation, and",
+                              "can be larger than the actual study area used for simulations."),
+                 sourceURL = "http://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip")
   ),
   outputObjects = bindrows(
-   createsOutput(objectName = "scfmRegimePars", objectClass = "list", desc =  "Fire regime parameters for each polygon"),
-   createsOutput(objectName = "firePoints", objectClass = "SpatialPointsDataFrame",
-                 desc = "Fire locations. Points outside studyArea are removed")
+    createsOutput("fireRegimePoints", "sf",
+                  desc = "Fire locations. Points outside `studyArea` are removed"),
+    createsOutput("fireRegimePolys", "sf",
+                  desc = "`fireRegimePolys` with fire attributes appended.")
   )
 ))
 
-
-## event types
-#   - type `init` is required for initiliazation
-
 doEvent.scfmRegime = function(sim, eventTime, eventType, debug = FALSE) {
   if (eventType == "init") {
-    Init(sim)
+    sim <- Init(sim)
   } else {
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
-    }
+  }
   return(invisible(sim))
 }
 
 Init <- function(sim) {
   tmp <- sim$firePoints
-  if (length(sim$firePoints) == 0) {
-    stop("there are no fires in your studyArea. Consider expanding the study Area")
-  }
-  #extract and validate fireCause spec
 
+  ## extract and validate fireCause spec
   fc <- P(sim)$fireCause
-  #should verify CAUSE is a column in the table...
-  if (is.factor(tmp$CAUSE)){
-    causeSet <- levels(tmp$CAUSE)}
-    else {
-    causeSet <- unique(tmp$CAUSE)
+
+  ## review that sf can be used like this.
+  ## should verify CAUSE is a column in the table...
+  if (!P(sim)$fireCauseColumnName %in% names(tmp)) {
+    stop("The column ", P(sim)$fireCauseColumnName, " does not exist in the fire database used. ",
+         "Please pass the correct column name for the fire cause.")
   }
-  if (any(!(fc %in% causeSet))) {
+  if (is.factor(tmp[[P(sim)$fireCauseColumnName]])) {
+    causeSet <- levels(tmp[[P(sim)$fireCauseColumnName]])
+  } else {
+    causeSet <- unique(tmp[[P(sim)$fireCauseColumnName]])
+  }
+
+  if ("N" %in% fc & "L" %in% causeSet) fc[fc == "N"] <- "L"
+  if ("L" %in% fc & "N" %in% causeSet) fc[fc == "L"] <- "N"
+
+  if (all(!(fc %in% causeSet))) {
     notPresent <- fc[!fc %in% causeSet]
-    warning("this firecause is not present: ", notPresent)
+    warning(paste0("This firecause is not present: ", notPresent,
+                   " The following are the fire causes: ",
+                   paste(causeSet, collapse = ", "),
+                   ". Original cause will be replaced by ",
+                   paste(causeSet, collapse = ", ")), immediate. = TRUE)
+    fc <- causeSet
   }
-  tmp <- subset(tmp, CAUSE %in% fc)
+
+  tmp <- subset(tmp, get(P(sim)$fireCauseColumnName) %in% fc)
 
   #extract and validate fireEpoch
   epoch <- P(sim)$fireEpoch
-  if (length(epoch) != 2 ||
-      !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2])
+  if (length(epoch) != 2 || !is.numeric(epoch) || any(!is.finite(epoch)) || epoch[1] > epoch[2]) {
     stop("illegal fireEpoch: ", epoch)
-  tmp <- subset(tmp, YEAR >= epoch[1] & YEAR <= epoch[2])
+  }
+
+  quotes <- paste0("tmp$", paste(eval(P(sim)$fireYearColumnName)))
+  tmp <- subset(tmp, get(P(sim)$fireYearColumnName) >= epoch[1] &
+                  get(P(sim)$fireYearColumnName) <= epoch[2])
 
   epochLength <- as.numeric(epoch[2] - epoch[1] + 1)
 
-  # Assign polygon label to SpatialPoints of fires object
-  #should be specify the name of polygon layer? what if it PROVINCE or ECODISTRICT
-  #tmp[["ECOREGION"]] <- sp::over(tmp, sim$studyArea[, "ECOREGION"])
-  frpl <- sim$studyArea$PolyID
-  tmp$PolyID <- sp::over(tmp, sim$studyArea) #gives studyArea row name to point
-  tmp$PolyID <- tmp$PolyID$PolyID
-
-  tmp <- tmp[!is.na(tmp$PolyID),] #have to remove NA points
-  sim$firePoints <- tmp
-
-  firePolys <- unlist(sim$firePoints)
-
-  scfmRegimePars <- lapply(names(sim$landscapeAttr), FUN = calcZonalRegimePars,
-                           firePolys = firePolys, landscapeAttr = sim$landscapeAttr,
-                           firePoints = sim$firePoints, epochLength = epochLength,
-                           maxSizeFactor = P(sim)$empiricalMaxSizeFactor)
-
-  names(scfmRegimePars) <- names(sim$landscapeAttr)
-
-  nullIdx <- sapply(scfmRegimePars, is.null)
-  if (any(nullIdx)){
-    scfmRegimePars <- scfmRegimePars[-which(nullIdx)]
+  if (sf::st_crs(tmp) != sf::st_crs(sim$fireRegimePolysCalibration)) {
+    tmp <- sf::st_transform(tmp, crs = sf::st_crs(sim$fireRegimePolysCalibration))
   }
-  sim$scfmRegimePars <- scfmRegimePars
+
+  tmp <- sf::st_intersection(tmp, sim$fireRegimePolysCalibration) ## gives studyArea colnames to points
+
+  if (any(is.na(tmp$PolyID))) {
+    tmp <- tmp[!is.na(tmp$PolyID), ] ## need to remove NA points
+  }
+  sim$fireRegimePoints <- tmp
+
+  ## this function estimates the ignition probability and escape probability based on NFDB
+  scfmRegimePars <- unique(sim$fireRegimePolysCalibration$PolyID) |>
+    lapply(
+      FUN = calcZonalRegimePars,
+      firePolys = sim$fireRegimePolysCalibration,
+      firePoints = sim$fireRegimePoints,
+      epochLength = epochLength,
+      maxSizeFactor = P(sim)$empiricalMaxSizeFactor,
+      fireSizeColumnName = P(sim)$fireSizeColumnName,
+      targetBurnRate = P(sim)$targetBurnRate,
+      targetMaxFireSize = P(sim)$targetMaxFireSize
+    ) |>
+    rbindlist(fill = TRUE)
+
+  ## drop the attributes if they are present
+  colsToDrop <- c("ignitionRate", "pEscape", "xBar", "lxBar",
+                  "xMax", "emfs_ha", "empiricalBurnRate")
+  colsToKeep <- setdiff(names(sim$fireRegimePolys), colsToDrop)
+  sim$fireRegimePolys <- sim$fireRegimePolys[colsToKeep]
+
+  ## only keep the attributes that are in study area
+  sim$fireRegimePolys <- left_join(sim$fireRegimePolys, scfmRegimePars, by = "PolyID")
 
   return(invisible(sim))
 }
 
-calcZonalRegimePars <- function(polygonID, firePolys = firePolys,
-                                landscapeAttr = sim$landscapeAttr,
-                                firePoints = sim$firePoints,
-                                epochLength = epochLength, maxSizeFactor) {
-  idx <- firePolys$PolyID == polygonID
-  tmpA <- firePoints[idx, ]
-  landAttr <- landscapeAttr[[polygonID]]
-  cellSize = landAttr$cellSize
-  nFires <- dim(tmpA)[1]
-  if (nFires == 0) {
-    return(NULL)
-  }
-  rate <- nFires / (epochLength * landAttr$burnyArea)   # fires per ha per yr
-
-  pEscape <- 0
-  xBar <- 0
-  xMax <- 0
-  lxBar <- NA
-  maxFireSize <- cellSize   #note that maxFireSize has unit of ha NOT cells!!!
-  xVec <- numeric(0)
-
-  if (nFires > 0) {
-    #calculate escaped fires
-    #careful to subtract cellSize where appropriate
-    xVec <- tmpA$SIZE_HA[tmpA$SIZE_HA > cellSize]
-
-    if (length(xVec) > 0) {
-      pEscape <- length(xVec) / nFires
-      xBar <- mean(xVec)
-      lxBar <- mean(log(xVec))
-      xMax <- max(xVec)
-
-      zVec <- log(xVec / cellSize)
-      if (length(zVec) < 50)
-        warning(paste("Less than 50 \"large\" fires in zone", polygonID, ".",
-                      "T estimates may be unstable.\n",
-                      "\tConsider using a larger area and/or longer epoch."))
-      hdList <- HannonDayiha(zVec)  #defined in sourced TEutilsNew.R
-      That <- hdList$That
-      if (That == -1) {
-        warning(
-          sprintf(
-            "Hannon-Dahiya convergence failure in zone %s.\n\tUsing sample maximum fire size",
-            polygonID
-          )
-        )
-        #browser()
-        maxFireSize <- xMax * maxSizeFactor  #just to be safe, respecify here
-      } else {
-        maxFireSize <- exp(That) * cellSize
-        if (!(maxFireSize > xMax)) {
-          warning(
-            sprintf("Dodgy maxFireSize estimate in zone %s.\n\tUsing sample maximum fire size.",polygonID)
-          )
-          maxFireSize <- xMax * maxSizeFactor
-        }
-        #missing BEACONS CBFA truncated at 2*xMax. Their reasons don't apply here.
-      }
-    } else {
-      message(paste("no fires larger than cellsize in ", polygonID, ". Default values used."))
-    }
-  } else {
-    message(paste("Insufficient data for polygon ", polygonID, ". Default values used."))
-  }
-
-  #verify estimation results are reasonable. That=-1 indicates convergence failure.
-  #need to addd a name or code for basic verification by Driver module, and time field
-  #to allow for dynamic regeneration of disturbanceDriver pars.
-  #browser()
-  if (maxFireSize < 1){
-    warning("this can't happen")
-    maxFireSize = cellSize
-  }
-  return(list(ignitionRate = rate,
-              pEscape = pEscape,
-              xBar = xBar,
-              #mean fire size
-              lxBar = lxBar,
-              #mean log(fire size)
-              xMax = xMax,
-              #maximum observed size
-              emfs_ha = maxFireSize  #Estimated Maximum Fire Size in ha
-              )
-          )
-}
-
 .inputObjects <- function(sim) {
-  dPath <- dataPath(sim)
-  cacheTags = c(currentModule(sim), "function:.inputObjects")
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  dPath <- asPath(inputPath(sim), 1)
 
-  if (!suppliedElsewhere("studyArea", sim)) {
-    message("study area not supplied. Using Ecodistrict 348")
-
-    #source shapefile from ecodistict in input folder. Use ecodistrict 348
-    studyAreaFilename <- file.path(dPath, "ecodistricts.shp")
-    SA <- Cache(prepInputs,
-                targetFile  = studyAreaFilename,
-                fun = "raster::shapefile",
-                url = extractURL(objectName = "studyArea"),
-                archive = "ecodistrict_shp.zip",
-                filename2 = TRUE,
-                userTags = c(cacheTags, "studyArea"),
-                destinationPath = file.path(dPath, "ecodistricts_shp", "Ecodistricts"))
-
-    SA <- SA[SA$ECODISTRIC == 348, ]
-    sim$studyArea <- SA
+  if (!suppliedElsewhere("studyAreaCalibration", sim)) {
+    sim$studyAreaCalibration <- sim$studyArea
   }
 
-  #this module has many dependencies that aren't sourced in .inputObjects
+  if (!suppliedElsewhere("rasterToMatchCalibration", sim)) {
+    sim$rasterToMatchCalibration <- sim$rasterToMatch
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    message("fireRegimePolys not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
+
+    sim$fireRegimePolys <- Cache(
+      scfmutils::prepInputsFireRegimePolys,
+      url = extractURL("fireRegimePolys", sim),
+      destinationPath = dPath,
+      studyArea = sim$studyArea,
+      rasterToMatch = sim$rasterToMatch,
+      type = P(sim)$fireRegimePolysType,
+      userTags = c(cacheTags, "fireRegimePolys")
+    )
+  }
+
+  if (!suppliedElsewhere("fireRegimePolysCalibration", sim)) {
+    message("fireRegimePolysCalibration not supplied. Using default ", P(sim)$fireRegimePolysType, " of Canada.")
+    if (!is.null(sim$studyAreaCalibration)) {
+      sim$fireRegimePolysCalibration <- Cache(
+        scfmutils::prepInputsFireRegimePolys,
+        url = NULL,
+        destinationPath = dPath,
+        studyArea = sim$studyAreaCalibration,
+        rasterToMatch = sim$rasterToMatchCalibration,
+        type = P(sim)$fireRegimePolysType,
+        userTags = c(cacheTags, "fireRegimePolysCalibration")
+      )
+    } else {
+      sim$fireRegimePolysCalibration <- sim$fireRegimePolys
+    }
+  }
+
   if (!suppliedElsewhere("firePoints", sim)) {
-    sim$firePoints <- Cache(prepInputs, url = extractURL(objectName = "firePoints"),
-                                 studyArea = sim$studyArea, fun = "shapefile",
-                                 destination = dPath, overwrite = TRUE,
-                                 useSAcrs = TRUE, omitArgs = c("dPath", "overwrite"))
+    ## NOTE: do not use fireSenseUtils - it removes the cause column...among other issues
+    sim$firePoints <- getFirePoints_NFDB_scfm(
+      studyArea = sim$fireRegimePolysCalibration,
+      NFDB_pointPath = checkPath(file.path(dPath, "NFDB_point"), create = TRUE)
+    )
+    sim$firePoints <- postProcess(sim$firePoints, studyArea = sim$fireRegimePolysCalibration)
   }
 
   return(invisible(sim))

@@ -1,33 +1,47 @@
-# Everything in this file gets sourced during simInit, and all functions and objects
-# are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmIgnition",
   description = "start a random number of fires",
   keywords = c("fire scfm ignition"),
-  authors = c(person(c("Steve", "Cumming"), "Last", email = "email@example.com", role = c("aut", "cre"))),
+  authors = c(
+    person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
+  ),
   childModules = character(),
-  version = numeric_version("1.1.0.9002"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(scfmIgnition = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmIgnition.Rmd"),
-  reqdPkgs = list("raster", "SpaDES.tools"),
+  documentation = list("README.md", "scfmIgnition.Rmd"), ## same file
+  reqdPkgs = list(
+    "sf", "SpaDES.tools", "terra",
+    "PredictiveEcology/LandR (>= 1.1.1)",
+    "PredictiveEcology/scfmutils@development (>= 2.0.1)"
+  ),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
+                   before = c("scfmEscape", "scfmSpread")),
   parameters = rbind(
-    #need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
-    defineParameter("pIgnition", "numeric", 0.001, 0, 1, desc = "per cell and time ignition probability"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "simulation time of first ignition"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "interval between main events"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, desc = "time at which the first plot event should occur")
+    ## TODO: need a Flash parameter controlling fixed number of fires, a la Ratz (1995)
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    paste("used to select the year of landcover data used to create",
+                          "`flammableMap` if the object is unsupplied")),
+    defineParameter("pIgnition", "numeric", 0.001, 0, 1,
+                    "default per-cell and time ignition probability if unsupplied."),
+    defineParameter("startTime", "numeric", start(sim), NA, NA,
+                    "simulation time of first ignition"),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA,
+                    "interval between main events"),
+    defineParameter(".useCache", "logical", FALSE, NA, NA,
+                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "map of flammability"),
-    expectsInput(objectName = "landscapeAttr", objectClass = "list", desc = "")
-  ),
+    expectsInput("fireRegimePolys", "sf", desc = "`fireRegimePolys` with ignition rate attribute"),
+    expectsInput("fireRegimeRas", "SpatRaster", desc = "rasterized version of `fireRegimePolys`"),
+    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability"),
+    expectsInput("rasterToMatch", "SpatRaster", desc = "template raster"),
+    expectsInput("studyArea", "sf", desc = "studyArea polygon encapsulating `fireRegimePolys`")
+    ),
   outputObjects = bindrows(
-    createsOutput(objectName = "ignitionLoci", objectClass = "numeric", desc = "")
+    createsOutput("ignitionLoci", "numeric", desc = "vector of ignition locations"),
+    createsOutput("pIg", "SpatRaster", desc = "ignition probability raster")
   )
 ))
 
@@ -39,15 +53,11 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmIgnition", "plot")
-    },
-    plot = {
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmIgnition", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     ignite = {
       sim <- Ignite(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite")
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmIgnition", "ignite", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -56,23 +66,22 @@ doEvent.scfmIgnition = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
+  ## if either of these is a map, it needs to have NAs in the right place
+  ##   and be conformant with flammableMap
+  if (!is.null(sim$fireRegimePolys$pIgnition)) {
 
-  #if either of these is a map, it needs to have NAs in the right place
-  #and be conformant with flammableMap
-  if ("scfmDriverPars" %in% ls(sim)) {
-    if (length(sim$scfmDriverPars) > 1) {
-      pIg <- raster(sim$flammableMap)
-      for (x in names(sim$scfmDriverPars)) {
-        pIg[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pIgnition
-      }
-      pIg[] <- pIg[] * (sim$flammableMap[])
-    } else {
-      pIg <- sim$scfmDriverPars[[1]]$pIgnition #and pIg is a constant from scfmDriver
-    }
+    igValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
+                           pIg = sim$fireRegimePolys$pIgnition)
+    igRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
+                        flam = as.vector(sim$flammableMap))
+    igValues <- igValues[igRas, on = c("PolyID")]
+    igValues[flam != 1, pIg := NA]
+    sim$pIg <- rast(sim$fireRegimeRas)
+    sim$pIg <- setValues(sim$pIg, igValues$pIg)
   } else {
-    pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
+    warning("using default pIgnition as no 'ignitionRate' column found in fireRegimePolys")
+    sim$pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
   }
-  sim$pIg <- pIg
 
   sim$ignitionLoci <- NULL
 
@@ -81,29 +90,65 @@ Init <- function(sim) {
 
 ### template for your event1
 Ignite <- function(sim) {
+
+  ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
-  ignitions <- lapply(names(sim$scfmDriverPars),
-                      function(polygonType,
-                               landscapeAttr = sim$landscapeAttr,
-                               pIg = sim$pIg) {
-    cells <- landscapeAttr[[polygonType]]$cellsByZone
-    if (is(pIg, "Raster")) {
-      cells[which(runif(length(cells)) < pIg[cells])]
-    } else {
-      cells[which(runif(length(cells)) < pIg)]
-    }
-  })
-  #resample generates a random permutation of the elements of ignitions
-  #so that we don't always sequence in map index order. EJM pointed this out.
+
+  ignitions <- calcIgnitions(fireRegimePolys = sim$fireRegimePolys,
+                             pIg = sim$pIg,
+                             fireRegimeRas = sim$fireRegimeRas)
+  ## resample generates a random permutation of the elements of ignitions
+  ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
 
   return(invisible(sim))
 }
 
-.inputObjects <- function(sim) {
+calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
 
- if (!suppliedElsewhere(object = "scfmReturnInterval", sim = sim, where = "sim"))
-   sim$scfmReturnInterval <- P(sim)$returnInterval
+  fireRegimePixels <- 1:ncell(fireRegimeRas)
+  fireRegimePixels <- fireRegimePixels[!is.na(as.vector(fireRegimeRas))]
+
+  if (inherits(pIg, "SpatRaster")) {
+    stopifnot(ncell(fireRegimeRas) == ncell(pIg))
+    igs <- which(runif(ncell(fireRegimeRas)) < as.vector(pIg)) #NA are allowed and omitted
+
+  } else {
+    igs <- fireRegimePixels[which(runif(length(fireRegimePixels)) <= pIg)]
+  }
+
+  return(igs)
+}
+
+.inputObjects <- function(sim) {
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  mod$dPath <- asPath(inputPath(sim), 1)
+  message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
+  if (!suppliedElsewhere("fireRegimeRas", sim)) {
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
+  }
+
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
+      postProcess(maskTo = sim$fireRegimePolys)
+  }
 
   return(invisible(sim))
 }

@@ -1,0 +1,116 @@
+---
+title: "scfmDataPrep Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'scfmDataPrep', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_scfmDataPrep.bib
+link-citations: true
+always_allow_html: true
+---
+
+# scfmDataPrep Module
+
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:scfmDataPrep) *scfmDataPrep*
+
+```{r setup-scfmDataPrep, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold") ## change to eval = TRUE if all chunks are to be evaluated
+
+dir.create("figures", showWarnings = FALSE)
+
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = 'wb')
+```
+
+[![made-with-Markdown](figures/markdownBadge.png)](https://commonmark.org)
+
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
+
+#### Authors:
+
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "scfmDataPrep", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
+
+## Module Overview
+
+### Module summary
+
+Generates relevant statistics and estimates parameters for a generic percolation model to simulate fire regime parameters for a given landscape (`studyArea`).
+
+If `scfm` is being parameterized over a larger area (`studyAreaCalibration`), then the following objects must be supplied with identical CRS and resolution, where applicable:
+
+- `studyArea` and `studyAreaCalibration`;
+- `rasterToMatch` and `rasterToMatchCalibration`.
+
+The extents should differ between objects and their larger `*Calibration` counterparts.
+
+### Module inputs and parameters
+
+Describe input data required by the module and how to obtain it (e.g., directly from online sources or supplied by other modules)
+If `sourceURL` is specified, `downloadData("scfmDataPrep", "..")` may be sufficient.
+Table \@ref(tab:moduleInputs-scfmDataPrep) shows the full list of module inputs.
+
+```{r moduleInputs-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_inputs <- SpaDES.core::moduleInputs("scfmDataPrep", "..")
+knitr::kable(df_inputs,
+             caption = "List of (ref:scfmDataPrep) input objects and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmDataPrep))
+
+
+```{r moduleParams-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_params <- SpaDES.core::moduleParams("scfmDataPrep", "..")
+knitr::kable(df_params, caption = "List of (ref:scfmDataPrep) parameters and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Events
+
+Describe what happens for each event type.
+
+### Plotting
+
+Write what is plotted.
+
+### Saving
+
+Write what is saved.
+
+### Module outputs
+
+Description of the module outputs (Table \@ref(tab:moduleOutputs-scfmDataPrep)).
+
+```{r moduleOutputs-scfmDataPrep, echo = FALSE, eval = TRUE, message = FALSE, warning = FALSE}
+df_outputs <- SpaDES.core::moduleOutputs("scfmDataPrep", "..")
+knitr::kable(df_outputs, caption = "List of (ref:scfmDataPrep) outputs and their description.") |>
+  kableExtra::kable_styling(latex_options = "scale_down", full_width = TRUE)
+```
+
+### Links to other modules
+
+### Links to other modules
+
+Intended to be run with the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
+
+- `ageModule` (optional)
+- `scfmDataPrep`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmSpread`
+
+
+### Getting help
+
+-   provide a way for people to obtain help (e.g., module repository issues page)

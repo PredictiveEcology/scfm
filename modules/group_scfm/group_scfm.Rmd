@@ -1,74 +1,76 @@
 ---
-title: "group_scfm"
-author: ""
-date: "15 November 2018"
-output: pdf_document
+title: "group_scfm Manual"
+subtitle: "v.`r SpaDES.core::moduleMetadata(module = 'group_scfm', path = '..')$version`"
+date: "Last updated: `r Sys.Date()`"
+output:
+  bookdown::html_document2:
+    toc: true
+    toc_float: true
+    theme: sandstone
+    number_sections: false
+    df_print: paged
+    keep_md: yes
+editor_options:
+  chunk_output_type: console
+  bibliography: citations/references_group_scfm.bib
+citation-style: citations/ecology-letters.csl
+link-citations: true
+always_allow_html: true
 ---
 
-# Overview
+# group_scfm Module
 
-Provide an overview of what the module does / how to use the module.
+<!-- the following are text references used in captions for LaTeX compatibility -->
+(ref:group_scfm) *group_scfm*
 
-Module documentation should be written so that others can use your module.
-This is a template for module documentation, and should be changed to reflect your module.
+```{r setup-group_scfm, include=FALSE}
+## change to eval = TRUE if all chunks are to be evaluated
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE, results = "hold")
 
-## R Markdown
+## get citation style
+if (!file.exists("citations/ecology-letters.csl")) {
+  dir.create("citations", showWarnings = FALSE)
+  download.file("https://www.zotero.org/styles/ecology-letters",
+                destfile = "citations/ecology-letters.csl")
+}
 
-R Markdown syntax allows R code, outputs, and figures to be rendered in the documentation.
+if (!require(dplyr)) {
+  install.packages("dplyr")
+  library(dplyr)
+}
 
-For help writing in R Markdown, see http://rmarkdown.rstudio.com/.
+dir.create("figures", showWarnings = FALSE)
 
-# Usage
-
-```{r module_usage}
-library(SpaDES)
-
-setPaths(modulePath = file.path("C:/Ian/Git/scfm/modules"))
-getPaths() # shows where the 4 relevant paths are
-
-times <- list(start = 0, end = 10)
-
-parameters <- list(
-  #.progress = list(type = "text", interval = 1), # for a progress bar
-  ## If there are further modules, each can have its own set of parameters:
-  #module1 = list(param1 = value1, param2 = value2),
-  #module2 = list(param1 = value1, param2 = value2)
-)
-modules <- list("group_scfm")
-objects <- list()
-inputs <- list()
-outputs <- list()
-
-mySim <- simInit(times = times, params = parameters, modules = modules,
-                 objects = objects)
-
-mySimOut <- spades(mySim)
+download.file(url = "https://img.shields.io/badge/Made%20with-Markdown-1f425f.png",
+              destfile = "figures/markdownBadge.png",
+              mode = "wb")
 ```
 
-# Events
+[![made-with-Markdown](figures/markdownBadge.png)](http://commonmark.org)
 
-Describe what happens for each event type.
+<!-- if knitting to pdf remember to add the pandoc_args: ["--extract-media", "."] option to yml in order to get the badge images -->
 
-## Plotting
+#### Authors:
 
-Write what is plotted.
+`r paste(as.character(SpaDES.core::moduleMetadata(module = "group_scfm", path = '..')$authors), sep = ', ')`
+<!-- ideally separate authors with new lines, '\n' not working -->
 
-## Saving
+## Module Overview
 
-Write what is saved.
+### Module summary
 
-# Data dependencies
+A module group to run the `scfm` suite of modules found at <https://github.com/PredictiveEcology/scfm>:
 
-## Input data
+- `ageModule` (optional)
+- `scfmDataPrep`
+- `scfmEscape`
+- `scfmIgnition`
+- `scfmSpread`
 
-How to obtain input data, and a description of the data required by the module.
-If `sourceURL` is specified, `downloadData("group_scfm", "path/to/modules/dir")` may be sufficient.
+### Module parameters, inputs and outputs
 
-## Output data
+See documentation for individual modules.
 
-Description of the module outputs.
+### Getting help
 
-# Links to other modules
-
-Describe any anticipated linkages to other modules.
-
+<https://github.com/PredictiveEcology/scfm/issues>

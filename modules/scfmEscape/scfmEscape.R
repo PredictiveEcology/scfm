@@ -2,37 +2,55 @@
 #  are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmEscape",
-  description = "This Escapes fire(s) from an initial set of loci returned by an ignition module, and readies the results for use by scfmSpread",
-  keywords = c("fire Escape BEACONs"),
-  authors = c(person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person(c("Ian", "MS"), "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+  description = paste("'Escapes' fire(s) from an initial set of loci returned by `scfmIgnition`,",
+                      "and prepares the results for use by `scfmSpread`."),
+  keywords = c("fire escape", "BEACONs"),
+  authors = c(
+    person(c("Steven", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
+    person("Ian MS", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = c("aut")),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
+  ),
   childModules = character(),
-  version = numeric_version("0.1.0"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(scfmEscape = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
-  documentation = list("README.txt", "scfmEscape.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
+  documentation = list("README.md", "scfmEscape.Rmd"),
+  reqdPkgs = list("data.table",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)",
+                  "sf",
+                  "PredictiveEcology/SpaDES.tools@development",
+                  "terra"),
   parameters = rbind(
-    #defineParameter("paramName", "paramClass", value, min, max, "parameter description")),
-    defineParameter("p0", "numeric", 0.1, 0, 1, "probability of an ignition spreading to an unburned immediate neighbour"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, "simulation time of first escape"),
-    defineParameter(".plotInitialTime", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", NA, NA, NA, "time at which the first plot event should occur"),
-    #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    #defineParameter(".saveInterval", "numeric", NA, NA, NA, "time at which the first save event should occur"),
-    defineParameter("returnInterval", "numeric", NA, NA, NA, "This specifies the time interval between Escape events"),
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of cell immediate neighbours")
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    paste("used to select the year of landcover data used to create",
+                          "`flammableMap` if the obejct is unsupplied.")),
+    defineParameter("neighbours", "integer", 8L, 4L, 8L,
+                    "Number of cell immediate neighbours (one of `4L` or `8L`)."),
+    defineParameter("p0", "numeric", 0.1, 0, 1,
+                    "probability of an ignition spreading to an unburned immediate neighbour"),
+    defineParameter("returnInterval", "numeric", 1, NA, NA,
+                    "This specifies the time interval between Escape events"),
+    defineParameter("startTime", "numeric", start(sim, "year"), NA, NA,
+                    "simulation time of first escape"),
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+                    "Internal. Can be names of events or the whole module name; these will be cached by SpaDES.")
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "ignitionLoci", objectClass = "numeric", desc = "Pixel IDs where ignition occurs"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability"),
-    expectsInput(objectName = "rasterToMatch", objectClass = "RasterLayer", desc = "template raster for raster GIS operations. Must be supplied by user")
+    expectsInput("fireRegimePolys", "sf", desc = "fire regime polys with ignition rate"),
+    expectsInput("fireRegimeRas", "SpatRaster", desc = "rasterized version of `fireRegimePolys`"),
+    expectsInput("flammableMap", "SpatRaster", desc = "map of flammability"),
+    expectsInput("ignitionLoci", "numeric", desc = "pixel IDs where ignition occurs"),
+    expectsInput("rasterToMatch", "SpatRaster", desc = "template raster"),
+    expectsInput("studyArea", "sf", desc = "studyArea polygon encapsulating `fireRegimePolys`")
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "spreadState", objectClass = "data.table", desc = "")
+    createsOutput("spreadState", "data.table",
+                  desc = paste("stores the current fire spread state, with each fire's size cap (`maxBurnCells`);",
+                               "`NULL` in a year with no ignitions")),
+    createsOutput("p0", "SpatRaster", desc = "escape probability raster")
   )
 ))
 
@@ -43,22 +61,13 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
   switch(
     eventType,
     init = {
-
       sim <- Init(sim)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmEscape", "plot")
-
-    },
-    plot = {
-      tmpRaster <- raster(sim$vegMap)
-      values(tmpRaster)[sim$spreadState[, pixels]] <- 2 # this reference method is believed to be faster
-      values(tmpRaster)[sim$ignitionLoci] <- 1           # mark the initials specially
-      Plot(tmpRaster)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmEscape", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmEscape", "escape", eventPriority = 7.5)
     },
     escape = {
       sim <- Escape(sim)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape")
+
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmEscape", "escape", eventPriority = 7.5)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -70,50 +79,83 @@ doEvent.scfmEscape = function(sim, eventTime, eventType, debug = FALSE){
 Init <- function(sim) {
   sim$spreadState <- NULL
 
-  if ("scfmDriverPars" %in% ls(sim)) {
-    if (length(sim$scfmDriverPars) > 1) {
-      p0 <- raster(sim$flammableMap)
-      for (x in names(sim$scfmDriverPars)) {
-        p0[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$p0
-      }
-      p0[] <- p0[] * (sim$flammableMap[])
-    } else {
-      p0 <- sim$scfmDriverPars[[1]]$p0
-    }
+  if (!is.null(sim$fireRegimePolys$p0)) {
+    escValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
+                            p0 = sim$fireRegimePolys$p0)
+    escRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
+                         flam = as.vector(sim$flammableMap))
+    escValues <- escValues[escRas, on = c("PolyID")]
+    escValues[flam != 1, p0 := NA]
+    sim$p0 <- rast(sim$fireRegimeRas)
+    sim$p0 <- setValues(sim$p0, escValues$p0)
   } else {
-    p0 <- P(sim)$p0
+    warning("using default escape prob as no `xxx` column found in fireRegimePolys")
+    sim$p0 <- P(sim)$p0
   }
-  sim$p0 <- p0
 
   return(invisible(sim))
 }
 
 Escape <- function(sim) {
+
+  ## no ignitions, no fire: scfmSpread must not spread last year's escapes again
+  sim$spreadState <- NULL
   if (length(sim$ignitionLoci) > 0) {
-    # print(paste("Year",time(sim), "loci = ", length(sim$ignitionLoci)))
-
-    maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
-    maxSizes <- maxSizes[sim$cellsByZone[sim$ignitionLoci, "zone"]]
-
-    sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
-                                             start = sim$ignitionLoci,
-                                             iterations = 1,
-                                             spreadProb = sim$p0,
-                                             directions = P(sim)$neighbours,
-                                             asRaster = FALSE,
-                                             maxSize = maxSizes)
+    ## Each fire's size cap (its fire regime polygon's maxBurnCells) is set where the fire starts, so
+    ## spread2() counts the escape's pixels towards it when scfmSpread resumes the fire. spreadState
+    ## carries it; a cap first given on resuming counts each fire as 1 pixel.
+    maxSizes <- if (is.null(sim$fireRegimePolys$maxBurnCells)) NA_real_ else
+      sim$fireRegimePolys$maxBurnCells[match(as.vector(sim$fireRegimeRas)[sim$ignitionLoci],
+                                             sim$fireRegimePolys$PolyID)]
+    sim$spreadState <- spread2(landscape = sim$flammableMap,
+                               start = sim$ignitionLoci,
+                               iterations = 1,
+                               spreadProb = sim$p0,
+                               directions = P(sim)$neighbours,
+                               maxSize = maxSizes,
+                               asRaster = FALSE)
   }
 
   return(invisible(sim))
 }
 
-#same model as scfmIgnition to enable standalone execution
+## same model as scfmIgnition to enable standalone execution
 .inputObjects <- function(sim) {
-  ## TODO: This module has many dependencies that aren't sourced in .inputObjects
+  cacheTags <- c(currentModule(sim), "function:.inputObjects")
+  mod$dPath <- asPath(inputPath(sim), 1)
+  message(currentModule(sim), ": using dataPath '", mod$dPath, "'.")
+
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
+  }
+
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
+  if (!suppliedElsewhere("fireRegimeRas", sim)) {
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
+  }
 
   if (!suppliedElsewhere("flammableMap", sim)) {
-    sim$flammableMap <- sim$rasterToMatch
-    sim$flammableMap[] <- sim$flammableMap[]* 0
+    sim$flammableMap <- rast(sim$fireRegimeRas)
+    sim$flammableMap[!is.na(sim$fireRegimeRas[])] <- 1
+
   }
+
+  if (!suppliedElsewhere("ignitionLoci", sim)) {
+    NAs <- which(is.na(as.vector(sim$flammableMap)))
+    poss <- setdiff(1:ncell(sim$flammableMap), NAs)
+    sim$ignitionLoci <- sample(poss, size = 5, replace = FALSE)
+  }
+
   return(invisible(sim))
 }

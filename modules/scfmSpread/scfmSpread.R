@@ -1,41 +1,75 @@
-# Everything in this file gets sourced during simInit, and all functions and objects
-# are put into the simList. To use objects and functions, use sim$xxx.
 defineModule(sim, list(
   name = "scfmSpread",
   description = "model fire spread",
   keywords = c("fire", "spread", "scfm"),
-  authors = c(person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut")),
-              person("Ian", "Eddy", email = "ian.eddy@canada.ca", role = c("aut"))),
+  authors = c(
+    person("Steve", "Cumming", email = "stevec@sbf.ulaval.ca", role = "aut"),
+    person("Ian", "Eddy", email = "ian.eddy@nrcan-rncan.gc.ca", role = "aut"),
+    person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
+  ),
   childModules = character(),
-  version = numeric_version("1.1.0.9002"),
-  spatialExtent = raster::extent(rep(NA_real_, 4)),
+  version = list(scfmSpread = "2.1.0"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
   documentation = list("README.txt", "scfmSpread.Rmd"),
-  reqdPkgs = list("data.table", "magrittr", "raster", "reproducible", "SpaDES.tools"),
+  loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver", "scfmIgnition", "scfmEscape"),
+                   before = c("Biomass_regeneration", "Biomass_regenerationPM")),
+  reqdPkgs = list("data.table", "fpCompare", "sf", "terra", "viridis",
+                  "PredictiveEcology/LandR (>= 1.1.1)",
+                  "PredictiveEcology/reproducible@development",
+                  "PredictiveEcology/SpaDES.tools (>= 2.0.7)",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.1)"),
   parameters = rbind(
-    defineParameter("pSpread", "numeric", 0.23, 0, 1, desc = "spread module for BEACONs"),
-    defineParameter("returnInterval", "numeric", 1.0, NA, NA, desc = "Time interval between burn events"),
-    defineParameter("startTime", "numeric", start(sim), NA, NA, desc = "Simulation time at which to initiate burning"),
-    defineParameter(".plotInitialTime", "numeric", start(sim), NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    defineParameter(".plotInterval", "numeric", P(sim)$returnInterval, NA, NA, "This describes the simulation time at which the first plot event should occur"),
-    #defineParameter(".saveInitialTime", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-    #defineParameter(".saveInterval", "numeric", NA, NA, NA, "This describes the simulation time at which the first save event should occur"),
-
-    defineParameter("neighbours", "numeric", 8, NA, NA, "Number of immediate cell neighbours")
+    defineParameter("dataYear", "numeric", 2011, 1985, 2020,
+                    desc = paste("used to select the year of landcover data used to create",
+                                 "`flammableMap` if the obejct is unsupplied")),
+    defineParameter("neighbours", "numeric", 8, NA, NA,
+                    desc = "Number of immediate cell neighbours"),
+    defineParameter("pSpread", "numeric", 0.23, 0, 1,
+                    desc = "default spread probability if `fireRegimePolys` is missing attribute `pSpread`."),
+    defineParameter("returnInterval", "numeric", 1.0, NA, NA,
+                    desc = "Time interval between burn events"),
+    defineParameter("startTime", "numeric", start(sim), NA, NA,
+                    desc = "Simulation time at which to initiate burning"),
+    defineParameter(".plotInterval", "numeric", 10, NA, NA,
+                    desc = "This describes the simulation time at which the first plot event should occur"),
+    defineParameter(".plots", "character", c("screen"), NA, NA,
+                    desc = "Used by Plots function, which can be optionally used here"),
+    defineParameter(".useCache", "character", c(".inputObjects"), NA, NA,
+                    desc = "Can be names of events or the whole module name; these will be cached by SpaDES"),
+    defineParameter(".runName", "character", NA_character_, NA, NA,
+                    paste('Name for simulation provided by user. Used as a title for diagnostic plots',
+                          'NULL is allowed but will result in plots without titles.'))
   ),
   inputObjects = bindrows(
-    expectsInput(objectName = "scfmDriverPars", objectClass = "list", desc = "fire modules' parameters"),
-    expectsInput(objectName = "spreadState", objectClass = "data.table", desc = "see SpaDES.tools::spread2"),
-    expectsInput(objectName = "flammableMap", objectClass = "RasterLayer", desc = "binary map of landscape flammability")
+    expectsInput("fireRegimePolys", "sf",
+                 desc = "`fireRegimePolys` with fire attributes appended."),
+    expectsInput("fireRegimeRas", "SpatRaster",
+                 desc = "raster with fire regimes from `fireRegimePolys`."),
+    expectsInput("flammableMap", "SpatRaster",
+                 desc = "binary map of landscape flammability"),
+    expectsInput("rasterToMatch", "SpatRaster",
+                 desc = "template raster for raster GIS operations. Must be supplied by user."),
+    expectsInput("spreadState", "data.table",
+                 desc = "see `SpaDES.tools::spread2`; from scfmEscape, which sets each fire's size cap"),
+    expectsInput("studyArea", "sf",
+                 desc = "Polygon to use as the simulation study area."),
+    expectsInput("studyAreaReporting", "sf",
+                 desc = paste("multipolygon (typically smaller/unbuffered than `studyArea`)",
+                              "to use for plotting/reporting.")),
+    expectsInput("timeSinceFire", "SpatRaster",
+                 desc = paste("map of time since last burn - with pixels that never burn receiving NA.",
+                              "If not supplied, it will count from start(sim)."))
   ),
   outputObjects = bindrows(
-    createsOutput(objectName = "burnMap", objectClass = "RasterLayer", desc = "cumulative burn map"),
-    createsOutput(objectName = "burnDT", objectClass = "data.table", desc = "data table with pixel IDs of most recent burn"),
-    createsOutput(objectName = "rstCurrentBurn", object = "RasterLayer", desc = "annual burn map"),
-    createsOutput(objectName = "pSpread", object = "RasterLayer", desc = "spread probability applied to flammabiliy Map"),
-    createsOutput(objectName = "burnSummary", object = "data.table", desc = "describes details of all burned pixels")
+    createsOutput("burnDT", "data.table", desc = "data table with pixel IDs of most recent burn"),
+    createsOutput("burnMap", "SpatRaster", desc = "cumulative burn map"),
+    createsOutput("burnSummary", "data.table", desc = "describes details of all burned pixels"),
+    createsOutput("pSpread", "SpatRaster", desc = "spread probability applied to flammability map"),
+    createsOutput("rstCurrentBurn", "SpatRaster", desc = "annual burn map"),
+    createsOutput("timeSinceFire", "SpatRaster",
+                  "map of time since last burn - with pixels that never burn receiving NA")
   )
 ))
 
@@ -47,21 +81,36 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
     eventType,
     init = {
       sim <- Init(sim)
+
       # schedule future event(s)
-      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn")
-      sim <- scheduleEvent(sim, P(sim)$.plotInitialTime, "scfmSpread", "plot")
-    },
-    plot = {
-      Plot(sim$burnMap, legend = FALSE)
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot")
+      sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "burn", 7.5)
+
+      if (anyPlotting(P(sim)$.plots)) {
+        sim <- scheduleEvent(sim, P(sim)$startTime, "scfmSpread", "plot", 7.5)
+      }
     },
     burn = {
-      if (!is.null(sim$spreadState)) {
-        ## we really want to test if the data table has any rows
-        if (NROW(sim$spreadState[state == "activeSource"]) > 0)
-          sim <- Burnemup(sim)
+      sim <- Burnemup(sim) ## fire sizes recorded in  sim$burnSummary
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn", eventPriority = 7.5)
+    },
+    plot = {
+      if (is.na(P(sim)$.runName)) {
+        runName <- NULL
+      } else {
+        runName <- P(sim)$.runName
       }
-      sim <- scheduleEvent(sim, time(sim) + P(sim)$returnInterval, "scfmSpread", "burn")
+
+      if (!is.null(sim$rstCurrentBurn)) {
+        Plots(sim$rstCurrentBurn, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
+              filename = paste0("currentBurnMap_year_", time(sim)),
+              title = paste0("Annual Burn: year ", time(sim)),
+              subtitle = runName)
+        Plots(sim$burnMap, fn = scfmutils::plot_burnMap, type = P(sim)$.plots,
+              filename = paste0("cumulativeBurnMap_year_", time(sim)),
+              title = paste0("Cumulative Burn: year ", time(sim)),
+              subtitle = runName)
+      }
+      sim <- scheduleEvent(sim, time(sim) + P(sim)$.plotInterval, "scfmSpread", "plot", eventPriority = 8)
     },
     warning(paste("Undefined event type: '", events(sim)[1, "eventType", with = FALSE],
                   "' in module '", events(sim)[1, "moduleName", with = FALSE], "'", sep = ""))
@@ -70,71 +119,171 @@ doEvent.scfmSpread = function(sim, eventTime, eventType, debug = FALSE) {
 }
 
 Init <- function(sim) {
-  sim$burnMap <- sim$flammableMap
-  sim$burnMap[] <- sim$flammableMap[] * 0  # 0 * NA = NA
-  if ("scfmDriverPars" %in% ls(sim)) {
-    if (length(sim$scfmDriverPars) > 1) {
-      pSpread <- raster(sim$flammableMap)
-      for (x in names(sim$scfmDriverPars)) {
-        pSpread[sim$landscapeAttr[[x]]$cellsByZone] <- sim$scfmDriverPars[[x]]$pSpread
-      }
-      pSpread[] <- pSpread[] * (sim$flammableMap[])
-    } else {
-      pSpread <- sim$flammableMap * sim$scfmDriverPars[[1]]$pSpread
-    }
+  compareGeom(sim$rasterToMatch, sim$fireRegimeRas)
+  compareGeom(sim$fireRegimeRas, sim$flammableMap)
+
+  tmpRas <- sim$rasterToMatch
+  values(tmpRas) <- 1:ncell(tmpRas)
+  tmpRas <- postProcess(tmpRas, studyArea = sim$studyAreaReporting)
+  mod$pixInSAR <- na.omit(as.vector(tmpRas))
+
+  ## better to use fireRegimeRas than flammableMap, or burnMap inherits attributes
+  sim$burnMap <- rast(sim$fireRegimeRas)
+  sim$burnMap[!is.na(sim$flammableMap[])] <- 0
+  sim$burnMap[sim$flammableMap[] %==% 0] <- NA
+
+
+  if (!is.null(sim$fireRegimePolys$pSpread)) {
+    sprValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
+                            pSpread = sim$fireRegimePolys$pSpread)
+    sprRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
+                         flam = as.vector(sim$flammableMap))
+    sprValues <- sprValues[sprRas, on = c("PolyID")]
+    sprValues[flam != 1, pSpread := NA]
+    sim$pSpread <- rast(sim$fireRegimeRas)
+    sim$pSpread <- setValues(sim$pSpread, sprValues$pSpread)
   } else {
-    pSpread <- sim$pSpread * sim$flammableMap
+    warning("using default pSpread as no pSpread column in fireRegimePolys")
+    sim$pSpread <- P(sim)$pSpread * sim$flammableMap
   }
-  sim$pSpread <- pSpread
   #Create empty data table to store each year's burn data
-  sim$burnSummary <- data.table("igLoc" = numeric(0),
-                                "N" = numeric(0),
-                                "year" = numeric(0),
-                                "areaBurned" = numeric(0),
-                                "polyID" = numeric(0))
+  sim$burnSummary <- data.table(igLoc = integer(0),
+                                grp = integer(0),
+                                N = numeric(0),
+                                year = numeric(0),
+                                areaBurned = numeric(0),
+                                PolyID = integer(0))
+
+  sim$rstCurrentBurn <- rast(sim$fireRegimeRas)
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 # reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA # might have to ignore warnings
 
   return(invisible(sim))
 }
 
+countBurnedPixelsInSAR <- function(burnDT) {
+  tempDT <- copy(burnDT)
+
+  ## grp 1: pixels from fires ignited in SAR & spread in SAR
+  ## grp 2: pixels from fires ignited in SAR & spread outside SAR
+  ## grp 3: pixels from fires ignited outside SAR & spread in SAR
+  ## grp 4: pixels from fires ignited outside SAR & spread outside SAR
+
+  tempDT[(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 1L]
+  tempDT[(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 2L]
+  tempDT[!(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 3L]
+  tempDT[!(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 4L]
+  tempDT <- tempDT[, .N, by = c("initialPixels", "grp")]
+
+  return(tempDT)
+}
+
+## name 'Burnemup' is a homage to Walters and Hillborne
 Burnemup <- function(sim) {
-  ## name is a homage to Walters and Hillborne
 
-  # maxSizes <- unlist(lapply(sim$scfmDriverPars, function(x) x$maxBurnCells))
-  # activeLoci <- unique(sim$spreadState$initialLocus) # indices[sim$spreadState$active]
-  #we prevent multiple ignitions, which shouldn't happen anyway.
-  # maxSizes <- maxSizes[sim$cellsByZone[activeLoci, "zone"]]
-  threadsDT <- getDTthreads()
+  ## This year's burn starts empty every year, before any fire: a year without fire must not keep the
+  ## last fire year's pixels (Biomass_regeneration regenerates wherever rstCurrentBurn > 0).
+  sim$rstCurrentBurn <- rast(sim$fireRegimeRas) ## use fireRegimeRas as template
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 1] <- 0 ## reset annual burn
+  sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA ## might have to ignore warnings.
+
+  if (NROW(sim$spreadState) == 0) { ## no ignitions this year: nothing burns, time since fire still ages
+    if (terra::hasValues(sim$timeSinceFire)) sim$timeSinceFire <- sim$timeSinceFire + 1
+    return(invisible(sim))
+  }
+
+  threadsDT <- data.table::getDTthreads()
   setDTthreads(1)
-  on.exit({setDTthreads(threadsDT)}, add = TRUE)
+  on.exit(setDTthreads(threadsDT), add = TRUE)
 
-  sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
-                                      start = sim$spreadState,
-                                      spreadProb = sim$pSpread,
-                                      #spreadState = sim$spreadState,
-                                      directions = P(sim)$neighbours,
-                                      # maxSize = maxSizes,  #not sure this works
-                                      asRaster = FALSE)
+  if (!is.null(sim$fireRegimePolys$maxBurnCells)){
+    maxSizes <- NA_real_ ## each fire's cap is in spreadState: scfmEscape set it where the fire started
+  } else {
+    maxSizes <- sum(as.vector(sim$flammableMap), na.rm = TRUE)
+  }
 
-  sim$rstCurrentBurn <- sim$vegMap #This preserves NAs
-  sim$rstCurrentBurn[!is.na(sim$rstCurrentBurn)] <- 0 #reset annual burn
-  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 #update annual burn
-  sim$burnMap[sim$burnDT$pixels] <- 1 #update cumulative burn
-  sim$burnMap <- setColors(sim$burnMap, value = c("grey", "red"))
-  sim$ageMap[sim$burnDT$pixels] <- 0 #update age
+  #TODO: check maxSizes
+  if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
+    sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
+                                        start = sim$spreadState,
+                                        spreadProb = sim$pSpread,
+                                        #spreadState = sim$spreadState,
+                                        directions = P(sim)$neighbours,
+                                        maxSize = maxSizes,
+                                        asRaster = FALSE)
+  } else {
+    ## No fire escaped: each ignition burned its own pixel, as the ignitions that do not escape do in a
+    ## year with escapes (spread2() keeps all of spreadState's pixels in burnDT).
+    sim$burnDT <- sim$spreadState
+  }
 
- #get fire year, pixels burned, area burned, poly ID of all burned pixels
-  tempDT <- sim$burnDT[, .(.N), by = "initialPixels"]
+  sim$rstCurrentBurn[sim$burnDT$pixels] <- 1 ## update annual burn
+  # sim$rstCurrentBurn@data@attributes <- list("Year" == time(sim))
+
+  sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 ## update cumulative burn
+
+  ## get fire year, pixels burned, area burned, poly ID of all burned pixels in studyAreaReporting
+  tempDT <- countBurnedPixelsInSAR(sim$burnDT)
   tempDT$year <- time(sim)
-  tempDT$areaBurned <- tempDT$N * sim$landscapeAttr[[1]]$cellSize
-  tempDT$polyID <- sim$studyAreaRas[tempDT$initialPixels]
+  tempDT$areaBurned <- tempDT$N * unique(sim$fireRegimePolys$cellSize)
+  tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
   setnames(tempDT, c("initialPixels"), c("igLoc"))
   sim$burnSummary <- rbind(sim$burnSummary, tempDT)
+
+  if (length(sim$burnDT$pixels) > 0 ){
+  #terra will error if performing arithmetic on a raster with all NAs,
+  #so do this instead (alternatively, treat year 1 differently from subsequent years)
+  sim$timeSinceFire[sim$burnDT$pixels] <- -1
+  sim$timeSinceFire <- sim$timeSinceFire + 1
+  }
 
   return(invisible(sim))
 }
 
 .inputObjects <- function(sim) {
 
+  if (!suppliedElsewhere("studyArea", sim)) {
+    sim$studyArea <- LandR::randomStudyArea(size = 10000 * 6.25 * 1000)
+  }
 
-  return(invisible(sim))
+  if (!suppliedElsewhere("rasterToMatch", sim)) {
+    sim$rasterToMatch <- rast(sim$studyArea, vals = 1, res = c(250, 250)) |>
+      mask(sim$studyArea)
+  }
+
+  if (!suppliedElsewhere("fireRegimePolys", sim)) {
+    sim$fireRegimePolys <- sim$studyArea
+    sim$fireRegimePolys$PolyID <- 1
+  }
+
+  if (!suppliedElsewhere("fireRegimeRas", sim)) {
+    sim$fireRegimeRas <- terra::rasterize(sim$fireRegimePolys,
+                                          field = "PolyID",
+                                          sim$rasterToMatch)
+  }
+
+  if (!suppliedElsewhere("flammableMap", sim)) {
+    sim$flammableMap <- rast(sim$fireRegimeRas, vals = 1) |>
+      postProcess(maskTo = sim$fireRegimePolys)
+  }
+
+  if (!suppliedElsewhere("studyAreaReporting", sim)) {
+    message("'studyAreaReporting' was not provided by user. Using the same as 'studyArea'.")
+    sim$studyAreaReporting <- sim$studyArea
+  }
+  if (!suppliedElsewhere("spreadState", sim)) {
+    sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
+                                             start = sample(1:ncell(sim$flammableMap),
+                                                            size = 10, replace = FALSE,
+                                                            prob = as.vector(sim$flammableMap)),
+                                             spreadProb = 0.1)
+  }
+
+
+
+  if (!suppliedElsewhere("timeSinceFire", sim)) {
+    sim$timeSinceFire <- rast(sim$flammableMap)
+  }
+
+  return(sim)
 }
