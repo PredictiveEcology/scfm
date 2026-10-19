@@ -280,11 +280,19 @@ Burnemup <- function(sim) {
     ## spreadCpp(), which returns no state to resume a fire from.
     opts <- options(spades.useSpreadCpp = FALSE)
     on.exit(options(opts), add = TRUE)
+    ## 10 escaped fires, as scfmEscape gives them: Burnemup resumes them, so 1 iteration, as a data.table
+    ignitionLoci <- sample(1:ncell(sim$flammableMap), size = 10, replace = FALSE,
+                           prob = as.vector(sim$flammableMap) %in% 1) # NA pixels never ignite
+    maxSizes <- if (is.null(sim$fireRegimePolys$maxBurnCells)) NA_real_ else
+      sim$fireRegimePolys$maxBurnCells[match(as.vector(sim$fireRegimeRas)[ignitionLoci],
+                                             sim$fireRegimePolys$PolyID)]
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
-                                             start = sample(1:ncell(sim$flammableMap),
-                                                            size = 10, replace = FALSE,
-                                                            prob = as.vector(sim$flammableMap)),
-                                             spreadProb = 0.1)
+                                             start = ignitionLoci,
+                                             iterations = 1,
+                                             spreadProb = 0.1,
+                                             directions = P(sim)$neighbours,
+                                             maxSize = maxSizes,
+                                             asRaster = FALSE)
   }
 
 
