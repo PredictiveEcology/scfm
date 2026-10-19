@@ -125,3 +125,15 @@ test_that("with maxBurnCells no fire burns more pixels than its fire regime poly
     expect_identical(sum(vals(sim$rstCurrentBurn) == 1, na.rm = TRUE), sum(caps))
   }
 })
+
+test_that("escaped fires spread past the escape under options(spades.useSpreadCpp = TRUE)", {
+  ## With this option, spread2() handed scfmEscape's escape to spreadCpp(), which returns no state to
+  ## resume from: with maxBurnCells each fire stopped at its escape pixels (cell 1 and its 3
+  ## neighbours); without, spreadCpp() errored on the NA size cap.
+  skip_if(utils::packageVersion("SpaDES.tools") < "2.1.3.9014", "SpaDES.tools has no spades.useSpreadCpp")
+  withr::local_options(spades.useSpreadCpp = TRUE)
+  for (caps in list(c(100L, 100L), NULL)) { # caps above the block sizes do not bind
+    sim <- burnYear(toySim(maxBurnCells = caps), 1, 1L)
+    expect_identical(which(vals(sim$rstCurrentBurn) == 1), westCells())
+  }
+})

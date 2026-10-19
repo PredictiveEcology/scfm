@@ -40,3 +40,17 @@ test_that("a year with no ignitions leaves no spreadState from the year before",
     expect_null(sim$spreadState) # scfmSpread would otherwise spread year 1's fire again
   }
 })
+
+test_that("escaped fires can be resumed under options(spades.useSpreadCpp = TRUE)", {
+  ## With this option, spread2() handed the escape to spreadCpp(), which returns every pixel "inactive"
+  ## (scfmSpread then spread no fire further), and errors on the NA size cap used without maxBurnCells.
+  skip_if(utils::packageVersion("SpaDES.tools") < "2.1.3.9014", "SpaDES.tools has no spades.useSpreadCpp")
+  withr::local_options(spades.useSpreadCpp = TRUE)
+  for (cap in list(100L, NULL)) {
+    sim <- toySim()
+    sim$fireRegimePolys$maxBurnCells <- cap
+    sim <- escapeYear(sim, 1, 45L)
+    expect_gt(NROW(sim$spreadState[state == "activeSource"]), 0) # p0 = 1: it escaped
+  }
+  expect_true(getOption("spades.useSpreadCpp")) # the caller's option is restored
+})

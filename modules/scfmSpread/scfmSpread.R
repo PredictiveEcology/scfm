@@ -8,7 +8,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmSpread = "2.1.0"),
+  version = list(scfmSpread = "2.1.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -204,6 +204,10 @@ Burnemup <- function(sim) {
 
   #TODO: check maxSizes
   if (NROW(sim$spreadState[state == "activeSource"]) > 0) {
+    ## spreadCpp() cannot resume a fire, so spread2() already uses its own algorithm for a data.table
+    ## `start` under options(spades.useSpreadCpp = TRUE); pinned so it does not depend on that.
+    opts <- options(spades.useSpreadCpp = FALSE)
+    on.exit(options(opts), add = TRUE)
     sim$burnDT <- SpaDES.tools::spread2(sim$flammableMap,
                                         start = sim$spreadState,
                                         spreadProb = sim$pSpread,
@@ -272,6 +276,10 @@ Burnemup <- function(sim) {
     sim$studyAreaReporting <- sim$studyArea
   }
   if (!suppliedElsewhere("spreadState", sim)) {
+    ## as in scfmEscape: under options(spades.useSpreadCpp = TRUE), spread2() would hand this call to
+    ## spreadCpp(), which returns no state to resume a fire from.
+    opts <- options(spades.useSpreadCpp = FALSE)
+    on.exit(options(opts), add = TRUE)
     sim$spreadState <- SpaDES.tools::spread2(landscape = sim$flammableMap,
                                              start = sample(1:ncell(sim$flammableMap),
                                                             size = 10, replace = FALSE,
