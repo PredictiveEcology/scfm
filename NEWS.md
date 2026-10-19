@@ -1,5 +1,6 @@
 # scfm (development version)
 
+- scfmEscape, scfmIgnition and scfmSpread call `scfmutils::fireRegimeParRaster()`, `scfmutils::calcIgnitions()` and `scfmutils::countBurnedPixelsInSAR()` instead of their own copies, and require scfmutils >= 2.0.9.9008 (PredictiveEcology/scfmutils#13). Results are unchanged (scfmEscape and scfmSpread 2.1.0.9001, scfmIgnition 2.1.0.9000).
 - scfmEscape and scfmSpread always run `spread2()` with its own algorithm. With `options(spades.useSpreadCpp = TRUE)` (SpaDES.tools >= 2.1.3.9014), `spread2()` handed scfmEscape's escape to `spreadCpp()`, which marks every pixel inactive: escaped fires stopped at their escape pixels without any warning, or, with no `maxBurnCells`, scfmEscape stopped with an error (scfmEscape and scfmSpread 2.1.0.9000).
 
 # scfm 2.1.0

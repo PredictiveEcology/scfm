@@ -11,7 +11,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmEscape = "2.1.0.9000"),
+  version = list(scfmEscape = "2.1.0.9001"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -19,7 +19,7 @@ defineModule(sim, list(
   reqdPkgs = list("data.table",
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
-                  "PredictiveEcology/scfmutils@development (>= 2.0.1)",
+                  "PredictiveEcology/scfmutils@development (>= 2.0.9.9008)",
                   "sf",
                   "PredictiveEcology/SpaDES.tools@development",
                   "terra"),
@@ -80,14 +80,10 @@ Init <- function(sim) {
   sim$spreadState <- NULL
 
   if (!is.null(sim$fireRegimePolys$p0)) {
-    escValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
-                            p0 = sim$fireRegimePolys$p0)
-    escRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
-                         flam = as.vector(sim$flammableMap))
-    escValues <- escValues[escRas, on = c("PolyID")]
-    escValues[flam != 1, p0 := NA]
-    sim$p0 <- rast(sim$fireRegimeRas)
-    sim$p0 <- setValues(sim$p0, escValues$p0)
+    sim$p0 <- scfmutils::fireRegimeParRaster(fireRegimePolys = sim$fireRegimePolys,
+                                             column = "p0",
+                                             fireRegimeRas = sim$fireRegimeRas,
+                                             flammableMap = sim$flammableMap)
   } else {
     warning("using default escape prob as no `xxx` column found in fireRegimePolys")
     sim$p0 <- P(sim)$p0

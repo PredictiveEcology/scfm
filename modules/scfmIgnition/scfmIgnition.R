@@ -6,7 +6,7 @@ defineModule(sim, list(
     person(c("Steve", "G"), "Cumming", email = "stevec@sbf.ulaval.ca", role = c("aut", "cre"))
   ),
   childModules = character(),
-  version = list(scfmIgnition = "2.1.0"),
+  version = list(scfmIgnition = "2.1.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -14,7 +14,7 @@ defineModule(sim, list(
   reqdPkgs = list(
     "sf", "SpaDES.tools", "terra",
     "PredictiveEcology/LandR (>= 1.1.1)",
-    "PredictiveEcology/scfmutils@development (>= 2.0.1)"
+    "PredictiveEcology/scfmutils@development (>= 2.0.9.9008)"
   ),
   loadOrder = list(after = c("scfmLandcoverInit", "scfmRegime", "scfmDriver"),
                    before = c("scfmEscape", "scfmSpread")),
@@ -69,15 +69,10 @@ Init <- function(sim) {
   ## if either of these is a map, it needs to have NAs in the right place
   ##   and be conformant with flammableMap
   if (!is.null(sim$fireRegimePolys$pIgnition)) {
-
-    igValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
-                           pIg = sim$fireRegimePolys$pIgnition)
-    igRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
-                        flam = as.vector(sim$flammableMap))
-    igValues <- igValues[igRas, on = c("PolyID")]
-    igValues[flam != 1, pIg := NA]
-    sim$pIg <- rast(sim$fireRegimeRas)
-    sim$pIg <- setValues(sim$pIg, igValues$pIg)
+    sim$pIg <- scfmutils::fireRegimeParRaster(fireRegimePolys = sim$fireRegimePolys,
+                                              column = "pIgnition",
+                                              fireRegimeRas = sim$fireRegimeRas,
+                                              flammableMap = sim$flammableMap)
   } else {
     warning("using default pIgnition as no 'ignitionRate' column found in fireRegimePolys")
     sim$pIg <- P(sim)$pIgnition #and pIg is a constant from the parameter list
@@ -94,30 +89,12 @@ Ignite <- function(sim) {
   ## TODO: this calcIgnitions could be simpler
   sim$ignitionLoci <- NULL #initialise FFS
 
-  ignitions <- calcIgnitions(fireRegimePolys = sim$fireRegimePolys,
-                             pIg = sim$pIg,
-                             fireRegimeRas = sim$fireRegimeRas)
+  ignitions <- scfmutils::calcIgnitions(pIg = sim$pIg, fireRegimeRas = sim$fireRegimeRas)
   ## resample generates a random permutation of the elements of ignitions
   ## so that we don't always sequence in map index order. EJM pointed this out.
   sim$ignitionLoci <- SpaDES.tools:::resample(unlist(ignitions))
 
   return(invisible(sim))
-}
-
-calcIgnitions <- function(fireRegimePolys, pIg, fireRegimeRas) {
-
-  fireRegimePixels <- 1:ncell(fireRegimeRas)
-  fireRegimePixels <- fireRegimePixels[!is.na(as.vector(fireRegimeRas))]
-
-  if (inherits(pIg, "SpatRaster")) {
-    stopifnot(ncell(fireRegimeRas) == ncell(pIg))
-    igs <- which(runif(ncell(fireRegimeRas)) < as.vector(pIg)) #NA are allowed and omitted
-
-  } else {
-    igs <- fireRegimePixels[which(runif(length(fireRegimePixels)) <= pIg)]
-  }
-
-  return(igs)
 }
 
 .inputObjects <- function(sim) {
