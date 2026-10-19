@@ -2,6 +2,8 @@
 
 - scfmEscape and scfmSpread always run `spread2()` with its own algorithm. With `options(spades.useSpreadCpp = TRUE)` (SpaDES.tools >= 2.1.3.9014), `spread2()` handed scfmEscape's escape to `spreadCpp()`, which marks every pixel inactive: escaped fires stopped at their escape pixels without any warning, or, with no `maxBurnCells`, scfmEscape stopped with an error (scfmEscape and scfmSpread 2.1.0.9000).
 
+- scfmSpread runs without scfmEscape. Its default `spreadState` was a fully spread map with no fire state to resume, so its burn event stopped with "object 'state' not found"; it is now 10 escaped fires, as scfmEscape gives them, capped by `maxBurnCells` when `fireRegimePolys` has it. Their ignitions are drawn from flammable pixels only, so an `NA` in `flammableMap` (the default one has them outside the study area) no longer stops `sample()` (scfmSpread 2.1.0.9000).
+
 # scfm 2.1.0
 
 This is the first release of scfm as one family under one version number. The repository itself is now the scfm parent module, so `PredictiveEcology/scfm@v2.1.0` loads the five scfm modules in use from this release in one step, and every module in it carries the version 2.1.0. A new scfmDataPrep module prepares the fire regime inputs in one place, the modules use terra and sf throughout, and run names can be added to plot titles and burn maps.
