@@ -11,7 +11,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmEscape = "2.1.0"),
+  version = list(scfmEscape = "2.1.0.9000"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -107,6 +107,10 @@ Escape <- function(sim) {
     maxSizes <- if (is.null(sim$fireRegimePolys$maxBurnCells)) NA_real_ else
       sim$fireRegimePolys$maxBurnCells[match(as.vector(sim$fireRegimeRas)[sim$ignitionLoci],
                                              sim$fireRegimePolys$PolyID)]
+    ## scfmSpread resumes these fires. With options(spades.useSpreadCpp = TRUE), spread2() hands this
+    ## call to spreadCpp(), which returns every pixel "inactive": nothing left to resume.
+    opts <- options(spades.useSpreadCpp = FALSE)
+    on.exit(options(opts), add = TRUE)
     sim$spreadState <- spread2(landscape = sim$flammableMap,
                                start = sim$ignitionLoci,
                                iterations = 1,
