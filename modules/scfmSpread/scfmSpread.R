@@ -8,7 +8,7 @@ defineModule(sim, list(
     person("Alex M", "Chubaty", email = "achubaty@for-cast.ca", role = "ctb")
   ),
   childModules = character(),
-  version = list(scfmSpread = "2.1.0.9000"),
+  version = list(scfmSpread = "2.1.0.9001"),
   timeframe = as.POSIXlt(c(NA, NA)),
   timeunit = "year",
   citation = list("citation.bib"),
@@ -19,7 +19,7 @@ defineModule(sim, list(
                   "PredictiveEcology/LandR (>= 1.1.1)",
                   "PredictiveEcology/reproducible@development",
                   "PredictiveEcology/SpaDES.tools (>= 2.0.7)",
-                  "PredictiveEcology/scfmutils@development (>= 2.0.1)"),
+                  "PredictiveEcology/scfmutils@development (>= 2.0.9.9008)"),
   parameters = rbind(
     defineParameter("dataYear", "numeric", 2011, 1985, 2020,
                     desc = paste("used to select the year of landcover data used to create",
@@ -134,14 +134,10 @@ Init <- function(sim) {
 
 
   if (!is.null(sim$fireRegimePolys$pSpread)) {
-    sprValues <- data.table(PolyID = sim$fireRegimePolys$PolyID,
-                            pSpread = sim$fireRegimePolys$pSpread)
-    sprRas <- data.table(PolyID = as.vector(sim$fireRegimeRas),
-                         flam = as.vector(sim$flammableMap))
-    sprValues <- sprValues[sprRas, on = c("PolyID")]
-    sprValues[flam != 1, pSpread := NA]
-    sim$pSpread <- rast(sim$fireRegimeRas)
-    sim$pSpread <- setValues(sim$pSpread, sprValues$pSpread)
+    sim$pSpread <- scfmutils::fireRegimeParRaster(fireRegimePolys = sim$fireRegimePolys,
+                                                  column = "pSpread",
+                                                  fireRegimeRas = sim$fireRegimeRas,
+                                                  flammableMap = sim$flammableMap)
   } else {
     warning("using default pSpread as no pSpread column in fireRegimePolys")
     sim$pSpread <- P(sim)$pSpread * sim$flammableMap
@@ -159,23 +155,6 @@ Init <- function(sim) {
   sim$rstCurrentBurn[sim$flammableMap[] %==% 0] <- NA # might have to ignore warnings
 
   return(invisible(sim))
-}
-
-countBurnedPixelsInSAR <- function(burnDT) {
-  tempDT <- copy(burnDT)
-
-  ## grp 1: pixels from fires ignited in SAR & spread in SAR
-  ## grp 2: pixels from fires ignited in SAR & spread outside SAR
-  ## grp 3: pixels from fires ignited outside SAR & spread in SAR
-  ## grp 4: pixels from fires ignited outside SAR & spread outside SAR
-
-  tempDT[(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 1L]
-  tempDT[(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 2L]
-  tempDT[!(initialPixels %in% mod$pixInSAR) & (pixels %in% mod$pixInSAR), grp := 3L]
-  tempDT[!(initialPixels %in% mod$pixInSAR) & !(pixels %in% mod$pixInSAR), grp := 4L]
-  tempDT <- tempDT[, .N, by = c("initialPixels", "grp")]
-
-  return(tempDT)
 }
 
 ## name 'Burnemup' is a homage to Walters and Hillborne
@@ -227,7 +206,8 @@ Burnemup <- function(sim) {
   sim$burnMap[sim$burnDT$pixels] <- sim$burnMap[sim$burnDT$pixels] + 1 ## update cumulative burn
 
   ## get fire year, pixels burned, area burned, poly ID of all burned pixels in studyAreaReporting
-  tempDT <- countBurnedPixelsInSAR(sim$burnDT)
+  ## grp: where each fire was ignited and burned, relative to studyAreaReporting
+  tempDT <- scfmutils::countBurnedPixelsInSAR(sim$burnDT, pixInSAR = mod$pixInSAR)
   tempDT$year <- time(sim)
   tempDT$areaBurned <- tempDT$N * unique(sim$fireRegimePolys$cellSize)
   tempDT$PolyID <- if (length(tempDT$initialPixels) > 0) sim$fireRegimeRas[tempDT$initialPixels] else NA_integer_
