@@ -1,7 +1,7 @@
 ---
 title: "scfmDataPrep Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-08"
+date: "Last updated: 2026-10-20"
 output:
   bookdown::html_document2:
     toc: true
