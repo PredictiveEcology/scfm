@@ -1,7 +1,7 @@
 ---
 title: "scfmSpread Manual"
 subtitle: "v.2.1.0.9001"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -118,6 +118,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -128,6 +129,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
    <td style="text-align:left;"> used to select the year of landcover data used to create `flammableMap` if the obejct is unsupplied </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> neighbours </td>
@@ -136,6 +138,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Number of immediate cell neighbours </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pSpread </td>
@@ -144,6 +147,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> default spread probability if `fireRegimePolys` is missing attribute `pSpread`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> returnInterval </td>
@@ -152,6 +156,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Time interval between burn events </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> startTime </td>
@@ -160,6 +165,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Simulation time at which to initiate burning </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -168,6 +174,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> This describes the simulation time at which the first plot event should occur </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -176,6 +183,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by Plots function, which can be optionally used here </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -184,6 +192,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Can be names of events or the whole module name; these will be cached by SpaDES </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runName </td>
@@ -192,6 +201,7 @@ Table \@ref(tab:moduleParams-scfmSpread) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name for simulation provided by user. Used as a title for diagnostic plots NULL is allowed but will result in plots without titles. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
