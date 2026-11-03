@@ -1,7 +1,7 @@
 ---
 title: "scfmRegime Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -111,6 +111,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -121,6 +122,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> 10 </td>
    <td style="text-align:left;"> scale `xMax` by this if HD estimator fails </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireCause </td>
@@ -129,6 +131,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> subset of `c('H', 'H-PB', 'N', 'Re', 'U')` </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireCauseColumnName </td>
@@ -137,6 +140,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire cause, consistent with `P(sim)$fireCause`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireEpoch </td>
@@ -145,6 +149,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> start of normal period </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireRegimePolysType </td>
@@ -153,6 +158,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Polygon type to use for scfm `fireRegimePolys`: see `?scfmutils::prepInputsFireRegimePolys` for allowed types. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireSizeColumnName </td>
@@ -161,6 +167,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire size </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireYearColumnName </td>
@@ -169,6 +176,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire size </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetBurnRate </td>
@@ -177,6 +185,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> a named vector giving the proportional annual area burned of each fire regime polygon. These override the default estimate of scfm and are used to estimate a new mean fire size and ignition rate. Names should correspond to `PolyID`. A partial set of polygons is allowed - missing polys are estimated from data. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetMaxFireSize </td>
@@ -185,6 +194,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> a named vector giving the estimated max fire size (in $ha$) of each fire regime polygon. These will override the default estimate of scfm and will be used to estimate a new spread probability. Names should correspond to `PolyID`. A partial set of polygons is allowed - missing polys are estimated from data. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -193,6 +203,7 @@ Table \@ref(tab:moduleParams-scfmRegime) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Internal. Can be names of events or the whole module name to be cached by SpaDES. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
