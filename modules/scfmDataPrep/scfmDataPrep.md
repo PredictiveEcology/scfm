@@ -1,7 +1,7 @@
 ---
 title: "scfmDataPrep Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -139,6 +139,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -149,6 +150,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> 1e+06 </td>
    <td style="text-align:left;"> If studyAreaCalibration is not supplied, this parameter will be used to buffer create it via buffering studyArea </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> cloudFolderID </td>
@@ -157,6 +159,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> URL for Google-drive-backed cloud cache </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> dataYear </td>
@@ -165,6 +168,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
    <td style="text-align:left;"> used to select the year of landcover data used to create flammableMap if the obejct is unsupplied </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> empiricalMaxSizeFactor </td>
@@ -173,6 +177,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> 10 </td>
    <td style="text-align:left;"> scale `xMax` by this if HD estimator fails </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> eventsToPrepare </td>
@@ -181,6 +186,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> which of three possible dataPrep steps to run? scfmLandcoverInit will clean GIS and generate landscape stats regarding flammability in each fire regime poly; scfmRegime will prepare fire regime attributes inc. mean fire size and ignition rate; scfmDriver will estimate the spread probability of flammable pixels </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireCause </td>
@@ -189,6 +195,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> subset of `c('H', 'H-PB', 'N', 'Re', 'U')` </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireCauseColumnName </td>
@@ -197,6 +204,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire cause, consistent with `P(sim)$fireCause`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireEpoch </td>
@@ -205,6 +213,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> start of normal period </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireRegimePolysType </td>
@@ -213,6 +222,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Polygon type to use for scfm `fireRegimePolys`: see `?scfmutils::prepInputsFireRegimePolys` for allowed types. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireSizeColumnName </td>
@@ -221,6 +231,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire size </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireYearColumnName </td>
@@ -229,6 +240,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name of the column that has fire size </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> flammabilityThreshold </td>
@@ -237,6 +249,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> Minimum proportion of flammable old pixel needed to define a new pixel as flammable when upscaling the default flammable maps. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> limitRAMuse </td>
@@ -245,6 +258,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> Limit RAM use during reprojection of landcover rasters during creation of flammableMap. Ideally this operation is performed at 30 metres resolution, to correctly incorporate the param flammmabilityThreshold </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> neighbours </td>
@@ -253,6 +267,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Number of immediate cell neighbours </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pJmp </td>
@@ -261,6 +276,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0.18 </td>
    <td style="text-align:left;"> 0.25 </td>
    <td style="text-align:left;"> default spread prob for degenerate polygons </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pMax </td>
@@ -269,6 +285,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0.24 </td>
    <td style="text-align:left;"> 0.26 </td>
    <td style="text-align:left;"> maximum spread range for calibration </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pMin </td>
@@ -277,6 +294,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0.15 </td>
    <td style="text-align:left;"> 0.225 </td>
    <td style="text-align:left;"> minimum spread range for calibration </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> scamOptimizer </td>
@@ -285,6 +303,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> numerical optimization method used in fitting scam model; see `?scam`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> sliverThreshold </td>
@@ -293,6 +312,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> fire regime polygons with area (in m2) less than this number will be merged with their closest non-sliver neighbour using `sf::st_nearest_feature`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetBurnRate </td>
@@ -301,6 +321,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> a named vector giving the proportional annual area burned of each fire regime polygon. These override the default estimate of scfm and are used to estimate a new mean fire size and ignition rate. Names should correspond to `PolyID`. A partial set of polygons is allowed - missing polys are estimated from data. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetMaxFireSize </td>
@@ -309,6 +330,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> a named vector giving the estimated max fire size (in $ha$) of each fire regime polygon. These will override the default estimate of scfm and will be used to estimate a new spread probability. Names should correspond to `PolyID`. A partial set of polygons is allowed - missing polys are estimated from data. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetN </td>
@@ -317,6 +339,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> target sample size for determining true spread probability </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInitialTime </td>
@@ -325,6 +348,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Initial time for plotting </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -333,6 +357,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Interval between plotting </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -341,6 +366,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by `Plots` function, which can be optionally used here. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInitialTime </td>
@@ -349,6 +375,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Initial time for saving </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInterval </td>
@@ -357,6 +384,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Interval between save events </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .studyAreaName </td>
@@ -365,6 +393,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Human-readable name for the study area used. If `NA`, a hash of studyArea will be used. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -373,6 +402,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Use caching of events - not recommended as of 10/05/2023 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCloud </td>
@@ -381,6 +411,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should a cloud cache be used for heavy operations </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCacheArgs </td>
@@ -389,6 +420,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should this event be cloud cached </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useParallelFireRegimePolys </td>
@@ -397,6 +429,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should driver use parallel? Alternatively accepts a numeric argument, i.e., how many cores. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
