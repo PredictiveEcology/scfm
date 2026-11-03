@@ -1,7 +1,7 @@
 ---
 title: "scfmLandcoverInit Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -124,6 +124,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -134,6 +135,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
    <td style="text-align:left;"> used to select the year of landcover data used to create flammableMap if the obejct is unsupplied </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> fireRegimePolysType </td>
@@ -142,6 +144,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Polygon type to use for scfm `fireRegimePolys`: see `?scfmutils::prepInputsFireRegimePolys` for allowed types. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> neighbours </td>
@@ -150,6 +153,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Number of immediate cell neighbours </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> sliverThreshold </td>
@@ -158,6 +162,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> fire regime polygons with area (in m2) less than this number will be merged with their closest non-sliver neighbour using `sf::st_nearest_feature`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> flammabilityThreshold </td>
@@ -166,6 +171,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> Minimum proportion of flammable old pixel needed to define a new pixel as flammable when upscaling the default flammable maps`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInitialTime </td>
@@ -174,6 +180,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Initial time for plotting </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -182,6 +189,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Interval between plotting </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -190,6 +198,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by `Plots` function, which can be optionally used here. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInitialTime </td>
@@ -198,6 +207,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Initial time for saving </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .saveInterval </td>
@@ -206,6 +216,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Interval between save events </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -214,6 +225,7 @@ Table \@ref(tab:moduleParams-scfmLandcoverInit) shows the full list of module pa
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Use caching of events - not recommended as of 10/05/2023 </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
