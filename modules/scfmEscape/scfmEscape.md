@@ -1,7 +1,7 @@
 ---
 title: "scfmEscape Manual"
 subtitle: "v.2.1.0.9001"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -105,6 +105,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -115,6 +116,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
    <td style="text-align:left;"> used to select the year of landcover data used to create `flammableMap` if the obejct is unsupplied. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> neighbours </td>
@@ -123,6 +125,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> 4 </td>
    <td style="text-align:left;"> 8 </td>
    <td style="text-align:left;"> Number of cell immediate neighbours (one of `4L` or `8L`). </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> p0 </td>
@@ -131,6 +134,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> probability of an ignition spreading to an unburned immediate neighbour </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> returnInterval </td>
@@ -139,6 +143,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> This specifies the time interval between Escape events </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> startTime </td>
@@ -147,6 +152,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> simulation time of first escape </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -155,6 +161,7 @@ Table \@ref(tab:moduleParams-scfmEscape) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Internal. Can be names of events or the whole module name; these will be cached by SpaDES. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
