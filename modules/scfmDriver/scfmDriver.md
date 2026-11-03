@@ -1,7 +1,7 @@
 ---
 title: "scfmDriver Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -93,6 +93,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -103,6 +104,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 1e+05 </td>
    <td style="text-align:left;"> Buffer width for fire landscape calibration </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> cloudFolderID </td>
@@ -111,6 +113,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> URL for Google-drive-backed cloud cache </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> dataYear </td>
@@ -119,6 +122,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 1985 </td>
    <td style="text-align:left;"> 2020 </td>
    <td style="text-align:left;"> used to select the year of landcover data used to create flammableMapCalibration if the object is unsupplied </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pJmp </td>
@@ -127,6 +131,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 0.18 </td>
    <td style="text-align:left;"> 0.25 </td>
    <td style="text-align:left;"> default spread prob for degenerate polygons </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pMax </td>
@@ -135,6 +140,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 0.24 </td>
    <td style="text-align:left;"> 0.26 </td>
    <td style="text-align:left;"> maximum spread range for calibration </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> pMin </td>
@@ -143,6 +149,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 0.15 </td>
    <td style="text-align:left;"> 0.225 </td>
    <td style="text-align:left;"> minimum spread range for calibration </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> scamOptimizer </td>
@@ -151,6 +158,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> numerical optimization method used in fitting scam model; see `?scam`. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> targetN </td>
@@ -159,6 +167,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> target sample size for determining true spread probability </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInitialTime </td>
@@ -167,6 +176,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> simulation time at which the first plot event should occur </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -175,6 +185,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> simulation time at which the first plot event should occur </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -183,6 +194,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by Plots function, which can be optionally used here </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -191,6 +203,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Can be names of events or the whole module name; these will be cached by SpaDES </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCloud </td>
@@ -199,6 +212,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should a cloud cache be used for heavy operations </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useParallelFireRegimePolys </td>
@@ -207,6 +221,7 @@ Table \@ref(tab:moduleParams-scfmDriver) shows the full list of module parameter
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> should driver use parallel? Alternatively accepts a numeric argument, i.e., how many cores. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
