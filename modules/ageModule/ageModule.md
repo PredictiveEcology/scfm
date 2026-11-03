@@ -1,7 +1,7 @@
 ---
 title: "ageModule Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -95,6 +95,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -105,6 +106,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 10000 </td>
    <td style="text-align:left;"> initial age </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> maxAge </td>
@@ -113,6 +115,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> 0 </td>
    <td style="text-align:left;"> 65535 </td>
    <td style="text-align:left;"> maximum age for plotting </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> returnInterval </td>
@@ -121,6 +124,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Time interval between aging events </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> startTime </td>
@@ -129,6 +133,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Simulation time at which to initiate aging </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInitialTime </td>
@@ -137,6 +142,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> This describes the simulation time at which the first plot event should occur </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plotInterval </td>
@@ -145,6 +151,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> This describes the simulation time at which the first plot event should occur </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -153,6 +160,7 @@ Summary of user-visible parameters (Table \@ref(tab:moduleParams-ageModule)).
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by `Plots()`, which can be optionally used here </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
