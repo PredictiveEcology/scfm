@@ -1,7 +1,7 @@
 ---
 title: "scfmDiagnostics Manual"
 subtitle: "v.2.1.0"
-date: "Last updated: 2026-10-20"
+date: "Last updated: 2026-11-03"
 output:
   bookdown::html_document2:
     toc: true
@@ -109,6 +109,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <th style="text-align:left;"> min </th>
    <th style="text-align:left;"> max </th>
    <th style="text-align:left;"> paramDesc </th>
+   <th style="text-align:left;"> cacheKey </th>
   </tr>
  </thead>
 <tbody>
@@ -119,6 +120,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> use 'single' to run part of an scfm simulation (i.e., along with other scfm modules); use 'multi' to run as part of postprocessing multiple scfm runs. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> reps </td>
@@ -127,6 +129,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> 1 </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> number of replicates/runs per study area when running in 'multi' mode. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> simOutPrefix </td>
@@ -135,6 +138,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> saved simList file prefix </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> simTimes </td>
@@ -143,6 +147,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Simulation start and end times when running in 'multi' mode. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .plots </td>
@@ -151,6 +156,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Used by Plots function, which can be optionally used here </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .studyAreaName </td>
@@ -159,6 +165,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Human-readable name for the study area used - e.g., a hash of the studyarea obtained using `reproducible::studyAreaName()` </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .useCache </td>
@@ -167,6 +174,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Should caching of events or module be used? </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
   <tr>
    <td style="text-align:left;"> .runName </td>
@@ -175,6 +183,7 @@ Provide a summary of user-visible parameters (Table \@ref(tab:moduleParams-scfmD
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> NA </td>
    <td style="text-align:left;"> Name for simulation provided by user. Used as a title for diagnostic plots NULL is allowed but will result in plots without titles. </td>
+   <td style="text-align:left;"> TRUE </td>
   </tr>
 </tbody>
 </table>
