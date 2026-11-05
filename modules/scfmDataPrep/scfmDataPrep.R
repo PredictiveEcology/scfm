@@ -27,7 +27,7 @@ defineModule(sim, list(
   citation = list("citation.bib"),
   documentation = list("NEWS.md", "README.md", "scfmDataPrep.Rmd"),
   reqdPkgs = list(
-    "dplyr", "ggplot2", "parallel",
+    "dplyr", "ggplot2", "httr2", "parallel",
     "PredictiveEcology/LandR@development (>= 1.1.5.9041)",
     "PredictiveEcology/pemisc@development",
     "PredictiveEcology/scfmutils@development (>= 2.0.9.9003)",
