@@ -19,10 +19,10 @@ eastCells <- function() which(toyCol(toyRTM()) >= 6)
 barrierCells <- function() which(toyCol(toyRTM()) == 5)
 vals <- function(r) as.vector(terra::values(r))
 
-## simInit() of scfmEscape + scfmSpread for years 1..1; burnYear() runs one year at a time.
+## simInit() of scfmEscape + scfmSpread (or `modules`) for years 1..1; burnYear() runs one year at a time.
 ## fireRegimePolys gives p0 = 1 (every ignition escapes) and pSpread = 1. With `maxBurnCells` (two
 ## values) there are two fire regime polygons, PolyID 1 (cols 1-5) and PolyID 2 (cols 6-10).
-toySim <- function(maxBurnCells = NULL) {
+toySim <- function(maxBurnCells = NULL, modules = c("scfmEscape", "scfmSpread")) {
   rtm <- toyRTM()
   flam <- rtm
   flam[toyCol(rtm) == 5] <- 0
@@ -43,7 +43,7 @@ toySim <- function(maxBurnCells = NULL) {
   root <- withr::local_tempdir(.local_envir = parent.frame())
   suppressMessages(SpaDES.core::simInit(
     times = list(start = 1, end = 1),
-    modules = c("scfmEscape", "scfmSpread"),
+    modules = modules,
     params = list(scfmEscape = list(.useCache = FALSE),
                   scfmSpread = list(.useCache = FALSE, .plots = NA)),
     objects = list(rasterToMatch = rtm, studyArea = sa, studyAreaReporting = sa,
@@ -136,4 +136,35 @@ test_that("escaped fires spread past the escape under options(spades.useSpreadCp
     sim <- burnYear(toySim(maxBurnCells = caps), 1, 1L)
     expect_identical(which(vals(sim$rstCurrentBurn) == 1), westCells())
   }
+})
+
+test_that("scfmSpread alone resumes its own spreadState: every ignition burns, within the caps", {
+  ## Without scfmEscape, scfmSpread makes 10 escaped fires itself. They were a fully spread SpatRaster,
+  ## with no `state` to resume, so the burn event stopped with "object 'state' not found".
+  withr::local_seed(1)
+  for (caps in list(NULL, c(3L, 3L))) {
+    sim <- toySim(maxBurnCells = caps, modules = "scfmSpread")
+    sim <- suppressMessages(SpaDES.core::spades(sim, debug = FALSE))
+    ignitions <- unique(sim$spreadState$initialPixels)
+    expect_length(ignitions, 10)
+    expect_true(all(vals(sim$rstCurrentBurn)[ignitions] == 1))
+    expect_setequal(sim$burnSummary$igLoc, ignitions)
+    if (!is.null(caps)) expect_lte(max(sim$burnSummary$N), 3)
+  }
+})
+
+test_that("scfmSpread alone runs on its default inputs", {
+  ## The default flammableMap is NA outside the study area, which made sample() stop on its NA weights.
+  withr::local_seed(1)
+  root <- withr::local_tempdir()
+  sim <- suppressMessages(SpaDES.core::simInit(
+    times = list(start = 1, end = 1), modules = "scfmSpread",
+    params = list(scfmSpread = list(.useCache = FALSE, .plots = NA)),
+    paths = list(modulePath = normalizePath(testthat::test_path("..", "..", "..")),
+                 cachePath = root, inputPath = root, outputPath = root)
+  ))
+  expect_warning(sim <- suppressMessages(SpaDES.core::spades(sim, debug = FALSE)), "default pSpread")
+  ignitions <- unique(sim$spreadState$initialPixels)
+  expect_length(ignitions, 10)
+  expect_true(all(vals(sim$rstCurrentBurn)[ignitions] == 1))
 })
