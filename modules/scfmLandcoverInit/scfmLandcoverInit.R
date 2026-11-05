@@ -24,7 +24,7 @@ defineModule(sim, list(
   timeunit = "year",
   citation = list(),
   reqdPkgs = list(
-    "PredictiveEcology/LandR (>= 1.1.1)",
+    "httr2", "PredictiveEcology/LandR (>= 1.1.1)",
     "purrr",
     "PredictiveEcology/scfmutils@development (>= 2.0.4)",
     "reproducible", "sf", "terra"
